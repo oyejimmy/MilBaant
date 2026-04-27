@@ -1,6 +1,4 @@
-Here you go — **single, clean `README.md` file** ready to copy-paste:
-
----
+Here's your cleaned-up, polished `README.md` ready to copy-paste — fixed formatting, consistent spacing, and ready to go:
 
 ```markdown
 # 💸 Flat Expenses Manager
@@ -40,19 +38,17 @@ A modern web application for managing shared flat expenses efficiently. Built wi
 ## 📁 Project Structure
 
 ```
-
 src/
-components/
-context/
-hooks/
-lib/
-pages/
-styles/
+├── components/
+├── context/
+├── hooks/
+├── lib/
+├── pages/
+└── styles/
 
 supabase/
-migrations/
-
-````
+└── migrations/
+```
 
 ---
 
@@ -63,7 +59,7 @@ migrations/
 ```bash
 git clone https://github.com/your-username/flat-expenses-manager.git
 cd flat-expenses-manager
-````
+```
 
 ### 2. Install dependencies
 
@@ -122,44 +118,44 @@ npm run preview
 
 ### Admin
 
-* Full access to the system
-* Manage users & permissions
-* Control announcements
-* Manage bed assignments
-* Delete any expense
+- Full access to the system
+- Manage users & permissions
+- Control announcements
+- Manage bed assignments
+- Delete any expense
 
 ### User
 
-* View all data
-* Add expenses (if permitted)
-* Cannot edit or delete expenses
+- View all data
+- Add expenses (if permitted)
+- Cannot edit or delete expenses
 
 ---
 
 ## 🧠 How It Works
 
-* **Fixed Expenses:** Split equally among all members
-* **Weekend Expenses:** Split only among selected participants
-* **Permissions:** Controlled per user by admin
-* **Storage:** Bills and images are securely stored
+- **Fixed Expenses:** Split equally among all members
+- **Weekend Expenses:** Split only among selected participants
+- **Permissions:** Controlled per user by admin
+- **Storage:** Bills and images are securely stored
 
 ---
 
 ## 🎨 UI & Design
 
-* Clean Glassmorphism-inspired interface
-* Built with Ant Design + Styled Components
-* Fully responsive layout
-* Smooth transitions and interactions
+- Clean Glassmorphism-inspired interface
+- Built with Ant Design + Styled Components
+- Fully responsive layout
+- Smooth transitions and interactions
 
 ---
 
 ## 📌 Future Improvements
 
-* Notifications system 🔔
-* Mobile app (React Native) 📱
-* Advanced analytics dashboard 📊
-* Real-time updates ⚡
+- Notifications system 🔔
+- Mobile app (React Native) 📱
+- Advanced analytics dashboard 📊
+- Real-time updates ⚡
 
 ---
 
@@ -174,15 +170,9 @@ Contributions are welcome!
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
 ## 👨‍💻 Author
 
-**Jamil Ur Rahman**
+**Jamil Ur Rahman**  
 Frontend Developer | React & TypeScript Specialist
 
 ---
@@ -190,13 +180,4 @@ Frontend Developer | React & TypeScript Specialist
 ## ⭐ Support
 
 If you like this project, give it a ⭐ on GitHub — it helps a lot!
-
-```
-
----
-
-If you want to upgrade this further, I can add:
-- GitHub **badges (build, stars, tech stack)**
-- **Live demo + screenshots section**
-- Or a **premium animated README** that stands out for recruiters 🚀
 ```
