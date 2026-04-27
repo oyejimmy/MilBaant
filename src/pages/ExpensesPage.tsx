@@ -8,6 +8,7 @@ import {
   Descriptions,
   Divider,
   Flex,
+  Grid,
   Image,
   InputNumber,
   Modal,
@@ -18,6 +19,7 @@ import {
   Typography,
   message,
 } from 'antd'
+import styled from 'styled-components'
 import {
   DeleteOutlined,
   DownloadOutlined,
@@ -55,6 +57,34 @@ import type { Expense, UserMonthlySummary } from '@/lib/types'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import { exportExpensesToExcel } from '@/lib/export'
 
+const { useBreakpoint } = Grid
+
+/* ─── Mobile card styles ──────────────────────────────────────────────────── */
+const MobileCard = styled.div`
+  border: 1px solid var(--card-border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`
+
+const MobileCardRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`
+
+const MobileCardLabel = styled.span`
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+`
+
 export function ExpensesPage() {
   const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs().startOf('month'))
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -68,6 +98,8 @@ export function ExpensesPage() {
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set())
 
   const { userId, canManageExpenses, isAdmin } = useAuth()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const expensesQuery = useExpenses(selectedMonth)
   const profilesQuery = useProfiles()
   const memberCountQuery = useMemberCountSetting()
@@ -431,45 +463,45 @@ export function ExpensesPage() {
       <QueryState isLoading={isLoading} error={error}>
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-          <div style={{ background: 'var(--surface)', border: '1.5px solid #e0eaff', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--icon-bg-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <WalletOutlined style={{ fontSize: 16, color: '#1677ff' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+          <div style={{ background: 'var(--surface)', border: '1.5px solid #e0eaff', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <WalletOutlined style={{ fontSize: 15, color: '#1677ff' }} />
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>Total Expenses</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#1677ff', letterSpacing: '-0.3px' }}>{formatCurrency(fixedTotal)}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#1677ff', letterSpacing: '-0.3px' }}>{formatCurrency(fixedTotal)}</div>
               <div style={{ fontSize: 10, color: '#aaa' }}>{formatMonthYear(selectedMonth)}</div>
             </div>
           </div>
-          <div style={{ background: 'var(--surface)', border: '1.5px solid #ede9fe', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--icon-bg-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <UserOutlined style={{ fontSize: 16, color: '#7c3aed' }} />
+          <div style={{ background: 'var(--surface)', border: '1.5px solid #ede9fe', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <UserOutlined style={{ fontSize: 15, color: '#7c3aed' }} />
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>Per-person Share</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#7c3aed', letterSpacing: '-0.3px' }}>{formatCurrency(perMemberShare)}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#7c3aed', letterSpacing: '-0.3px' }}>{formatCurrency(perMemberShare)}</div>
               <div style={{ fontSize: 10, color: '#aaa' }}>Each member owes</div>
             </div>
           </div>
-          <div style={{ background: 'var(--surface)', border: '1.5px solid #d1fae5', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--icon-bg-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TeamOutlined style={{ fontSize: 16, color: '#059669' }} />
+          <div style={{ background: 'var(--surface)', border: '1.5px solid #d1fae5', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TeamOutlined style={{ fontSize: 15, color: '#059669' }} />
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>Member Count</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#059669', letterSpacing: '-0.3px' }}>{memberCount}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#059669', letterSpacing: '-0.3px' }}>{memberCount}</div>
               <div style={{ fontSize: 10, color: '#aaa' }}>Active flatmates</div>
             </div>
           </div>
         </div>
 
         <SectionBlock>
-            <Flex justify="space-between" align="center" style={{ marginBottom: 4 }}>
+            <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 4 }}>
               <Typography.Title level={4} style={{ margin: 0, color: 'var(--text-strong)' }}>
                 Shared Expenses
               </Typography.Title>
-              <Space>
+              <Flex wrap gap={8}>
                 <Button
                   icon={<PrinterOutlined />}
                   onClick={() => void handleOpenPrint()}
@@ -482,36 +514,81 @@ export function ExpensesPage() {
                 >
                   Distribute
                 </Button>
-              </Space>
+              </Flex>
             </Flex>
             <Typography.Text style={{ color: 'var(--text-muted)' }}>
               Total amount for {formatMonthYear(selectedMonth)} divided by member count.
             </Typography.Text>
 
             <div style={{ marginTop: 16 }}>
-              <Table
-                rowKey="id"
-                columns={fixedColumns}
-                dataSource={fixedExpenses}
-                pagination={false}
-                scroll={{ x: 900 }}
-                summary={() => (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={2}>
+              {isMobile ? (
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  {fixedExpenses.length === 0 && (
+                    <Typography.Text type="secondary">No shared expenses for this month.</Typography.Text>
+                  )}
+                  {fixedExpenses.map((exp) => (
+                    <MobileCard key={exp.id}>
+                      <MobileCardRow>
+                        <Tag color="blue" style={{ margin: 0 }}>{CATEGORY_LABELS[exp.category]}</Tag>
+                        <Typography.Text strong style={{ color: 'var(--text-strong)' }}>{formatCurrency(exp.amount)}</Typography.Text>
+                      </MobileCardRow>
+                      <MobileCardRow>
+                        <MobileCardLabel>{formatDate(exp.date)}</MobileCardLabel>
+                        {exp.description && (
+                          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', flex: 1, marginLeft: 8 }} ellipsis>
+                            {exp.description}
+                          </Typography.Text>
+                        )}
+                      </MobileCardRow>
+                      {isAdmin && (
+                        <MobileCardRow>
+                          <div />
+                          <Flex gap={6}>
+                            <Button icon={<EditOutlined />} size="small" onClick={() => setEditingExpense(exp)} />
+                            <Popconfirm title="Delete?" onConfirm={() => void handleDeleteExpense(exp.id, CATEGORY_LABELS[exp.category])}>
+                              <Button danger icon={<DeleteOutlined />} size="small" />
+                            </Popconfirm>
+                          </Flex>
+                        </MobileCardRow>
+                      )}
+                    </MobileCard>
+                  ))}
+                  {fixedExpenses.length > 0 && (
+                    <div style={{ padding: '8px 12px', background: 'var(--content-bg)', borderRadius: 7, border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
                       <Typography.Text strong>Total</Typography.Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1}>
-                      <Typography.Text strong>{formatCurrency(fixedTotal)}</Typography.Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2}>
-                      <Tag color="blue" style={{ fontWeight: 600, fontSize: 13, padding: '2px 10px' }}>
-                        Per-person: {formatCurrency(perMemberShare)}
-                      </Tag>
-                    </Table.Summary.Cell>
-                    {isAdmin && <Table.Summary.Cell index={3} />}
-                  </Table.Summary.Row>
-                )}
-              />
+                      <Flex gap={8} align="center">
+                        <Typography.Text strong>{formatCurrency(fixedTotal)}</Typography.Text>
+                        <Tag color="blue">Per-person: {formatCurrency(perMemberShare)}</Tag>
+                      </Flex>
+                    </div>
+                  )}
+                </Space>
+              ) : (
+                <Table
+                  rowKey="id"
+                  columns={fixedColumns}
+                  dataSource={fixedExpenses}
+                  pagination={false}
+                  scroll={{ x: 700 }}
+                  size="small"
+                  summary={() => (
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell index={0} colSpan={2}>
+                        <Typography.Text strong>Total</Typography.Text>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={1}>
+                        <Typography.Text strong>{formatCurrency(fixedTotal)}</Typography.Text>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={2}>
+                        <Tag color="blue" style={{ fontWeight: 600, fontSize: 13, padding: '2px 10px' }}>
+                          Per-person: {formatCurrency(perMemberShare)}
+                        </Tag>
+                      </Table.Summary.Cell>
+                      {isAdmin && <Table.Summary.Cell index={3} />}
+                    </Table.Summary.Row>
+                  )}
+                />
+              )}
             </div>
           </SectionBlock>
 
@@ -523,13 +600,50 @@ export function ExpensesPage() {
             Meals recorded on Saturdays and Sundays are divided only among selected participants.
           </Typography.Text>
           <div style={{ marginTop: 16 }}>
-            <Table
-              rowKey="id"
-              columns={weekendColumns}
-              dataSource={weekendExpenses}
-              pagination={false}
-              scroll={{ x: 980 }}
-            />
+            {isMobile ? (
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                {weekendExpenses.length === 0 && (
+                  <Typography.Text type="secondary">No weekend expenses for this month.</Typography.Text>
+                )}
+                {weekendExpenses.map((exp) => (
+                  <MobileCard key={exp.id}>
+                    <MobileCardRow>
+                      <MobileCardLabel>{formatDate(exp.date)}</MobileCardLabel>
+                      <Typography.Text strong style={{ color: 'var(--text-strong)' }}>{formatCurrency(exp.amount)}</Typography.Text>
+                    </MobileCardRow>
+                    <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {exp.description || 'Weekend meal'}
+                    </Typography.Text>
+                    <Flex wrap gap={4}>
+                      {exp.expense_participants.map((p) => (
+                        <Tag key={p.user_id} color="cyan" style={{ margin: 0, fontSize: 11 }}>
+                          {p.profile?.full_name ?? '?'}
+                        </Tag>
+                      ))}
+                    </Flex>
+                    <MobileCardRow>
+                      <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                        Share/person: {formatCurrency(calculateWeekendExpenseShare(exp))}
+                      </Typography.Text>
+                      {isAdmin && (
+                        <Popconfirm title="Delete?" onConfirm={() => void handleDeleteExpense(exp.id)}>
+                          <Button danger icon={<DeleteOutlined />} size="small" />
+                        </Popconfirm>
+                      )}
+                    </MobileCardRow>
+                  </MobileCard>
+                ))}
+              </Space>
+            ) : (
+              <Table
+                rowKey="id"
+                columns={weekendColumns}
+                dataSource={weekendExpenses}
+                pagination={false}
+                scroll={{ x: 800 }}
+                size="small"
+              />
+            )}
           </div>
         </SectionBlock>
 
@@ -538,16 +652,34 @@ export function ExpensesPage() {
             Monthly Owed Per User
           </Typography.Title>
           <Typography.Text style={{ color: 'var(--text-muted)' }}>
-            share plus weekend meal participation for the selected month.
+            Share plus weekend meal participation for the selected month.
           </Typography.Text>
           <div style={{ marginTop: 16 }}>
-            <Table
-              rowKey="userId"
-              columns={summaryColumns}
-              dataSource={userSummary}
-              pagination={false}
-              scroll={{ x: 720 }}
-            />
+            {isMobile ? (
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                {userSummary.map((row) => (
+                  <MobileCard key={row.userId}>
+                    <MobileCardRow>
+                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{row.fullName}</Typography.Text>
+                      <Typography.Text strong style={{ color: '#909ffa', fontSize: 14 }}>{formatCurrency(row.totalOwed)}</Typography.Text>
+                    </MobileCardRow>
+                    <MobileCardRow>
+                      <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Share: {formatCurrency(row.fixedShare)}</Typography.Text>
+                      <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Weekend: {formatCurrency(row.weekendShare)}</Typography.Text>
+                    </MobileCardRow>
+                  </MobileCard>
+                ))}
+              </Space>
+            ) : (
+              <Table
+                rowKey="userId"
+                columns={summaryColumns}
+                dataSource={userSummary}
+                pagination={false}
+                scroll={{ x: 500 }}
+                size="small"
+              />
+            )}
           </div>
         </SectionBlock>
       </QueryState>
@@ -574,7 +706,7 @@ export function ExpensesPage() {
         title="Distribute Expenses"
         onCancel={() => setDistributeOpen(false)}
         footer={null}
-        width={480}
+        width="min(480px, 95vw)"
       >
         <Space direction="vertical" size={20} style={{ width: '100%' }}>
           <Descriptions column={1} bordered size="small">

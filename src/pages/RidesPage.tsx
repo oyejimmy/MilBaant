@@ -560,7 +560,7 @@ function AddRideModal({
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width={480}
+      width="min(480px, 95vw)"
     >
       <Form
         form={form}
@@ -631,7 +631,7 @@ const ModalGrid = styled.div`
   gap: 12px;
   padding-top: 4px;
 
-  @media (max-width: 480px) {
+  @media (max-width: 520px) {
     grid-template-columns: 1fr;
   }
 `
@@ -720,7 +720,7 @@ function RideDetailModal({
           <Button size="small" onClick={onClose}>Close</Button>
         </Flex>
       }
-      width={460}
+      width="min(460px, 95vw)"
       styles={{ body: { padding: '12px 16px 4px' } }}
     >
       <ModalGrid>

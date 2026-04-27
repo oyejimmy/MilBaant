@@ -496,7 +496,7 @@ function AddUserModal({
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width={460}
+      width="min(460px, 95vw)"
     >
       <Alert
         type="info"
@@ -610,7 +610,7 @@ function EditUserModal({
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width={400}
+      width="min(400px, 95vw)"
     >
       <Form
         form={form}

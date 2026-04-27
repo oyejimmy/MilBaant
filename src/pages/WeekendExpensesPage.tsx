@@ -513,7 +513,7 @@ const ModalGrid = styled.div`
   gap: 12px;
   padding-top: 4px;
 
-  @media (max-width: 480px) {
+  @media (max-width: 520px) {
     grid-template-columns: 1fr;
   }
 `
@@ -603,7 +603,7 @@ function ExpenseDetailModal({
           <Button size="small" onClick={onClose}>Close</Button>
         </Flex>
       }
-      width={480}
+      width="min(480px, 95vw)"
       styles={{ body: { padding: '12px 16px 4px' } }}
     >
       <ModalGrid>
@@ -709,7 +709,7 @@ function SettleModal({
       okText="Confirm Payment"
       confirmLoading={submitting}
       onOk={() => void handleOk()}
-      width={420}
+      width="min(420px, 95vw)"
     >
       <Space direction="vertical" size={16} style={{ width: '100%', paddingTop: 8 }}>
         <Alert

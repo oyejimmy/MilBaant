@@ -204,33 +204,57 @@ const TopHeader = styled(Header)`
   position: sticky !important;
   top: 0;
   z-index: 100;
-  height: 56px !important;
-  line-height: 56px !important;
-  padding: 0 16px !important;
+  height: 48px !important;
+  line-height: 48px !important;
+  padding: 0 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   background: var(--navbar-bg) !important;
   border-bottom: 1px solid var(--navbar-border) !important;
   border-radius: 0 !important;
+
+  @media (min-width: 768px) {
+    height: 56px !important;
+    line-height: 56px !important;
+    padding: 0 16px !important;
+  }
 `
 
 const NavLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+
+  @media (min-width: 768px) {
+    gap: 10px;
+  }
 `
 
 const NavRight = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
+
+  @media (min-width: 768px) {
+    gap: 6px;
+  }
 `
 
 const NavTitle = styled(Typography.Text)`
-  font-size: 0.95rem !important;
+  font-size: 0.85rem !important;
   font-weight: 600 !important;
   color: var(--text-strong) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (min-width: 768px) {
+    font-size: 0.95rem !important;
+  }
 `
 
 const NavBtn = styled(Button)`
@@ -238,12 +262,18 @@ const NavBtn = styled(Button)`
   border-color: var(--navbar-border) !important;
   background: transparent !important;
   color: var(--text-muted) !important;
-  width: 34px !important;
-  height: 34px !important;
+  width: 32px !important;
+  height: 32px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0;
+
+  @media (min-width: 768px) {
+    width: 34px !important;
+    height: 34px !important;
+  }
 
   &:hover {
     background: var(--menu-hover-bg) !important;
@@ -255,14 +285,20 @@ const NavBtn = styled(Button)`
 const ProfileBtn = styled.button`
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px 3px 3px;
+  gap: 4px;
+  padding: 3px 6px 3px 3px;
   border: 1px solid var(--navbar-border);
   border-radius: 7px;
   background: transparent;
   cursor: pointer;
   color: inherit;
   transition: background 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+
+  @media (min-width: 768px) {
+    gap: 6px;
+    padding: 3px 8px 3px 3px;
+  }
 
   &:hover {
     background: var(--menu-hover-bg);
@@ -273,11 +309,13 @@ const ProfileBtn = styled.button`
 /* ─── Content ─────────────────────────────────────────────────────────────── */
 
 const MainContent = styled(Content)`
-  padding: 16px;
+  padding: 10px;
   background: transparent !important;
+  padding-bottom: 68px; /* clear bottom nav */
 
   @media (min-width: 768px) {
     padding: 24px;
+    padding-bottom: 24px;
   }
 `
 
@@ -301,6 +339,58 @@ const DrawerBrand = styled.div`
   padding: 0 0 16px;
   border-bottom: 1px solid var(--sidebar-border);
   margin-bottom: 8px;
+`
+
+/* ─── Mobile bottom nav bar ───────────────────────────────────────────────── */
+
+const BottomNav = styled.nav`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  height: 56px;
+  background: var(--navbar-bg);
+  border-top: 1px solid var(--navbar-border);
+  display: flex;
+  align-items: stretch;
+  padding: 0 2px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+`
+
+const BottomNavItem = styled.button<{ $active: boolean }>`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  border-radius: 6px;
+  color: ${({ $active }) => ($active ? '#909ffa' : 'var(--text-muted)')};
+  transition: color 0.15s ease, background 0.15s ease;
+  min-width: 0;
+
+  &:active {
+    background: var(--menu-hover-bg);
+  }
+
+  .anticon {
+    font-size: 17px;
+  }
+`
+
+const BottomNavLabel = styled.span`
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1;
 `
 
 /* ─── Icon map ────────────────────────────────────────────────────────────── */
@@ -531,6 +621,29 @@ export function AppLayout() {
           </ContentWrap>
         </MainContent>
       </MainLayout>
+
+      {/* ── Mobile bottom nav bar ── */}
+      {!isDesktop && (
+        <BottomNav>
+          {menuItems.slice(0, 5).map((item) => (
+            <BottomNavItem
+              key={item.key}
+              $active={activePath === item.key}
+              onClick={() => navigate(item.key)}
+            >
+              {item.icon}
+              <BottomNavLabel>{item.label}</BottomNavLabel>
+            </BottomNavItem>
+          ))}
+          <BottomNavItem
+            $active={false}
+            onClick={() => setMobileOpen(true)}
+          >
+            <MenuOutlined />
+            <BottomNavLabel>More</BottomNavLabel>
+          </BottomNavItem>
+        </BottomNav>
+      )}
     </Shell>
   )
 }

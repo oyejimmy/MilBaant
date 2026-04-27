@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { Alert, Button, Col, Flex, Input, InputNumber, Row, Space, Table, Tag, Typography, message } from 'antd'
+import { Alert, Button, Col, Flex, Grid, Input, InputNumber, Row, Space, Table, Tag, Typography, message } from 'antd'
 import { EditOutlined, HistoryOutlined, MobileOutlined, SaveOutlined, UserOutlined, WalletOutlined, CalendarOutlined, CoffeeOutlined, TeamOutlined } from '@ant-design/icons'
+import styled from 'styled-components'
 import { PageStack, ResponsiveGrid, SectionBlock } from '@/components/Glass'
 import { QueryState } from '@/components/QueryState'
 import { SummaryStat } from '@/components/SummaryStat'
@@ -20,8 +21,24 @@ import {
 import { formatCurrency, formatDateTime } from '@/lib/formatters'
 import type { UserMonthlySummary } from '@/lib/types'
 
+const { useBreakpoint } = Grid
+
+/* ─── Mobile balance card ─────────────────────────────────────────────────── */
+const BalanceRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--card-border);
+  background: var(--content-bg);
+  gap: 8px;
+`
+
 export function DashboardPage() {
   const { isAdmin } = useAuth()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const currentMonth = dayjs().startOf('month')
   const expensesQuery = useExpenses(currentMonth)
   const announcementsQuery = useAnnouncements()
@@ -164,11 +181,11 @@ export function DashboardPage() {
             background: 'var(--surface)',
             border: `1.5px solid ${prevRemainder > 0 ? '#d9770622' : 'var(--card-border)'}`,
             borderRadius: 14,
-            padding: '14px 18px',
+            padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 12,
+            gap: 10,
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, color: '#888', fontWeight: 500, marginBottom: 2 }}>Remainder from Previous Month</div>
@@ -265,12 +282,12 @@ export function DashboardPage() {
               <div style={{
                 background: 'linear-gradient(135deg, #00a651 0%, #007a3d 100%)',
                 borderRadius: 14,
-                padding: '16px 20px',
+                padding: '14px 16px',
                 marginBottom: 16,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 12,
+                gap: 10,
               }}>
                 <div>
                   <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: 500, marginBottom: 2 }}>Powered by</div>
@@ -294,7 +311,7 @@ export function DashboardPage() {
               {/* Info rows */}
               <Space direction="vertical" size={10} style={{ width: '100%', flex: 1 }}>
                 {/* Account Number */}
-                <div style={{ background: 'var(--content-bg)', border: '1.5px solid #e0eaff', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ background: 'var(--content-bg)', border: '1.5px solid #e0eaff', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--icon-bg-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <MobileOutlined style={{ fontSize: 14, color: '#1677ff' }} />
                   </div>
@@ -309,7 +326,7 @@ export function DashboardPage() {
                 </div>
 
                 {/* Account Name */}
-                <div style={{ background: 'var(--content-bg)', border: '1.5px solid #ede9fe', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ background: 'var(--content-bg)', border: '1.5px solid #ede9fe', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--icon-bg-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <UserOutlined style={{ fontSize: 14, color: '#7c3aed' }} />
                   </div>
@@ -324,7 +341,7 @@ export function DashboardPage() {
                 </div>
 
                 {/* Payment Method */}
-                <div style={{ background: 'var(--content-bg)', border: '1.5px solid #d1fae5', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ background: 'var(--content-bg)', border: '1.5px solid #d1fae5', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--icon-bg-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: '#00a651' }}>EP</span>
                   </div>
@@ -353,13 +370,39 @@ export function DashboardPage() {
               </Typography.Text>
             </div>
 
-            <Table
-              rowKey="userId"
-              columns={balanceColumns}
-              dataSource={monthlySummary}
-              pagination={false}
-              scroll={{ x: 760 }}
-            />
+            {isMobile ? (
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                {monthlySummary.map((row) => (
+                  <BalanceRow key={row.userId}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13, display: 'block' }}>
+                        {row.fullName}
+                      </Typography.Text>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                        <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          Share: {formatCurrency(row.fixedShare)}
+                        </Typography.Text>
+                        <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          Weekend: {formatCurrency(row.weekendShare)}
+                        </Typography.Text>
+                      </div>
+                    </div>
+                    <Typography.Text strong style={{ color: '#909ffa', fontSize: 14, whiteSpace: 'nowrap' }}>
+                      {formatCurrency(row.totalOwed)}
+                    </Typography.Text>
+                  </BalanceRow>
+                ))}
+              </Space>
+            ) : (
+              <Table
+                rowKey="userId"
+                columns={balanceColumns}
+                dataSource={monthlySummary}
+                pagination={false}
+                scroll={{ x: 500 }}
+                size="small"
+              />
+            )}
           </Space>
         </SectionBlock>
       </QueryState>

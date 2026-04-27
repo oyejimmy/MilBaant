@@ -85,24 +85,52 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
     background: var(--soft-accent) !important;
   }
 
-  /* Mobile: tighter padding */
+  /* Mobile: tighter table padding + horizontal scroll */
   @media (max-width: 767px) {
+    .ant-table-wrapper {
+      border-radius: 6px;
+    }
+
     .ant-table-tbody > tr > td,
     .ant-table-thead > tr > th {
-      padding: 8px 10px !important;
+      padding: 7px 8px !important;
+      font-size: 12px !important;
+    }
+
+    .ant-table-thead > tr > th {
+      white-space: nowrap !important;
+      font-size: 11px !important;
+    }
+
+    /* Ensure table container scrolls horizontally */
+    .ant-table-content {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
     }
 
     .ant-card-body {
-      padding: 14px !important;
+      padding: 12px !important;
     }
 
     .ant-modal {
-      max-width: calc(100vw - 24px) !important;
-      margin: 12px auto !important;
+      max-width: calc(100vw - 16px) !important;
+      margin: 8px auto !important;
     }
 
     .ant-modal-content {
-      border-radius: 7px !important;
+      border-radius: 10px !important;
+    }
+
+    .ant-modal-body {
+      padding: 12px 14px !important;
+    }
+
+    .ant-modal-header {
+      padding: 12px 14px 8px !important;
+    }
+
+    .ant-modal-footer {
+      padding: 8px 14px !important;
     }
 
     /* Page header actions wrap nicely */
@@ -110,10 +138,83 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
       width: 100%;
     }
 
-    /* Prevent table header text overflow */
+    /* Descriptions responsive */
+    .ant-descriptions-item-label,
+    .ant-descriptions-item-content {
+      padding: 6px 8px !important;
+      font-size: 12px !important;
+    }
+
+    /* Tags wrap */
+    .ant-tag {
+      margin-bottom: 2px;
+      font-size: 11px !important;
+      padding: 0 5px !important;
+    }
+
+    /* Pagination compact */
+    .ant-pagination {
+      font-size: 12px !important;
+    }
+
+    .ant-pagination-item,
+    .ant-pagination-prev,
+    .ant-pagination-next {
+      min-width: 28px !important;
+      height: 28px !important;
+      line-height: 26px !important;
+    }
+
+    /* Form items tighter */
+    .ant-form-item {
+      margin-bottom: 12px !important;
+    }
+
+    /* Select / picker full width in forms */
+    .ant-form-item .ant-select,
+    .ant-form-item .ant-picker,
+    .ant-form-item .ant-input-number {
+      width: 100% !important;
+    }
+
+    /* Alert compact */
+    .ant-alert {
+      padding: 8px 10px !important;
+      font-size: 12px !important;
+    }
+
+    /* Typography headings smaller on mobile */
+    .ant-typography h3,
+    h3.ant-typography {
+      font-size: 16px !important;
+    }
+
+    .ant-typography h4,
+    h4.ant-typography {
+      font-size: 14px !important;
+    }
+
+    .ant-typography h5,
+    h5.ant-typography {
+      font-size: 13px !important;
+    }
+  }
+
+  /* Extra small screens */
+  @media (max-width: 375px) {
+    .ant-table-tbody > tr > td,
     .ant-table-thead > tr > th {
-      white-space: normal !important;
-      word-break: break-word;
+      padding: 5px 6px !important;
+      font-size: 11px !important;
+    }
+
+    .ant-btn {
+      font-size: 12px !important;
+      padding: 0 8px !important;
+    }
+
+    .ant-tag {
+      font-size: 10px !important;
     }
   }
 

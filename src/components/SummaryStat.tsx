@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import styled from 'styled-components'
 import type { SummaryStatItem } from '@/lib/types'
 
 interface SummaryStatProps extends SummaryStatItem {
@@ -6,23 +7,38 @@ interface SummaryStatProps extends SummaryStatItem {
   color?: string
 }
 
+const StatCard = styled.div<{ $color: string }>`
+  background: var(--surface);
+  border: 1.5px solid ${({ $color }) => $color}22;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  @media (min-width: 768px) {
+    padding: 14px 18px;
+    gap: 12px;
+  }
+`
+
+const StatValue = styled.div<{ $color: string }>`
+  font-size: clamp(14px, 4vw, 18px);
+  font-weight: 700;
+  color: ${({ $color }) => $color};
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+`
+
 export function SummaryStat({ title, value, subtitle, icon, color = '#1677ff' }: SummaryStatProps) {
   return (
-    <div style={{
-      background: 'var(--surface)',
-      border: `1.5px solid ${color}22`,
-      borderRadius: 14,
-      padding: '14px 18px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
-    }}>
+    <StatCard $color={color}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: '#888', fontWeight: 500, marginBottom: 2 }}>{title}</div>
-        <div style={{ fontSize: 18, fontWeight: 700, color, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{value}</div>
+        <StatValue $color={color}>{value}</StatValue>
         {subtitle && (
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{subtitle}</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 2, lineHeight: 1.3 }}>{subtitle}</div>
         )}
       </div>
       {icon && (
@@ -41,6 +57,6 @@ export function SummaryStat({ title, value, subtitle, icon, color = '#1677ff' }:
           {icon}
         </div>
       )}
-    </div>
+    </StatCard>
   )
 }

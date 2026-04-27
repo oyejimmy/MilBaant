@@ -1,13 +1,26 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { Input, Table, Tag, Typography } from 'antd'
+import { Grid, Input, Table, Tag, Typography } from 'antd'
 import { AuditOutlined } from '@ant-design/icons'
+import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
 import { PageStack, SectionBlock } from '@/components/Glass'
 import { useActivityLogs } from '@/hooks/useActivityLog'
 import type { ActivityLog } from '@/lib/types'
+
+const { useBreakpoint } = Grid
+
+const LogCard = styled.div`
+  border: 1px solid var(--card-border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`
 
 const ACTION_COLOR: Record<ActivityLog['action'], string> = {
   create: 'green',
@@ -28,6 +41,8 @@ export function LogsPage() {
   const [search, setSearch] = useState('')
   const logsQuery = useActivityLogs()
   const logs = logsQuery.data ?? []
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
 
   const filtered = search.trim()
     ? logs.filter(
@@ -101,28 +116,57 @@ export function LogsPage() {
         subtitle="A read-only audit trail of all actions performed in the app. Logs cannot be edited or deleted."
       />
       <SectionBlock>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <AuditOutlined style={{ fontSize: 18, color: 'var(--text-muted)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+          <AuditOutlined style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0 }} />
           <Input.Search
             placeholder="Search by user, module or description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             allowClear
-            style={{ maxWidth: 400 }}
+            style={{ flex: 1, minWidth: 200, maxWidth: 400 }}
           />
-          <Typography.Text type="secondary" style={{ marginLeft: 'auto' }}>
+          <Typography.Text type="secondary" style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}>
             {filtered.length} entries
           </Typography.Text>
         </div>
         <QueryState isLoading={logsQuery.isLoading} error={logsQuery.error as Error | null}>
-          <Table
-            rowKey="id"
-            columns={columns}
-            dataSource={filtered}
-            pagination={{ pageSize: 50, showSizeChanger: true }}
-            scroll={{ x: 900 }}
-            size="small"
-          />
+          {isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {filtered.length === 0 && (
+                <Typography.Text type="secondary">No logs found.</Typography.Text>
+              )}
+              {filtered.slice(0, 100).map((log) => (
+                <LogCard key={log.id}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Tag color={ACTION_COLOR[log.action]} style={{ margin: 0, textTransform: 'capitalize', fontWeight: 600 }}>
+                      {log.action}
+                    </Tag>
+                    <Tag color={ENTITY_COLOR[log.entity] ?? 'default'} style={{ margin: 0, textTransform: 'capitalize' }}>
+                      {log.entity.replace('_', ' ')}
+                    </Tag>
+                    <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-strong)' }}>
+                      {log.actor?.full_name ?? 'Unknown'}
+                    </Typography.Text>
+                  </div>
+                  <Typography.Text style={{ fontSize: 12, color: 'var(--text-base)' }}>
+                    {log.description}
+                  </Typography.Text>
+                  <Typography.Text style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                    {dayjs(log.created_at).format('DD MMM YYYY, HH:mm')}
+                  </Typography.Text>
+                </LogCard>
+              ))}
+            </div>
+          ) : (
+            <Table
+              rowKey="id"
+              columns={columns}
+              dataSource={filtered}
+              pagination={{ pageSize: 50, showSizeChanger: true }}
+              scroll={{ x: 700 }}
+              size="small"
+            />
+          )}
         </QueryState>
       </SectionBlock>
     </PageStack>

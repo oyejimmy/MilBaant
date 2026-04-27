@@ -55,13 +55,24 @@ const BalanceCard = styled.div<{ $status: 'surplus' | 'deficit' | 'zero' }>`
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 20px;
+  padding: 16px;
   border-radius: 7px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   border-left: 4px solid ${({ $status }) =>
     $status === 'surplus' ? '#52c41a' : $status === 'deficit' ? '#ff4d4f' : '#909ffa'};
   flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+
+    > div:last-child {
+      width: 100%;
+      min-width: unset;
+    }
+  }
 `
 
 const BalanceAmount = styled.div<{ $status: 'surplus' | 'deficit' | 'zero' }>`
@@ -528,7 +539,7 @@ function AdvanceModal({
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width={400}
+      width="min(400px, 95vw)"
     >
       <Form form={form} layout="vertical" initialValues={{ date: dayjs() }} style={{ paddingTop: 8 }}>
         <Form.Item label="Amount (PKR)" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
@@ -577,7 +588,7 @@ function PurchaseModal({
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width={420}
+      width="min(420px, 95vw)"
     >
       <Form
         form={form}

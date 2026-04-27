@@ -8,10 +8,38 @@ body,
 
 body {
   margin: 0;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 767px) {
+  button,
+  [role="button"],
+  .ant-btn {
+    min-height: 36px;
+  }
+
+  /* Prevent text size adjustment on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Smooth scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent double-tap zoom on buttons */
+  button,
+  a {
+    touch-action: manipulation;
+  }
 }
