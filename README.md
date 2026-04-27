@@ -18,8 +18,6 @@ A modern web application for managing shared flat expenses efficiently. Built wi
 - 🎨 Glassmorphism UI with responsive design
 - 🌙 Light/Dark mode ready
 
----
-
 ## 🧰 Tech Stack
 
 - **Frontend:** React + TypeScript + Vite  
@@ -28,8 +26,6 @@ A modern web application for managing shared flat expenses efficiently. Built wi
 - **Routing:** React Router  
 - **Backend & DB:** Supabase  
 - **File Handling:** SheetJS (xlsx), react-dropzone  
-
----
 
 ## 📁 Project Structure
 
