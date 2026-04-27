@@ -1,11 +1,8 @@
-Here's your cleaned-up, polished `README.md` ready to copy-paste — fixed formatting, consistent spacing, and ready to go:
-
 ```markdown
 # 💸 Flat Expenses Manager
 
 A modern web application for managing shared flat expenses efficiently. Built with a powerful stack and designed with a clean, professional UI, this app simplifies expense tracking, splitting, and collaboration among flatmates.
 
----
 
 ## 🚀 Features
 
@@ -50,8 +47,6 @@ supabase/
 └── migrations/
 ```
 
----
-
 ## ⚙️ Setup & Installation
 
 ### 1. Clone the repository
@@ -84,8 +79,6 @@ Run the SQL migration files located in:
 supabase/migrations/
 ```
 
----
-
 ## ▶️ Running the App
 
 ```bash
@@ -98,8 +91,6 @@ App will be available at:
 http://localhost:5173
 ```
 
----
-
 ## 🏗️ Build for Production
 
 ```bash
@@ -111,8 +102,6 @@ To preview:
 ```bash
 npm run preview
 ```
-
----
 
 ## 🔐 Authentication & Roles
 
@@ -130,16 +119,12 @@ npm run preview
 - Add expenses (if permitted)
 - Cannot edit or delete expenses
 
----
-
 ## 🧠 How It Works
 
 - **Fixed Expenses:** Split equally among all members
 - **Weekend Expenses:** Split only among selected participants
 - **Permissions:** Controlled per user by admin
 - **Storage:** Bills and images are securely stored
-
----
 
 ## 🎨 UI & Design
 
@@ -148,16 +133,12 @@ npm run preview
 - Fully responsive layout
 - Smooth transitions and interactions
 
----
-
 ## 📌 Future Improvements
 
 - Notifications system 🔔
 - Mobile app (React Native) 📱
 - Advanced analytics dashboard 📊
 - Real-time updates ⚡
-
----
 
 ## 🤝 Contributing
 
@@ -168,14 +149,10 @@ Contributions are welcome!
 3. Make your changes
 4. Submit a pull request
 
----
-
 ## 👨‍💻 Author
 
 **Jamil Ur Rahman**  
 Frontend Developer | React & TypeScript Specialist
-
----
 
 ## ⭐ Support
 
