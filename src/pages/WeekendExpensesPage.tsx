@@ -229,7 +229,7 @@ export function WeekendExpensesPage() {
       render: (_: unknown, record: Expense) => (
         <Space size={4}>
           <Button size="small" icon={<EyeOutlined />} onClick={(e) => { e.stopPropagation(); setViewExpense(record) }} />
-          {!!userId && (
+          {record.created_by === userId && (
             <Popconfirm title="Delete?" onConfirm={() => void handleDelete(record.id)}>
               <Button size="small" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
             </Popconfirm>
@@ -309,7 +309,7 @@ export function WeekendExpensesPage() {
                       {formatCurrency(calculateWeekendExpenseShare(exp))}/person
                     </Typography.Text>
                   </MobileRow>
-                  {!!userId && (
+                  {exp.created_by === userId && (
                     <MobileRow>
                       <div />
                       <Popconfirm title="Delete?" onConfirm={(e) => { e?.stopPropagation(); void handleDelete(exp.id) }}>
@@ -420,7 +420,7 @@ export function WeekendExpensesPage() {
       </QueryState>
 
       <ExpenseFormModal open={addModalOpen} submitting={createExpense.isPending} profiles={profiles} lockedCategory="weekend_meal" onClose={() => setAddModalOpen(false)} onSubmit={handleCreateExpense} />
-      {viewExpense && <ExpenseDetailModal expense={viewExpense} onClose={() => setViewExpense(null)} onDelete={!!userId ? handleDelete : undefined} deleting={deleteExpense.isPending} />}
+      {viewExpense && <ExpenseDetailModal expense={viewExpense} onClose={() => setViewExpense(null)} onDelete={viewExpense.created_by === userId ? handleDelete : undefined} deleting={deleteExpense.isPending} />}
       {settleModal && <SettleModal debt={settleModal} submitting={createSettlement.isPending} onClose={() => setSettleModal(null)} onSubmit={handleSettle} />}
     </PageStack>
   )
