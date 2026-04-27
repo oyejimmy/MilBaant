@@ -1,4 +1,3 @@
-```markdown
 # 💸 Flat Expenses Manager
 
 A modern web application for managing shared flat expenses efficiently. Built with a powerful stack and designed with a clean, professional UI, this app simplifies expense tracking, splitting, and collaboration among flatmates.
