@@ -202,7 +202,7 @@ export function DashboardPage() {
               )}
               <div style={{
                 width: 28, height: 28, borderRadius: 8,
-                background: prevRemainder > 0 ? 'var(--icon-bg-amber)' : 'var(--soft-accent)',
+                background: prevRemainder > 0 ? '#fef3c718' : '#f3f4f618',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, color: prevRemainder > 0 ? '#d97706' : '#9ca3af',
               }}>
