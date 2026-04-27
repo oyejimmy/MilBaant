@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import { Layer, Rect, Text, Group } from 'react-konva'
 import { CONTENT_W, CONTENT_H, C } from './layout'
 

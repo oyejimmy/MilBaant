@@ -1,7 +1,6 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import { Layer, Rect, Text, Group } from 'react-konva'
-import type { BedAssignment } from '@/lib/types'
-import { getRoomLayouts, BED_W, BED_H, C } from './layout'
+import { BED_W, BED_H, C } from './layout'
 
 interface BedRect {
   bedId: number
@@ -34,7 +33,7 @@ export const FurnitureLayer = memo(function FurnitureLayer({
           ? C.bedHover
           : bed.occupied
           ? C.bedOccupied
-          : C.bedEmpty
+          : C.bedFill
 
         return (
           <Group

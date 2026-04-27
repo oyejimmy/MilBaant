@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Group, Circle, Text, Rect } from 'react-konva'
-import { Button, Tooltip, Typography } from 'antd'
+import { Button, Typography } from 'antd'
 import {
   CompressOutlined,
   LoadingOutlined,
@@ -196,7 +196,7 @@ export default function FlatViewKonva() {
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 })
   const stageRef = useRef<Konva.Stage>(null)
 
-  const [positions, setPositions] = useState(getDefaultPositions)
+  const [positions] = useState(getDefaultPositions)
   const [tooltip, setTooltip] = useState<{ name: string; sx: number; sy: number } | null>(null)
 
   useEffect(() => {

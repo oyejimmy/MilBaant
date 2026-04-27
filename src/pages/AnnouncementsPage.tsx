@@ -45,7 +45,7 @@ export function AnnouncementsPage() {
 
   async function handleDelete(id: string) {
     try {
-      await deleteAnnouncement.mutateAsync(id)
+      await deleteAnnouncement.mutateAsync({ announcementId: id, userId: userId ?? '' })
       message.success('Announcement deleted.')
     } catch (error) {
       message.error(

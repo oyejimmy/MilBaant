@@ -39,7 +39,7 @@ import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import { useRides, useCreateRide, useDeleteRide } from '@/hooks/useRides'
 import { useProfiles } from '@/hooks/useProfiles'
-import { RIDE_SERVICES, QUERY_KEYS } from '@/lib/constants'
+import { RIDE_SERVICES } from '@/lib/constants'
 import { formatCurrency, formatDate, formatDateTime, formatMonthYear } from '@/lib/formatters'
 import type { CreateRideInput, Ride } from '@/lib/types'
 

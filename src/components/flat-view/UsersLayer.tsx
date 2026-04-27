@@ -1,9 +1,9 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { Layer, Group, Circle, Image as KonvaImage, Text } from 'react-konva'
 import useImage from 'use-image'
 import type Konva from 'konva'
 import type { BedAssignment } from '@/lib/types'
-import { BED_W, BED_H, C } from './layout'
+import { BED_W, C } from './layout'
 
 const AVATAR_R = 24   // radius
 const AVATAR_D = AVATAR_R * 2

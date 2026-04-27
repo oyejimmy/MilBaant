@@ -5,10 +5,8 @@ import {
   Alert,
   Avatar,
   Button,
-  Card,
   Col,
   DatePicker,
-  Descriptions,
   Flex,
   Form,
   Image,
@@ -16,7 +14,6 @@ import {
   Modal,
   Popconfirm,
   Row,
-  Select,
   Space,
   Table,
   Tag,
@@ -87,7 +84,7 @@ export function WeekendExpensesPage() {
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [settleModal, setSettleModal] = useState<DebtRow | null>(null)
 
-  const { userId, isAdmin } = useAuth()
+  const { userId } = useAuth()
   const expensesQuery = useExpenses(selectedMonth)
   const profilesQuery = useProfiles()
   const settlementsQuery = useSettlements()

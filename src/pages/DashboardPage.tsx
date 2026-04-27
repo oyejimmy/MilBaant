@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { Alert, Button, Card, Col, Flex, Input, InputNumber, Row, Space, Table, Tag, Typography, message } from 'antd'
+import { Alert, Button, Col, Flex, Input, InputNumber, Row, Space, Table, Tag, Typography, message } from 'antd'
 import { EditOutlined, HistoryOutlined, MobileOutlined, SaveOutlined, UserOutlined, WalletOutlined, CalendarOutlined, CoffeeOutlined, TeamOutlined } from '@ant-design/icons'
-import { PageHeader } from '@/components/PageHeader'
-import { QueryState } from '@/components/QueryState'
 import { PageStack, ResponsiveGrid, SectionBlock } from '@/components/Glass'
+import { QueryState } from '@/components/QueryState'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAnnouncements } from '@/hooks/useAnnouncements'
 import { useAuth } from '@/hooks/useAuth'
@@ -18,7 +17,7 @@ import {
   calculatePerMemberShare,
   splitExpensesByType,
 } from '@/lib/expense-helpers'
-import { formatCurrency, formatDateTime, formatMonthYear } from '@/lib/formatters'
+import { formatCurrency, formatDateTime } from '@/lib/formatters'
 import type { UserMonthlySummary } from '@/lib/types'
 
 export function DashboardPage() {

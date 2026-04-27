@@ -24,7 +24,6 @@ import {
 import {
   CoffeeOutlined,
   DeleteOutlined,
-  PlusOutlined,
   WalletOutlined,
   ShoppingCartOutlined,
 } from '@ant-design/icons'
@@ -46,7 +45,7 @@ import {
   PURCHASE_CATEGORY_OPTIONS,
   PURCHASE_CATEGORY_COLORS,
 } from '@/lib/constants'
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters'
+import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { CookAdvance, CookPurchase, PurchaseCategory } from '@/lib/types'
 
 /* ─── Styled ──────────────────────────────────────────────────────────────── */

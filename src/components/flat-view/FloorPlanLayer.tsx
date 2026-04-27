@@ -1,8 +1,7 @@
 import React, { memo } from 'react'
-import { Layer, Rect, Text, Line, Arc, Group } from 'react-konva'
+import { Layer, Rect, Text, Arc } from 'react-konva'
 import {
   C, PAD, CONTENT_W, CONTENT_H,
-  LEFT_X, LEFT_W, RIGHT_X, RIGHT_W,
   R2_X, R2_Y, R2_W, R2_H,
   WC2_X, WC2_Y, WC2_W, WC2_H,
   LOUNGE_X, LOUNGE_Y, LOUNGE_W, LOUNGE_H,
