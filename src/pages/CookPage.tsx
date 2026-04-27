@@ -8,6 +8,7 @@ import {
   DatePicker,
   Flex,
   Form,
+  Grid,
   Input,
   InputNumber,
   Modal,
@@ -47,6 +48,35 @@ import {
 } from '@/lib/constants'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { CookAdvance, CookPurchase, PurchaseCategory } from '@/lib/types'
+
+const { useBreakpoint } = Grid
+
+/* ─── Styled ──────────────────────────────────────────────────────────────── */
+
+const MobileCard = styled.div`
+  border: 1px solid var(--card-border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+`
+
+const MobileRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`
+
+const MobileLabel = styled.span`
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+`
 
 /* ─── Styled ──────────────────────────────────────────────────────────────── */
 
@@ -91,6 +121,8 @@ export function CookPage() {
   const [filterMonth, setFilterMonth] = useState<Dayjs | null>(null)
 
   const { userId, isAdmin } = useAuth()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
 
   const advancesQuery = useCookAdvances()
   const purchasesQuery = useCookPurchases()
@@ -437,42 +469,93 @@ export function CookPage() {
 
         {/* Purchases table */}
         <SectionBlock>
-          <Flex align="center" justify="space-between" style={{ marginBottom: 12 }} wrap gap={8}>
+          <Flex align="center" justify="space-between" style={{ marginBottom: 10 }} wrap gap={8}>
             <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
               <ShoppingCartOutlined style={{ marginRight: 8, color: '#ff4d4f' }} />
               What the Cook Bought
             </Typography.Title>
             <Tag color="red">{formatCurrency(totalSpent)} total</Tag>
           </Flex>
-          <Table<CookPurchase>
-            rowKey="id"
-            size="small"
-            columns={purchaseColumns}
-            dataSource={purchases}
-            pagination={{ pageSize: 12, hideOnSinglePage: true, size: 'small' }}
-            scroll={{ x: 600 }}
-            locale={{ emptyText: 'No purchases logged yet.' }}
-          />
+          {isMobile ? (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              {purchases.length === 0 && <Typography.Text type="secondary">No purchases logged yet.</Typography.Text>}
+              {purchases.map((p) => (
+                <MobileCard key={p.id}>
+                  <MobileRow>
+                    <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{p.item}</Typography.Text>
+                    <Typography.Text strong style={{ color: '#ff4d4f' }}>-{formatCurrency(p.amount)}</Typography.Text>
+                  </MobileRow>
+                  <MobileRow>
+                    <Flex gap={6} align="center">
+                      <MobileLabel>{formatDate(p.date)}</MobileLabel>
+                      <Tag color={PURCHASE_CATEGORY_COLORS[p.category] ?? 'default'} style={{ margin: 0, fontSize: 10, textTransform: 'capitalize' }}>{p.category}</Tag>
+                    </Flex>
+                    {!!userId && (
+                      <Popconfirm title="Remove?" onConfirm={() => void handleDeletePurchase(p.id)}>
+                        <Button size="small" danger icon={<DeleteOutlined />} />
+                      </Popconfirm>
+                    )}
+                  </MobileRow>
+                  {p.note && <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.note}</Typography.Text>}
+                </MobileCard>
+              ))}
+            </Space>
+          ) : (
+            <Table<CookPurchase>
+              rowKey="id"
+              size="small"
+              columns={purchaseColumns}
+              dataSource={purchases}
+              pagination={{ pageSize: 12, hideOnSinglePage: true, size: 'small' }}
+              scroll={{ x: 500 }}
+              locale={{ emptyText: 'No purchases logged yet.' }}
+            />
+          )}
         </SectionBlock>
 
         {/* Advances table */}
         <SectionBlock>
-          <Flex align="center" justify="space-between" style={{ marginBottom: 12 }} wrap gap={8}>
+          <Flex align="center" justify="space-between" style={{ marginBottom: 10 }} wrap gap={8}>
             <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
               <WalletOutlined style={{ marginRight: 8, color: '#52c41a' }} />
               Advances Given
             </Typography.Title>
             <Tag color="green">{formatCurrency(totalAdvanced)} total</Tag>
           </Flex>
-          <Table<CookAdvance>
-            rowKey="id"
-            size="small"
-            columns={advanceColumns}
-            dataSource={advances}
-            pagination={{ pageSize: 8, hideOnSinglePage: true, size: 'small' }}
-            scroll={{ x: 500 }}
-            locale={{ emptyText: 'No advances recorded yet.' }}
-          />
+          {isMobile ? (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              {advances.length === 0 && <Typography.Text type="secondary">No advances recorded yet.</Typography.Text>}
+              {advances.map((a) => (
+                <MobileCard key={a.id}>
+                  <MobileRow>
+                    <MobileLabel>{formatDate(a.date)}</MobileLabel>
+                    <Typography.Text strong style={{ color: '#52c41a' }}>+{formatCurrency(a.amount)}</Typography.Text>
+                  </MobileRow>
+                  <MobileRow>
+                    <Flex gap={6} align="center">
+                      <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>{a.giver?.full_name ?? '—'}</Tag>
+                      {a.note && <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>{a.note}</Typography.Text>}
+                    </Flex>
+                    {(isAdmin || !!userId) && (
+                      <Popconfirm title="Remove?" onConfirm={() => void handleDeleteAdvance(a.id)}>
+                        <Button size="small" danger icon={<DeleteOutlined />} />
+                      </Popconfirm>
+                    )}
+                  </MobileRow>
+                </MobileCard>
+              ))}
+            </Space>
+          ) : (
+            <Table<CookAdvance>
+              rowKey="id"
+              size="small"
+              columns={advanceColumns}
+              dataSource={advances}
+              pagination={{ pageSize: 8, hideOnSinglePage: true, size: 'small' }}
+              scroll={{ x: 450 }}
+              locale={{ emptyText: 'No advances recorded yet.' }}
+            />
+          )}
         </SectionBlock>
 
         {/* Deficit warning */}

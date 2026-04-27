@@ -10,6 +10,7 @@ import {
   DatePicker,
   Flex,
   Form,
+  Grid,
   Input,
   InputNumber,
   Modal,
@@ -43,14 +44,16 @@ import { RIDE_SERVICES } from '@/lib/constants'
 import { formatCurrency, formatDate, formatDateTime, formatMonthYear } from '@/lib/formatters'
 import type { CreateRideInput, Ride } from '@/lib/types'
 
+const { useBreakpoint } = Grid
+
 /* ─── Styled ──────────────────────────────────────────────────────────────── */
 
 const DebtCard = styled.div<{ $type: 'owe' | 'owed' | 'neutral' }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 11px 14px;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 7px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
@@ -63,12 +66,38 @@ const RiderChip = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 5px;
   background: rgba(144, 159, 250, 0.1);
   border: 1px solid rgba(144, 159, 250, 0.2);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--text-strong);
+`
+
+const MobileCard = styled.div`
+  border: 1px solid var(--card-border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+`
+
+const MobileRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`
+
+const MobileLabel = styled.span`
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 `
 
 /* ─── Debt helpers ────────────────────────────────────────────────────────── */
@@ -146,6 +175,8 @@ export function RidesPage() {
   const [viewRide, setViewRide] = useState<Ride | null>(null)
 
   const { userId } = useAuth()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const ridesQuery = useRides(selectedMonth)
   const profilesQuery = useProfiles()
   const createRide = useCreateRide()
@@ -391,41 +422,96 @@ export function RidesPage() {
 
         {/* Rides table */}
         <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
+          <Typography.Title level={5} style={{ margin: '0 0 10px', color: 'var(--text-strong)' }}>
             All Rides
           </Typography.Title>
-          <Table<Ride>
-            rowKey="id"
-            columns={columns}
-            dataSource={rides}
-            size="small"
-            pagination={{ pageSize: 10, hideOnSinglePage: true, size: 'small' }}
-            scroll={{ x: 700 }}
-            onRow={(record) => ({
-              onClick: (e) => {
-                const t = e.target as HTMLElement
-                if (t.closest('button') || t.closest('.ant-btn')) return
-                setViewRide(record)
-              },
-              style: { cursor: 'pointer' },
-            })}
-            locale={{ emptyText: 'No rides recorded for this month.' }}
-          />
+          {isMobile ? (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              {rides.length === 0 && <Typography.Text type="secondary">No rides recorded for this month.</Typography.Text>}
+              {rides.map((r) => (
+                <MobileCard key={r.id} onClick={() => setViewRide(r)}>
+                  <MobileRow>
+                    <Flex gap={6} align="center">
+                      <Tag color="geekblue" style={{ margin: 0, fontSize: 11 }}>{r.service}</Tag>
+                      <MobileLabel>{formatDate(r.date)}</MobileLabel>
+                    </Flex>
+                    <Typography.Text strong style={{ color: 'var(--text-strong)' }}>{formatCurrency(r.amount)}</Typography.Text>
+                  </MobileRow>
+                  {r.route && (
+                    <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      <CarOutlined style={{ marginRight: 4 }} />{r.route}
+                    </Typography.Text>
+                  )}
+                  <MobileRow>
+                    <Flex gap={4} wrap>
+                      <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>{r.payer?.full_name ?? '—'} paid</Tag>
+                      {r.ride_riders.slice(0, 2).map((rr) => (
+                        <RiderChip key={rr.user_id}>{rr.profile?.full_name ?? '?'}</RiderChip>
+                      ))}
+                      {r.ride_riders.length > 2 && <RiderChip>+{r.ride_riders.length - 2}</RiderChip>}
+                    </Flex>
+                    <Flex gap={4} align="center" onClick={(e) => e.stopPropagation()}>
+                      {!!userId && (
+                        <Popconfirm title="Delete this ride?" onConfirm={() => void handleDelete(r.id)}>
+                          <Button size="small" danger icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                      )}
+                    </Flex>
+                  </MobileRow>
+                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    Share/rider: {r.ride_riders.length > 0 ? formatCurrency(r.amount / r.ride_riders.length) : '—'}
+                  </Typography.Text>
+                </MobileCard>
+              ))}
+            </Space>
+          ) : (
+            <Table<Ride>
+              rowKey="id"
+              columns={columns}
+              dataSource={rides}
+              size="small"
+              pagination={{ pageSize: 10, hideOnSinglePage: true, size: 'small' }}
+              scroll={{ x: 600 }}
+              onRow={(record) => ({
+                onClick: (e) => { const t = e.target as HTMLElement; if (t.closest('button') || t.closest('.ant-btn')) return; setViewRide(record) },
+                style: { cursor: 'pointer' },
+              })}
+              locale={{ emptyText: 'No rides recorded for this month.' }}
+            />
+          )}
         </SectionBlock>
 
         {/* Per-person summary */}
         <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
+          <Typography.Title level={5} style={{ margin: '0 0 10px', color: 'var(--text-strong)' }}>
             Monthly Share per Rider
           </Typography.Title>
-          <Table
-            rowKey="id"
-            size="small"
-            pagination={false}
-            dataSource={riderSummary}
-            columns={summaryColumns}
-            locale={{ emptyText: 'No data yet.' }}
-          />
+          {isMobile ? (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              {riderSummary.length === 0 && <Typography.Text type="secondary">No data yet.</Typography.Text>}
+              {riderSummary.map((row) => (
+                <MobileCard key={row.id} style={{ cursor: 'default' }}>
+                  <MobileRow>
+                    <Flex align="center" gap={8}>
+                      <Avatar size={22} style={{ background: '#909ffa', color: '#fff', fontSize: 10 }} icon={<UserOutlined />} />
+                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{row.name}</Typography.Text>
+                    </Flex>
+                    <Typography.Text strong style={{ color: '#909ffa' }}>{formatCurrency(row.totalShare)}</Typography.Text>
+                  </MobileRow>
+                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.rideCount} ride{row.rideCount !== 1 ? 's' : ''}</Typography.Text>
+                </MobileCard>
+              ))}
+            </Space>
+          ) : (
+            <Table
+              rowKey="id"
+              size="small"
+              pagination={false}
+              dataSource={riderSummary}
+              columns={summaryColumns}
+              locale={{ emptyText: 'No data yet.' }}
+            />
+          )}
         </SectionBlock>
 
         {/* Who owes whom */}

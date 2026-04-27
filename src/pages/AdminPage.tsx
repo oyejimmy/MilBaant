@@ -8,6 +8,7 @@ import {
   Col,
   Flex,
   Form,
+  Grid,
   Input,
   InputNumber,
   Modal,
@@ -51,21 +52,20 @@ import {
 import { useMemberCountSetting, useUpsertMemberCount } from '@/hooks/useSettings'
 import type { Profile, Role } from '@/lib/types'
 
+const { useBreakpoint } = Grid
+
 /* ─── Styled ──────────────────────────────────────────────────────────────── */
 
 const MemberCard = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 7px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   transition: border-color 0.15s ease;
-
-  &:hover {
-    border-color: #909ffa;
-  }
+  &:hover { border-color: #909ffa; }
 `
 
 const AVATAR_COLORS = [
@@ -91,6 +91,8 @@ export function AdminPage() {
   const [addUserOpen, setAddUserOpen] = useState(false)
   const [editUser, setEditUser] = useState<Profile | null>(null)
   const [memberCountDraft, setMemberCountDraft] = useState<number | null>(null)
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
 
   const profilesQuery = useProfiles()
   const memberCountQuery = useMemberCountSetting()
@@ -338,14 +340,38 @@ export function AdminPage() {
           <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
             Permissions & Roles
           </Typography.Title>
-          <Table
-            rowKey="id"
-            size="small"
-            columns={columns}
-            dataSource={profiles}
-            pagination={false}
-            scroll={{ x: 500 }}
-          />
+          {isMobile ? (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              {profiles.map((p) => (
+                <div key={p.id} style={{ border: '1px solid var(--card-border)', borderRadius: 7, padding: '10px 12px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Flex align="center" justify="space-between" gap={8}>
+                    <Flex align="center" gap={8}>
+                      <Avatar size={28} style={{ background: avatarColor(p.full_name), color: '#fff', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>{initials(p.full_name)}</Avatar>
+                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{p.full_name}</Typography.Text>
+                    </Flex>
+                    <Button size="small" icon={<EditOutlined />} onClick={() => setEditUser(p)} />
+                  </Flex>
+                  <Flex gap={8} align="center" wrap>
+                    <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 40 }}>Role:</Typography.Text>
+                    <Select size="small" style={{ flex: 1, minWidth: 110 }} options={ROLE_OPTIONS} value={p.role} onChange={(value) => void handleRoleChange(p, value)} />
+                  </Flex>
+                  <Flex gap={8} align="center">
+                    <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', flex: 1 }}>Can Add Expenses</Typography.Text>
+                    <Switch size="small" checked={p.can_add_expenses} onChange={(checked) => void handlePermissionChange(p, checked)} />
+                  </Flex>
+                </div>
+              ))}
+            </Space>
+          ) : (
+            <Table
+              rowKey="id"
+              size="small"
+              columns={columns}
+              dataSource={profiles}
+              pagination={false}
+              scroll={{ x: 450 }}
+            />
+          )}
         </SectionBlock>
 
         {/* Member count */}
