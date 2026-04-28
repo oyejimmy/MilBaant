@@ -41,7 +41,8 @@ const { Header, Content, Sider } = Layout
 const { useBreakpoint } = Grid
 
 // ── Sidebar dimensions ─────────────────────────────────────────────────────
-const SIDEBAR_WIDTH = 60 // Icon-only sidebar
+const SIDEBAR_WIDTH_EXPANDED = 220
+const SIDEBAR_WIDTH_COLLAPSED = 60
 
 // ── Grouped menu definition ────────────────────────────────────────────────
 interface NavGroup {
@@ -116,7 +117,7 @@ const AppSider = styled(Sider)`
 const SiderTop = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
   padding: 0 14px;
   height: 56px;
   min-height: 56px;
@@ -136,6 +137,15 @@ const LogoMark = styled.div`
   font-size: 14px;
   color: #fff;
   box-shadow: 0 2px 8px rgba(144, 159, 250, 0.35);
+  flex-shrink: 0;
+`
+
+const BrandText = styled(Typography.Text)`
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--text-strong) !important;
+  white-space: nowrap;
 `
 
 const NavWrap = styled.div`
@@ -177,10 +187,9 @@ const StyledMenu = styled(Menu)`
 
 const SiderBottom = styled.div`
   border-top: 1px solid var(--sidebar-border);
-  padding: 10px 6px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 6px;
   flex-shrink: 0;
 `
@@ -188,12 +197,18 @@ const SiderBottom = styled.div`
 const ProfileRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 6px 0;
+  gap: 8px;
+  padding: 6px 8px;
   border-radius: 7px;
   cursor: pointer;
   transition: background 0.15s ease;
   &:hover { background: var(--menu-hover-bg); }
+`
+
+const ProfileMeta = styled.div`
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
 `
 
 const MainLayout = styled(Layout)<{ $ml: number }>`
@@ -396,25 +411,19 @@ export function AppLayout() {
   const activePath = getActivePath(location.pathname)
   const breadcrumbs = getBreadcrumbs(activePath)
 
-  // Build Ant Design menu items - icons only for desktop sidebar
+  // Build Ant Design menu items with labels for desktop sidebar
   const menuItems = useMemo<MenuProps['items']>(() => {
     const items: MenuProps['items'] = []
-    NAV_GROUPS.forEach((group, gi) => {
+    NAV_GROUPS.forEach((group) => {
       const visibleItems = group.items.filter((i) => !i.adminOnly || isAdmin)
       if (visibleItems.length === 0) return
 
-      // Group divider (visual separator)
-      if (gi > 0) {
-        items.push({ type: 'divider', key: `div-${gi}`, style: { margin: '4px 10px', opacity: 0.5 } })
-      }
-
-      // Actual nav items - no labels, only icons with tooltips
+      // Add nav items with labels
       visibleItems.forEach((item) => {
         items.push({
           key: item.key,
           icon: item.icon,
-          label: null, // Remove labels from sidebar
-          title: item.label, // Tooltip will show the label
+          label: item.label,
         })
       })
     })
@@ -494,25 +503,30 @@ export function AppLayout() {
           trigger={null}
         >
           <SiderTop>
-            <Tooltip title={APP_NAME} placement="right">
-              <LogoMark>M</LogoMark>
-            </Tooltip>
+            <LogoMark>M</LogoMark>
+            <BrandText>{APP_NAME}</BrandText>
           </SiderTop>
 
           <NavWrap>{desktopMenu}</NavWrap>
 
           <SiderBottom>
-            <Tooltip title="Profile" placement="right">
-              <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
-                <ProfileRow>
-                  <Avatar
-                    size={32}
-                    style={{ background: '#909ffa', color: '#fff' }}
-                    icon={<UserOutlined />}
-                  />
-                </ProfileRow>
-              </Dropdown>
-            </Tooltip>
+            <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
+              <ProfileRow>
+                <Avatar
+                  size={28}
+                  style={{ background: '#909ffa', color: '#fff', flexShrink: 0 }}
+                  icon={<UserOutlined />}
+                />
+                <ProfileMeta>
+                  <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
+                    {profile?.full_name ?? 'Flatmate'}
+                  </Typography.Text>
+                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                    {isAdmin ? 'Admin' : 'Resident'}
+                  </Typography.Text>
+                </ProfileMeta>
+              </ProfileRow>
+            </Dropdown>
           </SiderBottom>
         </AppSider>
       )}
