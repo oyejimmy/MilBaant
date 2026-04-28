@@ -2,21 +2,29 @@ import styled from 'styled-components'
 
 export const PageStack = styled.div`
   display: grid;
-  gap: 16px;
+  gap: 12px;
+  padding-bottom: 20px;
 
   @media (min-width: 768px) {
-    gap: 24px;
+    gap: 20px;
+    padding-bottom: 0;
   }
 `
 
 export const SectionBlock = styled.div`
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 14px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: border-color 0.2s ease;
 
   @media (min-width: 768px) {
-    padding: 20px 22px;
+    padding: 18px 20px;
+    border-radius: 10px;
+  }
+
+  &:hover {
+    border-color: rgba(144, 159, 250, 0.3);
   }
 `
 
@@ -96,4 +104,36 @@ export const ActionsRow = styled.div`
       width: 100% !important;
     }
   }
+`
+
+/* ─── Shared mobile card primitives (used across all pages) ──────────────── */
+
+export const MobileCard = styled.div`
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+`
+
+export const MobileRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`
+
+export const MobileLabel = styled.span`
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `

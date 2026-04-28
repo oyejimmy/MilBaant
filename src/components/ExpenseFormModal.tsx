@@ -75,6 +75,7 @@ export function ExpenseFormModal({
           category: editingExpense.category,
           amount: editingExpense.amount,
           date: dayjs(editingExpense.date),
+          lastDate: editingExpense.last_date ? dayjs(editingExpense.last_date) : undefined,
           description: editingExpense.description ?? '',
           participantIds: editingExpense.expense_participants.map((p) => p.user_id),
         })
@@ -83,6 +84,7 @@ export function ExpenseFormModal({
           category: lockedCategory ?? 'gas_bill',
           amount: undefined,
           date: dayjs(),
+          lastDate: undefined,
           description: '',
           participantIds: profiles.map((profile) => profile.id),
         })
@@ -212,6 +214,14 @@ export function ExpenseFormModal({
             label={isWeekendMeal ? 'Weekend Date' : 'Expense Date'}
             name="date"
             rules={[{ required: true, message: 'Please choose a date.' }]}
+          >
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          </Form.Item>
+
+          <Form.Item
+            label="Last Date (Optional)"
+            name="lastDate"
+            tooltip="End date for recurring expenses or billing period"
           >
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>

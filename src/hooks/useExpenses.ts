@@ -22,6 +22,7 @@ interface RawExpense {
   description: string | null
   amount: number | string
   date: string
+  last_date: string | null
   split_type: Expense['split_type']
   bill_image_url: string | null
   created_at: string
@@ -60,6 +61,7 @@ async function fetchExpensesByMonth(month: Dayjs) {
       description,
       amount,
       date,
+      last_date,
       split_type,
       bill_image_url,
       created_at,
@@ -106,6 +108,7 @@ export function useCreateExpense() {
           description: payload.description?.trim() || null,
           amount: payload.amount,
           date: payload.date,
+          last_date: payload.lastDate || null,
           split_type: splitType,
           bill_image_url: payload.billImageUrl ?? null,
         })

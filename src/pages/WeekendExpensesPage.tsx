@@ -33,7 +33,7 @@ import styled from 'styled-components'
 import { ExpenseFormModal, type ExpenseSubmission } from '@/components/ExpenseFormModal'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import { useCreateExpense, useDeleteExpense, useExpenses } from '@/hooks/useExpenses'
@@ -69,31 +69,6 @@ const DebtCard = styled.div<{ $type: 'owe' | 'owed' | 'settled' }>`
   flex-wrap: wrap;
   border-left: 3px solid ${({ $type }) =>
     $type === 'owe' ? '#ff7875' : $type === 'owed' ? '#52c41a' : 'var(--card-border)'};
-`
-
-const MobileCard = styled.div`
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-`
-
-const MobileRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-`
-
-const MobileLabel = styled.span`
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 `
 
 /* ─── Main page ───────────────────────────────────────────────────────────── */
@@ -137,6 +112,7 @@ export function WeekendExpensesPage() {
         category: 'weekend_meal',
         amount: values.amount,
         date: values.date.format('YYYY-MM-DD'),
+        lastDate: values.lastDate ? values.lastDate.format('YYYY-MM-DD') : undefined,
         description: values.description,
         participantIds: values.participantIds ?? [],
         billImageUrl,
@@ -199,7 +175,12 @@ export function WeekendExpensesPage() {
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
-      render: (v: string | null) => v || <Typography.Text type="secondary">—</Typography.Text>,
+      render: (v: string | null, record: Expense) => {
+        const parts: string[] = []
+        if (v) parts.push(v)
+        if (record.last_date) parts.push(`Last Date: ${formatDate(record.last_date)}`)
+        return parts.length > 0 ? parts.join(' | ') : <Typography.Text type="secondary">—</Typography.Text>
+      },
     },
     {
       title: 'Paid By',

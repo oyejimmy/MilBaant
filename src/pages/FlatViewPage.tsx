@@ -3,23 +3,29 @@ import { LoadingOutlined } from '@ant-design/icons'
 import { PageHeader } from '@/components/PageHeader'
 import { PageStack } from '@/components/Glass'
 
-const FlatViewKonva = lazy(() => import('@/components/flat-view/FlatViewKonva'))
+const FlatView3D = lazy(() => import('@/components/flat-view-3d/FlatView3D'))
 
 export function FlatViewPage() {
   return (
     <PageStack>
       <PageHeader
-        title="Flat View"
-        subtitle="Interactive floor plan — click any bed to assign a flatmate. Admins can drag avatars to reassign."
+        title="3D Flat View"
+        subtitle="Interactive 3D apartment — click any bed to assign a flatmate (admin only). Orbit, zoom, and pan to explore."
       />
       <Suspense
         fallback={
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
-            <LoadingOutlined style={{ fontSize: 36, color: '#909ffa' }} spin />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px',
+            width: '100%',
+          }}>
+            <LoadingOutlined style={{ fontSize: 48, color: '#909ffa' }} spin />
           </div>
         }
       >
-        <FlatViewKonva />
+        <FlatView3D />
       </Suspense>
     </PageStack>
   )

@@ -31,7 +31,7 @@ import {
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -50,33 +50,6 @@ import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { CookAdvance, CookPurchase, PurchaseCategory } from '@/lib/types'
 
 const { useBreakpoint } = Grid
-
-/* ─── Styled ──────────────────────────────────────────────────────────────── */
-
-const MobileCard = styled.div`
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-`
-
-const MobileRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-`
-
-const MobileLabel = styled.span`
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-`
 
 /* ─── Styled ──────────────────────────────────────────────────────────────── */
 
@@ -362,7 +335,7 @@ export function CookPage() {
                 Log Purchase
               </Button>
             )}
-            {!!userId && (
+            {isAdmin && (
               <Button
                 type="primary"
                 icon={<WalletOutlined />}

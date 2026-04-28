@@ -62,9 +62,11 @@ const TooltipBox = styled.div`
 
 const LoadingOverlay = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 500px;
+  gap: 16px;
+  min-height: 500px;
   background: ${C.bgDark};
   border-radius: 12px;
 `
@@ -235,7 +237,8 @@ export default function FlatViewKonva() {
   if (profilesQuery.isLoading) {
     return (
       <LoadingOverlay>
-        <LoadingOutlined style={{ fontSize: 36, color: '#909ffa' }} spin />
+        <LoadingOutlined style={{ fontSize: 48, color: '#909ffa' }} spin />
+        <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading flat view...</span>
       </LoadingOverlay>
     )
   }

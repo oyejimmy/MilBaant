@@ -35,7 +35,7 @@ import {
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import { useRides, useCreateRide, useDeleteRide } from '@/hooks/useRides'
@@ -72,32 +72,6 @@ const RiderChip = styled.span`
   border: 1px solid rgba(144, 159, 250, 0.2);
   font-size: 0.72rem;
   color: var(--text-strong);
-`
-
-const MobileCard = styled.div`
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  cursor: pointer;
-`
-
-const MobileRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-`
-
-const MobileLabel = styled.span`
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 `
 
 /* ─── Debt helpers ────────────────────────────────────────────────────────── */

@@ -3,6 +3,7 @@ import dayjs, { type Dayjs } from 'dayjs'
 import html2canvas from 'html2canvas'
 import type { ColumnsType } from 'antd/es/table'
 import {
+  Avatar,
   Button,
   DatePicker,
   Descriptions,
@@ -19,8 +20,9 @@ import {
   Typography,
   message,
 } from 'antd'
-import styled from 'styled-components'
 import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
@@ -35,11 +37,12 @@ import {
 import { ExpenseFormModal, type ExpenseSubmission } from '@/components/ExpenseFormModal'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
 import { useAuth } from '@/hooks/useAuth'
 import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } from '@/hooks/useExpenses'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useMemberCountSetting, useUpsertMemberCount } from '@/hooks/useSettings'
+import { useContributionPayments, useDeleteContributionPayment } from '@/hooks/useContributions'
 import {
   buildMonthlyUserSummary,
   calculateFixedTotal,
@@ -53,37 +56,11 @@ import {
   formatMonthYear,
 } from '@/lib/formatters'
 import { uploadBillImage } from '@/lib/storage'
-import type { Expense, UserMonthlySummary } from '@/lib/types'
+import type { ContributionPayment, Expense, UserMonthlySummary } from '@/lib/types'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import { exportExpensesToExcel } from '@/lib/export'
 
 const { useBreakpoint } = Grid
-
-/* ─── Mobile card styles ──────────────────────────────────────────────────── */
-const MobileCard = styled.div`
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-`
-
-const MobileCardRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-`
-
-const MobileCardLabel = styled.span`
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-`
 
 export function ExpensesPage() {
   const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs().startOf('month'))
@@ -107,11 +84,21 @@ export function ExpensesPage() {
   const deleteExpense = useDeleteExpense()
   const updateExpense = useUpdateExpense()
   const saveMemberCount = useUpsertMemberCount()
+  const paymentsQuery = useContributionPayments(selectedMonth.format('YYYY-MM'))
+  const deletePayment = useDeleteContributionPayment()
 
   const expenses = expensesQuery.data ?? []
   const profiles = profilesQuery.data ?? []
   const memberCount = memberCountQuery.data ?? 10
   const effectiveDraftMemberCount = draftMemberCount ?? memberCount
+  const payments = paymentsQuery.data ?? []
+
+  // Map userId → their payments for this month
+  const paymentsByUser = new Map<string, ContributionPayment[]>()
+  for (const p of payments) {
+    const existing = paymentsByUser.get(p.user_id) ?? []
+    paymentsByUser.set(p.user_id, [...existing, p])
+  }
 
   const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses)
   const fixedTotal = calculateFixedTotal(fixedExpenses)
@@ -194,6 +181,7 @@ export function ExpensesPage() {
         category: values.category,
         amount: values.amount,
         date: values.date.format('YYYY-MM-DD'),
+        lastDate: values.lastDate ? values.lastDate.format('YYYY-MM-DD') : undefined,
         description: values.description,
         participantIds:
           values.category === 'weekend_meal'
@@ -238,6 +226,41 @@ export function ExpensesPage() {
     }
   }
 
+  // Payment submission handler - UI implementation pending
+  /*
+  async function handleSubmitPayment(values: { amount: number; paidAt: Dayjs; note: string; file?: File }) {
+    if (!userId) return
+    try {
+      let screenshotUrl: string | null = null
+      if (values.file) {
+        screenshotUrl = await uploadPaymentScreenshot(userId, values.file)
+      }
+      await createPayment.mutateAsync({
+        userId,
+        month: selectedMonth.format('YYYY-MM'),
+        amount: values.amount,
+        paidAt: values.paidAt.format('YYYY-MM-DD'),
+        screenshotUrl,
+        note: values.note,
+        createdBy: userId,
+      })
+      message.success('Payment submitted successfully.')
+      setPayModalOpen(false)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to submit payment.')
+    }
+  }
+  */
+
+  async function handleDeletePayment(id: string) {
+    try {
+      await deletePayment.mutateAsync({ id, userId: userId ?? '' })
+      message.success('Payment record removed.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to delete.')
+    }
+  }
+
   const DESCRIPTION_LIMIT = 60
 
   const fixedColumns: ColumnsType<Expense> = [
@@ -269,12 +292,25 @@ export function ExpensesPage() {
       key: 'description',
       sorter: (a: Expense, b: Expense) => (a.description ?? '').localeCompare(b.description ?? ''),
       render: (value: string | null, record: Expense) => {
-        if (!value) return '—'
-        const isLong = value.length > DESCRIPTION_LIMIT
+        const parts: string[] = []
+        
+        if (value) {
+          parts.push(value)
+        }
+        
+        if (record.last_date) {
+          parts.push(`Last Date: ${formatDate(record.last_date)}`)
+        }
+        
+        if (parts.length === 0) return '—'
+        
+        const fullText = parts.join(' | ')
+        const isLong = fullText.length > DESCRIPTION_LIMIT
         const expanded = expandedDescriptions.has(record.id)
+        
         return (
           <span>
-            {isLong && !expanded ? `${value.slice(0, DESCRIPTION_LIMIT)}…` : value}
+            {isLong && !expanded ? `${fullText.slice(0, DESCRIPTION_LIMIT)}…` : fullText}
             {isLong && (
               <Typography.Link
                 style={{ marginLeft: 6, fontSize: 12 }}
@@ -383,6 +419,13 @@ export function ExpensesPage() {
       title: 'Flatmate',
       dataIndex: 'fullName',
       key: 'fullName',
+      render: (v: string, row: UserMonthlySummary) => (
+        <Flex align="center" gap={8}>
+          <Avatar size={24} style={{ background: '#909ffa', color: '#fff', fontSize: 11 }} icon={<UserOutlined />} />
+          <Typography.Text style={{ color: 'var(--text-strong)', fontSize: 13 }}>{v}</Typography.Text>
+          {row.userId === userId && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>You</Tag>}
+        </Flex>
+      ),
     },
     {
       title: 'Share',
@@ -391,7 +434,7 @@ export function ExpensesPage() {
       render: (value: number) => formatCurrency(value),
     },
     {
-      title: 'Weekend Share',
+      title: 'Weekend',
       dataIndex: 'weekendShare',
       key: 'weekendShare',
       render: (value: number) => formatCurrency(value),
@@ -406,6 +449,73 @@ export function ExpensesPage() {
         </Typography.Text>
       ),
     },
+    {
+      title: 'Payment Status',
+      key: 'payment',
+      render: (_: unknown, row: UserMonthlySummary) => {
+        const userPayments = paymentsByUser.get(row.userId) ?? []
+        const totalPaid = userPayments.reduce((s, p) => s + p.amount, 0)
+        const isPaid = totalPaid >= row.totalOwed - 0.01
+        const isOverdue = !isPaid && dayjs().isAfter(dayjs(selectedMonth).endOf('month'))
+        if (userPayments.length === 0) {
+          return isOverdue
+            ? <Tag color="red" icon={<ClockCircleOutlined />}>Overdue</Tag>
+            : <Tag color="default">Pending</Tag>
+        }
+        return (
+          <Flex gap={4} wrap>
+            {isPaid
+              ? <Tag color="green" icon={<CheckCircleOutlined />}>Paid {formatCurrency(totalPaid)}</Tag>
+              : <Tag color="orange" icon={<ClockCircleOutlined />}>Partial {formatCurrency(totalPaid)}</Tag>
+            }
+          </Flex>
+        )
+      },
+    },
+    {
+      title: 'Screenshot',
+      key: 'screenshot',
+      render: (_: unknown, row: UserMonthlySummary) => {
+        const userPayments = paymentsByUser.get(row.userId) ?? []
+        const withScreenshot = userPayments.filter((p) => p.screenshot_url)
+        if (withScreenshot.length === 0) return <Typography.Text type="secondary">—</Typography.Text>
+        // Payment screenshot viewing - UI implementation pending
+        return <Typography.Text type="secondary">View in Contributions page</Typography.Text>
+        /*
+        return (
+          <Flex gap={4}>
+            {withScreenshot.map((p) => (
+              <Button
+                key={p.id}
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => setViewPayment(p)}
+              />
+            ))}
+          </Flex>
+        )
+        */
+      },
+    },
+    {
+      title: '',
+      key: 'action',
+      width: 44,
+      render: (_: unknown, row: UserMonthlySummary) => {
+        const userPayments = paymentsByUser.get(row.userId) ?? []
+        return (
+          <Flex gap={4}>
+            {userPayments.map((p) =>
+              p.created_by === userId || isAdmin ? (
+                <Popconfirm key={p.id} title="Remove this payment?" onConfirm={() => void handleDeletePayment(p.id)}>
+                  <Button size="small" danger icon={<DeleteOutlined />} />
+                </Popconfirm>
+              ) : null
+            )}
+          </Flex>
+        )
+      },
+    },
   ]
 
   const isLoading =
@@ -414,7 +524,6 @@ export function ExpensesPage() {
     (expensesQuery.error as Error | null) ??
     (profilesQuery.error as Error | null) ??
     (memberCountQuery.error as Error | null)
-
   const pTh: React.CSSProperties = {
     padding: '8px 12px',
     textAlign: 'left',
@@ -528,20 +637,20 @@ export function ExpensesPage() {
                   )}
                   {fixedExpenses.map((exp) => (
                     <MobileCard key={exp.id}>
-                      <MobileCardRow>
+                      <MobileRow>
                         <Tag color="blue" style={{ margin: 0 }}>{CATEGORY_LABELS[exp.category]}</Tag>
                         <Typography.Text strong style={{ color: 'var(--text-strong)' }}>{formatCurrency(exp.amount)}</Typography.Text>
-                      </MobileCardRow>
-                      <MobileCardRow>
-                        <MobileCardLabel>{formatDate(exp.date)}</MobileCardLabel>
-                        {exp.description && (
+                      </MobileRow>
+                      <MobileRow>
+                        <MobileLabel>{formatDate(exp.date)}</MobileLabel>
+                        {(exp.description || exp.last_date) && (
                           <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', flex: 1, marginLeft: 8 }} ellipsis>
-                            {exp.description}
+                            {[exp.description, exp.last_date ? `Last Date: ${formatDate(exp.last_date)}` : null].filter(Boolean).join(' | ')}
                           </Typography.Text>
                         )}
-                      </MobileCardRow>
+                      </MobileRow>
                       {isAdmin && (
-                        <MobileCardRow>
+                        <MobileRow>
                           <div />
                           <Flex gap={6}>
                             <Button icon={<EditOutlined />} size="small" onClick={() => setEditingExpense(exp)} />
@@ -549,7 +658,7 @@ export function ExpensesPage() {
                               <Button danger icon={<DeleteOutlined />} size="small" />
                             </Popconfirm>
                           </Flex>
-                        </MobileCardRow>
+                        </MobileRow>
                       )}
                     </MobileCard>
                   ))}
@@ -607,10 +716,10 @@ export function ExpensesPage() {
                 )}
                 {weekendExpenses.map((exp) => (
                   <MobileCard key={exp.id}>
-                    <MobileCardRow>
-                      <MobileCardLabel>{formatDate(exp.date)}</MobileCardLabel>
+                    <MobileRow>
+                      <MobileLabel>{formatDate(exp.date)}</MobileLabel>
                       <Typography.Text strong style={{ color: 'var(--text-strong)' }}>{formatCurrency(exp.amount)}</Typography.Text>
-                    </MobileCardRow>
+                    </MobileRow>
                     <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {exp.description || 'Weekend meal'}
                     </Typography.Text>
@@ -621,7 +730,7 @@ export function ExpensesPage() {
                         </Tag>
                       ))}
                     </Flex>
-                    <MobileCardRow>
+                    <MobileRow>
                       <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                         Share/person: {formatCurrency(calculateWeekendExpenseShare(exp))}
                       </Typography.Text>
@@ -630,7 +739,7 @@ export function ExpensesPage() {
                           <Button danger icon={<DeleteOutlined />} size="small" />
                         </Popconfirm>
                       )}
-                    </MobileCardRow>
+                    </MobileRow>
                   </MobileCard>
                 ))}
               </Space>
@@ -648,27 +757,79 @@ export function ExpensesPage() {
         </SectionBlock>
 
         <SectionBlock>
-          <Typography.Title level={4} style={{ marginTop: 0, color: 'var(--text-strong)' }}>
-            Monthly Owed Per User
-          </Typography.Title>
-          <Typography.Text style={{ color: 'var(--text-muted)' }}>
-            Share plus weekend meal participation for the selected month.
-          </Typography.Text>
-          <div style={{ marginTop: 16 }}>
+          <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 4 }}>
+            <div>
+              <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 0, color: 'var(--text-strong)' }}>
+                Monthly Owed Per User
+              </Typography.Title>
+              <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                Share plus weekend participation. Submit payment proof on Dashboard.
+              </Typography.Text>
+            </div>
+            {/* Payment submission button - use Dashboard or Contributions page instead */}
+            {/*
+            {!!userId && (
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={() => setPayModalOpen(true)}
+              >
+                Mark as Paid
+              </Button>
+            )}
+            */}
+          </Flex>
+          <div style={{ marginTop: 12 }}>
             {isMobile ? (
               <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                {userSummary.map((row) => (
-                  <MobileCard key={row.userId}>
-                    <MobileCardRow>
-                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{row.fullName}</Typography.Text>
-                      <Typography.Text strong style={{ color: '#909ffa', fontSize: 14 }}>{formatCurrency(row.totalOwed)}</Typography.Text>
-                    </MobileCardRow>
-                    <MobileCardRow>
-                      <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Share: {formatCurrency(row.fixedShare)}</Typography.Text>
-                      <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Weekend: {formatCurrency(row.weekendShare)}</Typography.Text>
-                    </MobileCardRow>
-                  </MobileCard>
-                ))}
+                {userSummary.map((row) => {
+                  const userPayments = paymentsByUser.get(row.userId) ?? []
+                  const totalPaid = userPayments.reduce((s, p) => s + p.amount, 0)
+                  const isPaid = totalPaid >= row.totalOwed - 0.01
+                  const isOverdue = !isPaid && dayjs().isAfter(dayjs(selectedMonth).endOf('month'))
+                  return (
+                    <MobileCard key={row.userId}>
+                      <MobileRow>
+                        <Flex align="center" gap={6}>
+                          <Avatar size={22} style={{ background: '#909ffa', color: '#fff', fontSize: 10 }} icon={<UserOutlined />} />
+                          <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{row.fullName}</Typography.Text>
+                          {row.userId === userId && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>You</Tag>}
+                        </Flex>
+                        <Typography.Text strong style={{ color: '#909ffa', fontSize: 14 }}>{formatCurrency(row.totalOwed)}</Typography.Text>
+                      </MobileRow>
+                      <MobileRow>
+                        <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Share: {formatCurrency(row.fixedShare)}</Typography.Text>
+                        <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Weekend: {formatCurrency(row.weekendShare)}</Typography.Text>
+                      </MobileRow>
+                      <MobileRow>
+                        {userPayments.length === 0 ? (
+                          isOverdue
+                            ? <Tag color="red" icon={<ClockCircleOutlined />} style={{ margin: 0 }}>Overdue</Tag>
+                            : <Tag color="default" style={{ margin: 0 }}>Pending</Tag>
+                        ) : isPaid ? (
+                          <Tag color="green" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>Paid {formatCurrency(totalPaid)}</Tag>
+                        ) : (
+                          <Tag color="orange" icon={<ClockCircleOutlined />} style={{ margin: 0 }}>Partial {formatCurrency(totalPaid)}</Tag>
+                        )}
+                        <Flex gap={4}>
+                          {/* Payment screenshot viewing - use Contributions page */}
+                          {userPayments.map(p =>
+                            p.created_by === userId || isAdmin ? (
+                              <Popconfirm key={p.id} title="Remove?" onConfirm={() => void handleDeletePayment(p.id)}>
+                                <Button size="small" danger icon={<DeleteOutlined />} />
+                              </Popconfirm>
+                            ) : null
+                          )}
+                        </Flex>
+                      </MobileRow>
+                      {userPayments.length > 0 && (
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          {userPayments.map(p => `${formatDate(p.paid_at)} — ${formatCurrency(p.amount)}`).join(' · ')}
+                        </div>
+                      )}
+                    </MobileCard>
+                  )
+                })}
               </Space>
             ) : (
               <Table
@@ -676,7 +837,7 @@ export function ExpensesPage() {
                 columns={summaryColumns}
                 dataSource={userSummary}
                 pagination={false}
-                scroll={{ x: 500 }}
+                scroll={{ x: 700 }}
                 size="small"
               />
             )}

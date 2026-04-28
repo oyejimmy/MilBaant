@@ -1,4 +1,4 @@
-import type { ExpenseCategory, NavItem, Role } from '@/lib/types'
+import type { ExpenseCategory, FlatFundExpenseCategory, NavItem, Role } from '@/lib/types'
 
 export const APP_NAME = 'MilBaant'
 export const DEFAULT_MEMBER_COUNT = 10
@@ -43,12 +43,14 @@ export const CATEGORY_LABELS: Record<ExpenseCategory, string> =
 export const NAV_ITEMS: NavItem[] = [
   { key: '/', label: 'Dashboard' },
   { key: '/expenses', label: 'Expenses' },
-  { key: '/weekend-expenses', label: 'Weekend Expenses' },
+  { key: '/weekend-expenses', label: 'Weekend Meals' },
   { key: '/rides', label: 'Rides' },
   { key: '/cook', label: 'Cook Ledger' },
+  { key: '/daily-menu', label: 'Daily Menu' },
+  { key: '/contributions', label: 'Contributions' },
   { key: '/flat-view', label: 'Flat View' },
   { key: '/announcements', label: 'Announcements' },
-  { key: '/admin', label: 'Admin Panel', adminOnly: true },
+  { key: '/admin', label: 'Admin', adminOnly: true },
   { key: '/logs', label: 'Activity Logs' },
 ]
 
@@ -65,6 +67,10 @@ export const QUERY_KEYS = {
   cookAdvances: ['cook-advances'],
   cookPurchases: ['cook-purchases'],
   activityLogs: ['activity-logs'],
+  flatFundAllocations: ['flat-fund-allocations'],
+  flatFundExpenses: ['flat-fund-expenses'],
+  contributionPayments: ['contribution-payments'],
+  dailyMenu: ['daily-menu'],
 }
 
 export const PURCHASE_CATEGORY_OPTIONS = [
@@ -87,3 +93,27 @@ export const PURCHASE_CATEGORY_COLORS: Record<string, string> = {
 
 export const RIDE_SERVICES = ['Yango', 'InDriver', 'Careem', 'Uber', 'Other'] as const
 export type RideService = (typeof RIDE_SERVICES)[number]
+
+export const FLAT_FUND_CATEGORY_OPTIONS: Array<{ label: string; value: FlatFundExpenseCategory }> = [
+  { label: 'Bulb / Electricity', value: 'bulb' },
+  { label: 'Bread', value: 'bread' },
+  { label: 'Water Bottle', value: 'water_bottle' },
+  { label: 'Cleaning', value: 'cleaning' },
+  { label: 'Maintenance', value: 'maintenance' },
+  { label: 'Grocery', value: 'grocery' },
+  { label: 'Other', value: 'other' },
+]
+
+export const FLAT_FUND_CATEGORY_COLORS: Record<string, string> = {
+  bulb: 'gold',
+  bread: 'orange',
+  water_bottle: 'cyan',
+  cleaning: 'green',
+  maintenance: 'blue',
+  grocery: 'purple',
+  other: 'default',
+}
+
+export const FLAT_FUND_CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  FLAT_FUND_CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
+)

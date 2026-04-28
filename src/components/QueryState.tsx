@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Alert, Empty, Result } from 'antd'
+import { Alert, Empty } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { SectionBlock } from '@/components/Glass'
 
@@ -19,10 +19,17 @@ export function QueryState({
   if (isLoading) {
     return (
       <SectionBlock>
-        <Result
-          icon={<LoadingOutlined style={{ fontSize: 40, color: '#909ffa' }} spin />}
-          title="Loading data"
-        />
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: '300px',
+          gap: '16px'
+        }}>
+          <LoadingOutlined style={{ fontSize: 48, color: '#909ffa' }} spin />
+          <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading data...</span>
+        </div>
       </SectionBlock>
     )
   }

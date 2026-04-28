@@ -55,6 +55,7 @@ export interface Expense {
   description: string | null
   amount: number
   date: string
+  last_date: string | null
   split_type: SplitType
   bill_image_url: string | null
   created_at: string
@@ -86,6 +87,7 @@ export interface ExpenseFormValues {
   category: ExpenseCategory
   amount: number
   date: Dayjs
+  lastDate?: Dayjs
   description?: string
   participantIds?: string[]
 }
@@ -95,6 +97,7 @@ export interface CreateExpenseInput {
   category: ExpenseCategory
   amount: number
   date: string
+  lastDate?: string
   description?: string
   participantIds: string[]
   billImageUrl?: string | null
@@ -220,4 +223,123 @@ export interface ActivityLog {
   description: string
   created_at: string
   actor?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+/* ─── Flat Fund ───────────────────────────────────────────────────────────── */
+
+export type FlatFundExpenseCategory =
+  | 'bulb'
+  | 'bread'
+  | 'water_bottle'
+  | 'cleaning'
+  | 'maintenance'
+  | 'grocery'
+  | 'other'
+
+export interface FlatFundAllocation {
+  id: string
+  user_id: string
+  amount: number
+  note: string | null
+  allocated_by: string
+  date: string
+  created_at: string
+  member?: Pick<Profile, 'id' | 'full_name'> | null
+  allocator?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+export interface FlatFundExpense {
+  id: string
+  user_id: string
+  amount: number
+  description: string
+  category: FlatFundExpenseCategory
+  date: string
+  created_by: string
+  created_at: string
+  member?: Pick<Profile, 'id' | 'full_name'> | null
+  creator?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+export interface CreateFlatFundAllocationInput {
+  userId: string
+  amount: number
+  note?: string
+  allocatedBy: string
+  date: string
+}
+
+export interface CreateFlatFundExpenseInput {
+  userId: string
+  amount: number
+  description: string
+  category: FlatFundExpenseCategory
+  date: string
+  createdBy: string
+}
+
+/** Per-member summary of flat fund balance */
+export interface FlatFundMemberSummary {
+  userId: string
+  fullName: string
+  totalAllocated: number
+  totalSpent: number
+  balance: number
+}
+
+/* ─── Contribution Payments ───────────────────────────────────────────────── */
+
+export interface ContributionPayment {
+  id: string
+  user_id: string
+  month: string          // 'YYYY-MM'
+  amount: number
+  paid_at: string        // date string
+  screenshot_url: string | null
+  note: string | null
+  created_by: string
+  created_at: string
+  member?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+export interface CreateContributionPaymentInput {
+  userId: string
+  month: string
+  amount: number
+  paidAt: string
+  screenshotUrl?: string | null
+  note?: string
+  createdBy: string
+}
+
+/* ─── Daily Menu ──────────────────────────────────────────────────────────── */
+
+export interface DailyMenu {
+  id: string
+  date: string
+  breakfast: string | null
+  lunch: string | null
+  dinner: string | null
+  notes: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+  creator?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+export interface CreateDailyMenuInput {
+  date: string
+  breakfast?: string
+  lunch?: string
+  dinner?: string
+  notes?: string
+  createdBy: string
+}
+
+export interface UpdateDailyMenuInput {
+  id: string
+  breakfast?: string
+  lunch?: string
+  dinner?: string
+  notes?: string
 }

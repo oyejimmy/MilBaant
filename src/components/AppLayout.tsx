@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import {
   Avatar,
+  Badge,
+  Breadcrumb,
   Button,
   Drawer,
   Dropdown,
@@ -11,44 +13,94 @@ import {
   Typography,
   message,
 } from 'antd'
+import type { MenuProps } from 'antd'
 import {
   ApartmentOutlined,
   AuditOutlined,
-  CalendarOutlined,
   CarOutlined,
   CoffeeOutlined,
   DashboardOutlined,
   DollarCircleOutlined,
+  FundOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
   MoonOutlined,
   NotificationOutlined,
+  ScheduleOutlined,
   SettingOutlined,
   SunOutlined,
   TeamOutlined,
   UserOutlined,
+  WalletOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import styled from 'styled-components'
-import { APP_NAME, NAV_ITEMS } from '@/lib/constants'
+import styled, { css } from 'styled-components'
+import { APP_NAME } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/context/ThemeModeContext'
 
 const { Header, Content, Sider } = Layout
 const { useBreakpoint } = Grid
 
-/* ─── Shell ───────────────────────────────────────────────────────────────── */
+// ── Sidebar dimensions ─────────────────────────────────────────────────────
+const EXPANDED  = 228
+const COLLAPSED = 60
+
+// ── Grouped menu definition ────────────────────────────────────────────────
+interface NavGroup {
+  label: string
+  items: Array<{ key: string; label: string; icon: React.ReactNode; adminOnly?: boolean }>
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Main',
+    items: [
+      { key: '/',          label: 'Dashboard',    icon: <DashboardOutlined /> },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { key: '/expenses',         label: 'Expenses',       icon: <WalletOutlined /> },
+      { key: '/contributions',    label: 'Contributions',  icon: <DollarCircleOutlined /> },
+      { key: '/cook',             label: 'Cook Ledger',    icon: <FundOutlined /> },
+      { key: '/daily-menu',       label: 'Daily Menu',     icon: <ScheduleOutlined /> },
+    ],
+  },
+  {
+    label: 'Activities',
+    items: [
+      { key: '/weekend-expenses', label: 'Weekend Meals',  icon: <CoffeeOutlined /> },
+      { key: '/rides',            label: 'Rides',          icon: <CarOutlined /> },
+    ],
+  },
+  {
+    label: 'Community',
+    items: [
+      { key: '/announcements',    label: 'Announcements',  icon: <NotificationOutlined /> },
+      { key: '/logs',             label: 'Activity Logs',  icon: <AuditOutlined /> },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { key: '/flat-view',        label: 'Flat View',      icon: <ApartmentOutlined /> },
+      { key: '/admin',            label: 'Admin',          icon: <SettingOutlined />, adminOnly: true },
+    ],
+  },
+]
+
+// ── Styled components ──────────────────────────────────────────────────────
 
 const Shell = styled(Layout)`
   min-height: 100vh;
   background: var(--content-bg) !important;
 `
 
-/* ─── Desktop Sidebar ─────────────────────────────────────────────────────── */
-
-const AppSider = styled(Sider)`
+const AppSider = styled(Sider)<{ $collapsed: boolean }>`
   position: fixed !important;
   top: 0;
   left: 0;
@@ -67,13 +119,11 @@ const AppSider = styled(Sider)`
   }
 `
 
-/* ─── Sidebar internals ───────────────────────────────────────────────────── */
-
 const SiderTop = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 16px;
+  padding: 0 14px;
   height: 56px;
   min-height: 56px;
   border-bottom: 1px solid var(--sidebar-border);
@@ -85,8 +135,8 @@ const LogoMark = styled.div`
   width: 30px;
   height: 30px;
   min-width: 30px;
-  border-radius: 7px;
-  background: #909ffa;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #909ffa 0%, #6b7ff0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,6 +144,7 @@ const LogoMark = styled.div`
   font-size: 13px;
   color: #fff;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(144, 159, 250, 0.35);
 `
 
 const BrandText = styled(Typography.Text)<{ $visible: boolean }>`
@@ -112,28 +163,54 @@ const NavWrap = styled.div`
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 6px;
+  padding: 8px 0;
 
   &::-webkit-scrollbar { width: 3px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: var(--sidebar-border); border-radius: 3px; }
 `
 
+// Group label shown in expanded mode
+const GroupLabel = styled.div<{ $collapsed: boolean }>`
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: ${({ $collapsed }) => ($collapsed ? '10px 0 4px' : '10px 16px 4px')};
+  text-align: ${({ $collapsed }) => ($collapsed ? 'center' : 'left')};
+  opacity: ${({ $collapsed }) => ($collapsed ? 0 : 1)};
+  max-height: ${({ $collapsed }) => ($collapsed ? '0' : '28px')};
+  overflow: hidden;
+  transition: opacity 0.18s ease, max-height 0.18s ease, padding 0.18s ease;
+  white-space: nowrap;
+`
+
+const GroupDivider = styled.div`
+  height: 1px;
+  background: var(--sidebar-border);
+  margin: 4px 10px;
+  opacity: 0.6;
+`
+
 const StyledMenu = styled(Menu)`
   background: transparent !important;
   border-inline-end: none !important;
+  padding: 0 6px;
 
   .ant-menu-item {
     border-radius: 7px !important;
-    margin: 2px 0 !important;
-    height: 42px !important;
-    line-height: 42px !important;
+    margin: 1px 0 !important;
+    height: 38px !important;
+    line-height: 38px !important;
     width: 100% !important;
+    font-size: 0.82rem !important;
   }
 
   .ant-menu-item-selected {
     background: rgba(144, 159, 250, 0.14) !important;
     color: #909ffa !important;
+    font-weight: 600 !important;
     .anticon { color: #909ffa !important; }
   }
 
@@ -189,8 +266,6 @@ const CollapseBtn = styled(Button)<{ $collapsed: boolean }>`
   }
 `
 
-/* ─── Main layout ─────────────────────────────────────────────────────────── */
-
 const MainLayout = styled(Layout)<{ $ml: number }>`
   background: transparent !important;
   margin-left: ${({ $ml }) => $ml}px;
@@ -198,39 +273,33 @@ const MainLayout = styled(Layout)<{ $ml: number }>`
   min-height: 100vh;
 `
 
-/* ─── Navbar ──────────────────────────────────────────────────────────────── */
-
 const TopHeader = styled(Header)`
   position: sticky !important;
   top: 0;
   z-index: 100;
-  height: 48px !important;
-  line-height: 48px !important;
+  height: 52px !important;
+  line-height: 52px !important;
   padding: 0 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   background: var(--navbar-bg) !important;
   border-bottom: 1px solid var(--navbar-border) !important;
-  border-radius: 0 !important;
+  box-shadow: 0 1px 0 var(--navbar-border) !important;
 
   @media (min-width: 768px) {
     height: 56px !important;
     line-height: 56px !important;
-    padding: 0 16px !important;
+    padding: 0 20px !important;
   }
 `
 
 const NavLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   flex: 1;
-
-  @media (min-width: 768px) {
-    gap: 10px;
-  }
 `
 
 const NavRight = styled.div`
@@ -239,22 +308,7 @@ const NavRight = styled.div`
   gap: 4px;
   flex-shrink: 0;
 
-  @media (min-width: 768px) {
-    gap: 6px;
-  }
-`
-
-const NavTitle = styled(Typography.Text)`
-  font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  color: var(--text-strong) !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  @media (min-width: 768px) {
-    font-size: 0.95rem !important;
-  }
+  @media (min-width: 768px) { gap: 6px; }
 `
 
 const NavBtn = styled(Button)`
@@ -270,10 +324,7 @@ const NavBtn = styled(Button)`
   justify-content: center !important;
   flex-shrink: 0;
 
-  @media (min-width: 768px) {
-    width: 34px !important;
-    height: 34px !important;
-  }
+  @media (min-width: 768px) { width: 34px !important; height: 34px !important; }
 
   &:hover {
     background: var(--menu-hover-bg) !important;
@@ -295,23 +346,23 @@ const ProfileBtn = styled.button`
   transition: background 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
 
-  @media (min-width: 768px) {
-    gap: 6px;
-    padding: 3px 8px 3px 3px;
-  }
+  @media (min-width: 768px) { gap: 6px; padding: 3px 8px 3px 3px; }
 
-  &:hover {
-    background: var(--menu-hover-bg);
-    border-color: #909ffa;
-  }
+  &:hover { background: var(--menu-hover-bg); border-color: #909ffa; }
 `
 
-/* ─── Content ─────────────────────────────────────────────────────────────── */
+const BreadcrumbWrap = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+`
 
 const MainContent = styled(Content)`
-  padding: 10px;
+  padding: 12px;
   background: transparent !important;
-  padding-bottom: 68px; /* clear bottom nav */
+  padding-bottom: 72px;
 
   @media (min-width: 768px) {
     padding: 24px;
@@ -320,12 +371,11 @@ const MainContent = styled(Content)`
 `
 
 const ContentWrap = styled.div`
-  width: min(1360px, 100%);
+  width: min(1400px, 100%);
   margin: 0 auto;
 `
 
-/* ─── Mobile drawer nav ───────────────────────────────────────────────────── */
-
+// ── Mobile drawer ──────────────────────────────────────────────────────────
 const DrawerNav = styled.div`
   display: flex;
   flex-direction: column;
@@ -336,13 +386,12 @@ const DrawerBrand = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 0 16px;
+  padding: 0 0 14px;
   border-bottom: 1px solid var(--sidebar-border);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 `
 
-/* ─── Mobile bottom nav bar ───────────────────────────────────────────────── */
-
+// ── Mobile bottom nav ──────────────────────────────────────────────────────
 const BottomNav = styled.nav`
   position: fixed;
   bottom: 0;
@@ -374,13 +423,8 @@ const BottomNavItem = styled.button<{ $active: boolean }>`
   transition: color 0.15s ease, background 0.15s ease;
   min-width: 0;
 
-  &:active {
-    background: var(--menu-hover-bg);
-  }
-
-  .anticon {
-    font-size: 17px;
-  }
+  &:active { background: var(--menu-hover-bg); }
+  .anticon { font-size: 17px; }
 `
 
 const BottomNavLabel = styled.span`
@@ -393,105 +437,105 @@ const BottomNavLabel = styled.span`
   line-height: 1;
 `
 
-/* ─── Icon map ────────────────────────────────────────────────────────────── */
-
-function getMenuIcon(path: string) {
-  switch (path) {
-    case '/': return <DashboardOutlined />
-    case '/expenses': return <DollarCircleOutlined />
-    case '/weekend-expenses': return <CalendarOutlined />
-    case '/rides': return <CarOutlined />
-    case '/cook': return <CoffeeOutlined />
-    case '/flat-view': return <ApartmentOutlined />
-    case '/announcements': return <NotificationOutlined />
-    case '/admin': return <SettingOutlined />
-    case '/logs': return <AuditOutlined />
-    default: return <DashboardOutlined />
-  }
+// ── Helpers ────────────────────────────────────────────────────────────────
+function getActivePath(pathname: string) {
+  return pathname === '/' ? '/' : `/${pathname.split('/')[1]}`
 }
 
-/* ─── Component ───────────────────────────────────────────────────────────── */
+function getBreadcrumbs(activePath: string, isAdmin: boolean) {
+  const all = NAV_GROUPS.flatMap((g) => g.items)
+  const item = all.find((i) => i.key === activePath)
+  if (!item) return [{ title: 'Dashboard' }]
+  return [{ title: 'MilBaant' }, { title: item.label }]
+}
 
+// ── Component ──────────────────────────────────────────────────────────────
 export function AppLayout() {
-  const screens = useBreakpoint()
-  const isDesktop = Boolean(screens.lg)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const screens    = useBreakpoint()
+  const isDesktop  = Boolean(screens.lg)
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const [collapsed,   setCollapsed]   = useState(false)
+  const [mobileOpen, setMobileOpen]   = useState(false)
   const { isAdmin, profile, canManageExpenses, signOut } = useAuth()
   const { mode, toggleMode } = useThemeMode()
 
-  const EXPANDED = 220
-  const COLLAPSED = 56
   const siderWidth = collapsed ? COLLAPSED : EXPANDED
+  const activePath = getActivePath(location.pathname)
+  const breadcrumbs = getBreadcrumbs(activePath, isAdmin)
 
-  const activePath =
-    location.pathname === '/' ? '/' : `/${location.pathname.split('/')[1]}`
+  // Build Ant Design menu items with group dividers
+  const menuItems = useMemo<MenuProps['items']>(() => {
+    const items: MenuProps['items'] = []
+    NAV_GROUPS.forEach((group, gi) => {
+      const visibleItems = group.items.filter((i) => !i.adminOnly || isAdmin)
+      if (visibleItems.length === 0) return
 
-  const menuItems = useMemo(
-    () =>
-      NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => ({
-        key: item.key,
-        label: item.label,
-        icon: getMenuIcon(item.key),
-      })),
-    [isAdmin],
-  )
+      // Group divider (not shown when collapsed — just a visual separator)
+      if (gi > 0) {
+        items.push({ type: 'divider', key: `div-${gi}`, style: { margin: '4px 10px', opacity: 0.5 } })
+      }
 
-  const currentLabel =
-    menuItems.find((item) => item.key === activePath)?.label ?? 'Dashboard'
+      // Group label as a disabled item (hidden when collapsed)
+      if (!collapsed) {
+        items.push({
+          key: `group-${gi}`,
+          label: (
+            <span style={{
+              fontSize: '0.67rem',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              lineHeight: 1,
+            }}>
+              {group.label}
+            </span>
+          ),
+          disabled: true,
+          style: { cursor: 'default', height: 24, minHeight: 24, lineHeight: '24px', padding: '0 10px', marginBottom: 2 },
+        })
+      }
 
-  async function handleSignOut() {
-    try {
-      await signOut()
-      message.success('Signed out.')
-      navigate('/login', { replace: true })
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to sign out.')
-    }
-  }
+      // Actual nav items
+      visibleItems.forEach((item) => {
+        items.push({
+          key: item.key,
+          icon: item.icon,
+          label: collapsed ? null : item.label,
+        })
+      })
+    })
+    return items
+  }, [isAdmin, collapsed])
 
-  const profileMenuItems = [
-    {
-      key: 'name',
-      label: profile?.full_name ?? 'Flatmate',
-      icon: <UserOutlined />,
-      disabled: true,
-    },
-    {
-      key: 'role',
-      label: `Role: ${isAdmin ? 'Admin' : 'User'}`,
-      icon: <TeamOutlined />,
-      disabled: true,
-    },
-    {
-      key: 'access',
-      label: canManageExpenses ? 'Can add expenses' : 'View only',
-      icon: <DollarCircleOutlined />,
-      disabled: true,
-    },
-    { type: 'divider' as const },
-    {
-      key: 'logout',
-      label: 'Sign Out',
-      icon: <LogoutOutlined />,
-      danger: true,
-      onClick: () => void handleSignOut(),
+  // Flat list for mobile bottom nav (first 5 most important)
+  const mobileItems = useMemo(() => {
+    return NAV_GROUPS.flatMap((g) => g.items)
+      .filter((i) => !i.adminOnly || isAdmin)
+      .slice(0, 5)
+  }, [isAdmin])
+
+  const profileMenuItems: MenuProps['items'] = [
+    { key: 'name',   label: profile?.full_name ?? 'Flatmate', icon: <UserOutlined />,         disabled: true },
+    { key: 'role',   label: `Role: ${isAdmin ? 'Admin' : 'User'}`, icon: <TeamOutlined />,    disabled: true },
+    { key: 'access', label: canManageExpenses ? 'Can add expenses' : 'View only', icon: <DollarCircleOutlined />, disabled: true },
+    { type: 'divider' },
+    { key: 'logout', label: 'Sign Out', icon: <LogoutOutlined />, danger: true,
+      onClick: () => void (async () => {
+        try { await signOut(); void message.success('Signed out.'); navigate('/login', { replace: true }) }
+        catch (e) { void message.error(e instanceof Error ? e.message : 'Unable to sign out.') }
+      })(),
     },
   ]
 
-  /* Shared nav menu used in both sidebar and mobile drawer */
   const navMenu = (
     <StyledMenu
       mode="inline"
       selectedKeys={[activePath]}
       inlineCollapsed={isDesktop ? collapsed : false}
       items={menuItems}
-      onClick={({ key }) => {
-        navigate(key)
-        setMobileOpen(false)
-      }}
+      onClick={({ key }) => { navigate(key); setMobileOpen(false) }}
     />
   )
 
@@ -500,6 +544,7 @@ export function AppLayout() {
       {/* ── Desktop sidebar ── */}
       {isDesktop && (
         <AppSider
+          $collapsed={collapsed}
           width={EXPANDED}
           collapsedWidth={COLLAPSED}
           collapsed={collapsed}
@@ -515,7 +560,11 @@ export function AppLayout() {
           <SiderBottom $collapsed={collapsed}>
             <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
               <ProfileRow $collapsed={collapsed}>
-                <Avatar size={28} style={{ background: '#909ffa', color: '#fff', flexShrink: 0 }} icon={<UserOutlined />} />
+                <Avatar
+                  size={28}
+                  style={{ background: '#909ffa', color: '#fff', flexShrink: 0 }}
+                  icon={<UserOutlined />}
+                />
                 <ProfileMeta $visible={!collapsed}>
                   <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
                     {profile?.full_name ?? 'Flatmate'}
@@ -544,10 +593,10 @@ export function AppLayout() {
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           placement="left"
-          width={240}
           styles={{
-            body: { padding: '16px', background: 'var(--sidebar-bg)', display: 'flex', flexDirection: 'column' },
+            body: { padding: '16px', background: 'var(--sidebar-bg)', display: 'flex', flexDirection: 'column', width: 240 },
             header: { display: 'none' },
+            wrapper: { width: 240 },
           }}
         >
           <DrawerNav>
@@ -558,11 +607,18 @@ export function AppLayout() {
               </Typography.Text>
             </DrawerBrand>
 
-            <div style={{ flex: 1 }}>{navMenu}</div>
+            <div style={{ flex: 1 }}>
+              <StyledMenu
+                mode="inline"
+                selectedKeys={[activePath]}
+                items={menuItems}
+                onClick={({ key }) => { navigate(key); setMobileOpen(false) }}
+              />
+            </div>
 
             <div style={{ borderTop: '1px solid var(--sidebar-border)', paddingTop: 12, marginTop: 8 }}>
               <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
-                <ProfileRow $collapsed={false} style={{ marginBottom: 0 }}>
+                <ProfileRow $collapsed={false}>
                   <Avatar size={28} style={{ background: '#909ffa', color: '#fff' }} icon={<UserOutlined />} />
                   <div>
                     <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
@@ -584,9 +640,20 @@ export function AppLayout() {
         <TopHeader>
           <NavLeft>
             {!isDesktop && (
-              <NavBtn icon={<MenuOutlined />} onClick={() => setMobileOpen(true)} />
+              <NavBtn icon={<MenuOutlined />} onClick={() => setMobileOpen(true)} aria-label="Open menu" />
             )}
-            <NavTitle>{currentLabel}</NavTitle>
+            <BreadcrumbWrap>
+              {isDesktop ? (
+                <Breadcrumb
+                  items={breadcrumbs}
+                  style={{ fontSize: '0.82rem' }}
+                />
+              ) : (
+                <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.9rem' }}>
+                  {breadcrumbs[breadcrumbs.length - 1]?.title}
+                </Typography.Text>
+              )}
+            </BreadcrumbWrap>
           </NavLeft>
 
           <NavRight>
@@ -594,11 +661,12 @@ export function AppLayout() {
               <NavBtn
                 icon={mode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
                 onClick={toggleMode}
+                aria-label="Toggle theme"
               />
             </Tooltip>
 
             <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="bottomRight">
-              <ProfileBtn type="button">
+              <ProfileBtn type="button" aria-label="Profile menu">
                 <Avatar size={26} style={{ background: '#909ffa', color: '#fff' }} icon={<UserOutlined />} />
                 {isDesktop && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
@@ -622,23 +690,22 @@ export function AppLayout() {
         </MainContent>
       </MainLayout>
 
-      {/* ── Mobile bottom nav bar ── */}
+      {/* ── Mobile bottom nav ── */}
       {!isDesktop && (
-        <BottomNav>
-          {menuItems.slice(0, 5).map((item) => (
+        <BottomNav role="navigation" aria-label="Main navigation">
+          {mobileItems.map((item) => (
             <BottomNavItem
               key={item.key}
               $active={activePath === item.key}
               onClick={() => navigate(item.key)}
+              aria-label={item.label}
+              aria-current={activePath === item.key ? 'page' : undefined}
             >
               {item.icon}
               <BottomNavLabel>{item.label}</BottomNavLabel>
             </BottomNavItem>
           ))}
-          <BottomNavItem
-            $active={false}
-            onClick={() => setMobileOpen(true)}
-          >
+          <BottomNavItem $active={false} onClick={() => setMobileOpen(true)} aria-label="More navigation">
             <MenuOutlined />
             <BottomNavLabel>More</BottomNavLabel>
           </BottomNavItem>

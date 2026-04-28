@@ -9,9 +9,19 @@ function FullscreenLoader() {
     <Flex
       align="center"
       justify="center"
-      style={{ minHeight: '100vh', width: '100%' }}
+      style={{ 
+        minHeight: '100vh', 
+        width: '100%',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'var(--content-bg)',
+        zIndex: 9999
+      }}
     >
-      <LoadingOutlined style={{ fontSize: 40, color: '#909ffa' }} spin />
+      <LoadingOutlined style={{ fontSize: 48, color: '#909ffa' }} spin />
     </Flex>
   )
 }
