@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
   Avatar,
-  Breadcrumb,
   Button,
   Drawer,
   Dropdown,
@@ -22,9 +21,7 @@ import {
   DollarCircleOutlined,
   FundOutlined,
   LogoutOutlined,
-  MenuFoldOutlined,
   MenuOutlined,
-  MenuUnfoldOutlined,
   MoonOutlined,
   NotificationOutlined,
   ScheduleOutlined,
@@ -44,8 +41,7 @@ const { Header, Content, Sider } = Layout
 const { useBreakpoint } = Grid
 
 // ── Sidebar dimensions ─────────────────────────────────────────────────────
-const EXPANDED  = 228
-const COLLAPSED = 60
+const SIDEBAR_WIDTH = 60 // Icon-only sidebar
 
 // ── Grouped menu definition ────────────────────────────────────────────────
 interface NavGroup {
@@ -99,7 +95,7 @@ const Shell = styled(Layout)`
   background: var(--content-bg) !important;
 `
 
-const AppSider = styled(Sider)<{ $collapsed: boolean }>`
+const AppSider = styled(Sider)`
   position: fixed !important;
   top: 0;
   left: 0;
@@ -108,7 +104,6 @@ const AppSider = styled(Sider)<{ $collapsed: boolean }>`
   background: var(--sidebar-bg) !important;
   border-right: 1px solid var(--sidebar-border) !important;
   overflow: hidden;
-  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
   .ant-layout-sider-children {
     display: flex;
@@ -121,41 +116,26 @@ const AppSider = styled(Sider)<{ $collapsed: boolean }>`
 const SiderTop = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
   padding: 0 14px;
   height: 56px;
   min-height: 56px;
   border-bottom: 1px solid var(--sidebar-border);
   flex-shrink: 0;
-  overflow: hidden;
 `
 
 const LogoMark = styled.div`
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: linear-gradient(135deg, #909ffa 0%, #6b7ff0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
   color: #fff;
-  flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(144, 159, 250, 0.35);
-`
-
-const BrandText = styled(Typography.Text)<{ $visible: boolean }>`
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  color: var(--text-strong) !important;
-  white-space: nowrap;
-  overflow: hidden;
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  max-width: ${({ $visible }) => ($visible ? '160px' : '0')};
-  transition: opacity 0.18s ease, max-width 0.18s ease;
 `
 
 const NavWrap = styled.div`
@@ -195,57 +175,30 @@ const StyledMenu = styled(Menu)`
   }
 `
 
-const SiderBottom = styled.div<{ $collapsed: boolean }>`
+const SiderBottom = styled.div`
   border-top: 1px solid var(--sidebar-border);
-  padding: ${({ $collapsed }) => ($collapsed ? '10px 6px' : '10px 10px')};
+  padding: 10px 6px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
   flex-shrink: 0;
 `
 
-const ProfileRow = styled.div<{ $collapsed: boolean }>`
+const ProfileRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: ${({ $collapsed }) => ($collapsed ? '6px 0' : '6px 8px')};
+  justify-content: center;
+  padding: 6px 0;
   border-radius: 7px;
   cursor: pointer;
   transition: background 0.15s ease;
-  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
   &:hover { background: var(--menu-hover-bg); }
-`
-
-const ProfileMeta = styled.div<{ $visible: boolean }>`
-  overflow: hidden;
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  max-width: ${({ $visible }) => ($visible ? '160px' : '0')};
-  transition: opacity 0.18s ease, max-width 0.18s ease;
-  white-space: nowrap;
-`
-
-const CollapseBtn = styled(Button)<{ $collapsed: boolean }>`
-  width: 100% !important;
-  border-radius: 7px !important;
-  border-color: var(--sidebar-border) !important;
-  background: transparent !important;
-  color: var(--text-muted) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')} !important;
-  gap: 6px;
-
-  &:hover {
-    background: var(--menu-hover-bg) !important;
-    color: var(--text-strong) !important;
-    border-color: var(--sidebar-border) !important;
-  }
 `
 
 const MainLayout = styled(Layout)<{ $ml: number }>`
   background: transparent !important;
   margin-left: ${({ $ml }) => $ml}px;
-  transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   min-height: 100vh;
 `
 
@@ -336,18 +289,23 @@ const BreadcrumbWrap = styled.div`
 `
 
 const MainContent = styled(Content)`
-  padding: 12px;
+  padding: 8px;
   background: transparent !important;
-  padding-bottom: 72px;
+  padding-bottom: 64px;
 
   @media (min-width: 768px) {
+    padding: 20px;
+    padding-bottom: 20px;
+  }
+
+  @media (min-width: 1024px) {
     padding: 24px;
-    padding-bottom: 24px;
   }
 `
 
 const ContentWrap = styled.div`
-  width: min(1400px, 100%);
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
 `
 
@@ -431,59 +389,37 @@ export function AppLayout() {
   const isDesktop  = Boolean(screens.lg)
   const navigate   = useNavigate()
   const location   = useLocation()
-  const [collapsed,   setCollapsed]   = useState(false)
   const [mobileOpen, setMobileOpen]   = useState(false)
   const { isAdmin, profile, canManageExpenses, signOut } = useAuth()
   const { mode, toggleMode } = useThemeMode()
 
-  const siderWidth = collapsed ? COLLAPSED : EXPANDED
   const activePath = getActivePath(location.pathname)
   const breadcrumbs = getBreadcrumbs(activePath)
 
-  // Build Ant Design menu items with group dividers
+  // Build Ant Design menu items - icons only for desktop sidebar
   const menuItems = useMemo<MenuProps['items']>(() => {
     const items: MenuProps['items'] = []
     NAV_GROUPS.forEach((group, gi) => {
       const visibleItems = group.items.filter((i) => !i.adminOnly || isAdmin)
       if (visibleItems.length === 0) return
 
-      // Group divider (not shown when collapsed — just a visual separator)
+      // Group divider (visual separator)
       if (gi > 0) {
         items.push({ type: 'divider', key: `div-${gi}`, style: { margin: '4px 10px', opacity: 0.5 } })
       }
 
-      // Group label as a disabled item (hidden when collapsed)
-      if (!collapsed) {
-        items.push({
-          key: `group-${gi}`,
-          label: (
-            <span style={{
-              fontSize: '0.67rem',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              lineHeight: 1,
-            }}>
-              {group.label}
-            </span>
-          ),
-          disabled: true,
-          style: { cursor: 'default', height: 24, minHeight: 24, lineHeight: '24px', padding: '0 10px', marginBottom: 2 },
-        })
-      }
-
-      // Actual nav items
+      // Actual nav items - no labels, only icons with tooltips
       visibleItems.forEach((item) => {
         items.push({
           key: item.key,
           icon: item.icon,
-          label: collapsed ? null : item.label,
+          label: null, // Remove labels from sidebar
+          title: item.label, // Tooltip will show the label
         })
       })
     })
     return items
-  }, [isAdmin, collapsed])
+  }, [isAdmin])
 
   // Flat list for mobile bottom nav (first 5 most important)
   const mobileItems = useMemo(() => {
@@ -505,12 +441,44 @@ export function AppLayout() {
     },
   ]
 
-  const navMenu = (
+  // Desktop menu with tooltips for icon-only items
+  const desktopMenu = (
     <StyledMenu
       mode="inline"
       selectedKeys={[activePath]}
-      inlineCollapsed={isDesktop ? collapsed : false}
       items={menuItems}
+      onClick={({ key }) => navigate(key)}
+    />
+  )
+
+  // Mobile drawer menu with labels
+  const mobileMenuItems = useMemo<MenuProps['items']>(() => {
+    const items: MenuProps['items'] = []
+    NAV_GROUPS.forEach((group, gi) => {
+      const visibleItems = group.items.filter((i) => !i.adminOnly || isAdmin)
+      if (visibleItems.length === 0) return
+
+      if (gi > 0) {
+        items.push({ type: 'divider', key: `div-${gi}`, style: { margin: '4px 10px', opacity: 0.5 } })
+      }
+
+      // Show labels in mobile drawer
+      visibleItems.forEach((item) => {
+        items.push({
+          key: item.key,
+          icon: item.icon,
+          label: item.label,
+        })
+      })
+    })
+    return items
+  }, [isAdmin])
+
+  const mobileDrawerMenu = (
+    <StyledMenu
+      mode="inline"
+      selectedKeys={[activePath]}
+      items={mobileMenuItems}
       onClick={({ key }) => { navigate(key); setMobileOpen(false) }}
     />
   )
@@ -520,45 +488,31 @@ export function AppLayout() {
       {/* ── Desktop sidebar ── */}
       {isDesktop && (
         <AppSider
-          $collapsed={collapsed}
-          width={EXPANDED}
-          collapsedWidth={COLLAPSED}
-          collapsed={collapsed}
+          width={SIDEBAR_WIDTH}
+          collapsedWidth={SIDEBAR_WIDTH}
+          collapsed={false}
           trigger={null}
         >
           <SiderTop>
-            <LogoMark>M</LogoMark>
-            <BrandText $visible={!collapsed}>{APP_NAME}</BrandText>
+            <Tooltip title={APP_NAME} placement="right">
+              <LogoMark>M</LogoMark>
+            </Tooltip>
           </SiderTop>
 
-          <NavWrap>{navMenu}</NavWrap>
+          <NavWrap>{desktopMenu}</NavWrap>
 
-          <SiderBottom $collapsed={collapsed}>
-            <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
-              <ProfileRow $collapsed={collapsed}>
-                <Avatar
-                  size={28}
-                  style={{ background: '#909ffa', color: '#fff', flexShrink: 0 }}
-                  icon={<UserOutlined />}
-                />
-                <ProfileMeta $visible={!collapsed}>
-                  <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
-                    {profile?.full_name ?? 'Flatmate'}
-                  </Typography.Text>
-                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                    {isAdmin ? 'Admin' : 'Resident'}
-                  </Typography.Text>
-                </ProfileMeta>
-              </ProfileRow>
-            </Dropdown>
-
-            <CollapseBtn
-              $collapsed={collapsed}
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed((c) => !c)}
-            >
-              {!collapsed && <span style={{ fontSize: '0.78rem' }}>Collapse</span>}
-            </CollapseBtn>
+          <SiderBottom>
+            <Tooltip title="Profile" placement="right">
+              <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
+                <ProfileRow>
+                  <Avatar
+                    size={32}
+                    style={{ background: '#909ffa', color: '#fff' }}
+                    icon={<UserOutlined />}
+                  />
+                </ProfileRow>
+              </Dropdown>
+            </Tooltip>
           </SiderBottom>
         </AppSider>
       )}
@@ -584,17 +538,12 @@ export function AppLayout() {
             </DrawerBrand>
 
             <div style={{ flex: 1 }}>
-              <StyledMenu
-                mode="inline"
-                selectedKeys={[activePath]}
-                items={menuItems}
-                onClick={({ key }) => { navigate(key); setMobileOpen(false) }}
-              />
+              {mobileDrawerMenu}
             </div>
 
             <div style={{ borderTop: '1px solid var(--sidebar-border)', paddingTop: 12, marginTop: 8 }}>
               <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
-                <ProfileRow $collapsed={false}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '7px', cursor: 'pointer' }}>
                   <Avatar size={28} style={{ background: '#909ffa', color: '#fff' }} icon={<UserOutlined />} />
                   <div>
                     <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
@@ -604,7 +553,7 @@ export function AppLayout() {
                       {isAdmin ? 'Admin' : 'Resident'}
                     </Typography.Text>
                   </div>
-                </ProfileRow>
+                </div>
               </Dropdown>
             </div>
           </DrawerNav>
@@ -612,23 +561,16 @@ export function AppLayout() {
       )}
 
       {/* ── Main area ── */}
-      <MainLayout $ml={isDesktop ? siderWidth : 0}>
+      <MainLayout $ml={isDesktop ? SIDEBAR_WIDTH : 0}>
         <TopHeader>
           <NavLeft>
             {!isDesktop && (
               <NavBtn icon={<MenuOutlined />} onClick={() => setMobileOpen(true)} aria-label="Open menu" />
             )}
             <BreadcrumbWrap>
-              {isDesktop ? (
-                <Breadcrumb
-                  items={breadcrumbs}
-                  style={{ fontSize: '0.82rem' }}
-                />
-              ) : (
-                <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.9rem' }}>
-                  {breadcrumbs[breadcrumbs.length - 1]?.title}
-                </Typography.Text>
-              )}
+              <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: isDesktop ? '1rem' : '0.95rem' }}>
+                {breadcrumbs[breadcrumbs.length - 1]?.title}
+              </Typography.Text>
             </BreadcrumbWrap>
           </NavLeft>
 
