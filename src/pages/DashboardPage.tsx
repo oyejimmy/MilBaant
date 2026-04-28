@@ -382,7 +382,7 @@ export function DashboardPage() {
             value={formatCurrency(totalRecorded)}
             subtitle="All expenses this month."
             icon={<WalletOutlined />}
-            color="#1677ff"
+            color="var(--primary)"
           />
           <SummaryStat
             title="Shared Total"
@@ -396,7 +396,7 @@ export function DashboardPage() {
             value={formatCurrency(weekendTotal)}
             subtitle="Split among participants only."
             icon={<CoffeeOutlined />}
-            color="#0ea5e9"
+            color="var(--info)"
           />
           <SummaryStat
             title="Per Member Share"
@@ -418,7 +418,7 @@ export function DashboardPage() {
             gap: 8,
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: '#888', fontWeight: 500, marginBottom: 2 }}>Prev. Remainder</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 2 }}>Prev. Remainder</div>
               {editingRemainder ? (
                 <div>
                   <InputNumber
@@ -441,7 +441,7 @@ export function DashboardPage() {
                   {formatCurrency(prevRemainder)}
                 </div>
               )}
-              <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-disabled)', marginTop: 2 }}>
                 {prevRemainder > 0 ? 'Carried over from last month.' : 'All settled last month.'}
               </div>
             </div>
@@ -558,7 +558,7 @@ export function DashboardPage() {
                 <Col xs={8}>
                   <div style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--content-bg)', borderRadius: 8, border: '1px solid var(--card-border)' }}>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Allocated</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1677ff' }}>{formatCurrency(flatTotalAllocated)}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>{formatCurrency(flatTotalAllocated)}</div>
                   </div>
                 </Col>
                 <Col xs={8}>
@@ -961,8 +961,8 @@ function AnnouncementTicker({ announcements }: { announcements: Announcement[] }
         key={activeIndex}
         className={exiting ? 'ticker-exit' : 'ticker-enter'}
         style={{
-          border: '1.5px solid #e0eaff',
-          borderLeft: '4px solid #1677ff',
+          border: '1.5px solid var(--border-light)',
+          borderLeft: '4px solid var(--primary)',
           borderRadius: 10,
           padding: '14px 16px',
           background: 'var(--card-bg)',
@@ -996,7 +996,7 @@ function AnnouncementTicker({ announcements }: { announcements: Announcement[] }
                 width: i === activeIndex ? 18 : 6,
                 height: 6,
                 borderRadius: 3,
-                background: i === activeIndex ? '#1677ff' : '#d1d5db',
+                background: i === activeIndex ? 'var(--primary)' : 'var(--border-default)',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
               }}

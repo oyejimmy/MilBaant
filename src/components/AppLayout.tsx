@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Avatar,
   Button,
@@ -63,15 +63,16 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Management',
     items: [
       { key: '/expenses',         label: 'Expenses',       icon: <WalletOutlined /> },
+      { key: '/flat-expenses',    label: 'Flat Fund',      icon: <FundOutlined /> },
       { key: '/contributions',    label: 'Contributions',  icon: <DollarCircleOutlined /> },
-      { key: '/cook',             label: 'Cook Ledger',    icon: <FundOutlined /> },
+      { key: '/cook',             label: 'Cook Ledger',    icon: <CoffeeOutlined /> },
       { key: '/daily-menu',       label: 'Daily Menu',     icon: <ScheduleOutlined /> },
     ],
   },
   {
     label: '',
     items: [
-      { key: '/weekend-expenses', label: 'Weekend Meals',  icon: <CoffeeOutlined /> },
+      { key: '/weekend-expenses', label: 'Weekend Meals',  icon: <CarOutlined /> },
       { key: '/rides',            label: 'Rides',          icon: <CarOutlined /> },
     ],
   },
@@ -133,14 +134,14 @@ const LogoMark = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #909ffa 0%, #6b7ff0 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--blue-300) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 14px;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(144, 159, 250, 0.35);
+  color: var(--text-inverse);
+  box-shadow: 0 2px 8px var(--primary-soft);
   flex-shrink: 0;
 `
 
@@ -182,10 +183,10 @@ const StyledMenu = styled(Menu)`
   }
 
   .ant-menu-item-selected {
-    background: rgba(144, 159, 250, 0.14) !important;
-    color: #909ffa !important;
+    background: ${({ theme: _t }) => 'var(--soft-accent)'} !important;
+    color: var(--primary) !important;
     font-weight: 600 !important;
-    .anticon { color: #909ffa !important; }
+    .anticon { color: var(--primary) !important; }
   }
 
   .ant-menu-item:not(.ant-menu-item-selected):hover {
@@ -248,7 +249,7 @@ const MainLayout = styled(Layout)<{ $ml: number }>`
   transition: margin-left 0.2s ease;
 `
 
-const TopHeader = styled(Header)`
+const TopHeader = styled(Header)<{ $scrolled: boolean }>`
   position: sticky !important;
   top: 0;
   z-index: 100;
@@ -258,9 +259,15 @@ const TopHeader = styled(Header)`
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  background: var(--navbar-bg) !important;
-  border-bottom: 1px solid var(--navbar-border) !important;
-  box-shadow: 0 1px 0 var(--navbar-border) !important;
+  border-bottom: none !important;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease !important;
+
+  background: ${({ $scrolled }) =>
+    $scrolled ? 'rgba(var(--navbar-bg-rgb), 0.55)' : 'var(--navbar-bg)'} !important;
+  backdrop-filter: ${({ $scrolled }) => ($scrolled ? 'blur(18px) saturate(180%)' : 'none')};
+  -webkit-backdrop-filter: ${({ $scrolled }) => ($scrolled ? 'blur(18px) saturate(180%)' : 'none')};
+  box-shadow: ${({ $scrolled }) =>
+    $scrolled ? '0 2px 20px rgba(0,0,0,0.07)' : 'none'} !important;
 
   @media (min-width: 768px) {
     height: 56px !important;
@@ -288,7 +295,7 @@ const NavRight = styled.div`
 
 const NavBtn = styled(Button)`
   border-radius: 7px !important;
-  border-color: var(--navbar-border) !important;
+  border: none !important;
   background: transparent !important;
   color: var(--text-muted) !important;
   width: 32px !important;
@@ -304,7 +311,7 @@ const NavBtn = styled(Button)`
   &:hover {
     background: var(--menu-hover-bg) !important;
     color: var(--text-strong) !important;
-    border-color: #909ffa !important;
+    border: none !important;
   }
 `
 
@@ -313,17 +320,17 @@ const ProfileBtn = styled.button`
   align-items: center;
   gap: 4px;
   padding: 3px 6px 3px 3px;
-  border: 1px solid var(--navbar-border);
+  border: none;
   border-radius: 7px;
   background: transparent;
   cursor: pointer;
   color: inherit;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease;
   flex-shrink: 0;
 
   @media (min-width: 768px) { gap: 6px; padding: 3px 8px 3px 3px; }
 
-  &:hover { background: var(--menu-hover-bg); border-color: #909ffa; }
+  &:hover { background: var(--menu-hover-bg); }
 `
 
 const BreadcrumbWrap = styled.div`
@@ -399,7 +406,7 @@ const BottomNavItem = styled.button<{ $active: boolean }>`
   cursor: pointer;
   padding: 4px 2px;
   border-radius: 6px;
-  color: ${({ $active }) => ($active ? '#909ffa' : 'var(--text-muted)')};
+  color: ${({ $active }) => ($active ? 'var(--primary)' : 'var(--text-muted)')};
   transition: color 0.15s ease, background 0.15s ease;
   min-width: 0;
 
@@ -437,8 +444,15 @@ export function AppLayout() {
   const location   = useLocation()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen]   = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const { isAdmin, profile, canManageExpenses, signOut } = useAuth()
   const { mode, toggleMode } = useThemeMode()
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const siderWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
   const activePath = getActivePath(location.pathname)
@@ -549,7 +563,7 @@ export function AppLayout() {
               <ProfileRow $collapsed={collapsed}>
                 <Avatar
                   size={28}
-                  style={{ background: '#909ffa', color: '#fff', flexShrink: 0 }}
+                  style={{ background: 'var(--primary)', color: 'var(--text-inverse)', flexShrink: 0 }}
                   icon={<UserOutlined />}
                 />
                 <ProfileMeta $visible={!collapsed}>
@@ -601,7 +615,7 @@ export function AppLayout() {
             <div style={{ borderTop: '1px solid var(--sidebar-border)', paddingTop: 12, marginTop: 8 }}>
               <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '7px', cursor: 'pointer' }}>
-                  <Avatar size={28} style={{ background: '#909ffa', color: '#fff' }} icon={<UserOutlined />} />
+                  <Avatar size={28} style={{ background: 'var(--primary)', color: 'var(--text-inverse)' }} icon={<UserOutlined />} />
                   <div>
                     <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
                       {profile?.full_name ?? 'Flatmate'}
@@ -619,7 +633,7 @@ export function AppLayout() {
 
       {/* ── Main area ── */}
       <MainLayout $ml={isDesktop ? siderWidth : 0}>
-        <TopHeader>
+        <TopHeader $scrolled={scrolled}>
           <NavLeft>
             {!isDesktop && (
               <NavBtn icon={<MenuOutlined />} onClick={() => setMobileOpen(true)} aria-label="Open menu" />
@@ -642,7 +656,7 @@ export function AppLayout() {
 
             <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="bottomRight">
               <ProfileBtn type="button" aria-label="Profile menu">
-                <Avatar size={26} style={{ background: '#909ffa', color: '#fff' }} icon={<UserOutlined />} />
+                <Avatar size={26} style={{ background: 'var(--primary)', color: 'var(--text-inverse)' }} icon={<UserOutlined />} />
                 {isDesktop && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
                     <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.78rem' }}>

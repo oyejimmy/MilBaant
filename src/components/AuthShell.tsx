@@ -61,7 +61,7 @@ const Eyebrow = styled.span`
   width: fit-content;
   padding: 10px 14px;
   border-radius: 14px;
-  background: rgba(144, 159, 250, 0.14);
+  background: var(--bg-elevated);
   border: 1px solid var(--surface-border);
   color: var(--text-strong);
   font-size: 0.82rem;
@@ -71,7 +71,7 @@ const Eyebrow = styled.span`
 const HelperPanel = styled.div`
   padding: 16px 18px;
   border-radius: 18px;
-  background: rgba(144, 159, 250, 0.08);
+  background: var(--bg-elevated);
   border: 1px solid var(--surface-border);
 `
 
@@ -105,8 +105,8 @@ export function AuthShell({
 
   return (
     <Wrapper className="auth-shell">
-      <Orb $top="10%" $left="8%" $size="180px" $color="rgba(144, 159, 250, 0.14)" />
-      <Orb $bottom="12%" $right="10%" $size="220px" $color="rgba(202, 204, 213, 0.18)" />
+      <Orb $top="10%" $left="8%" $size="180px" $color="var(--primary-soft)" />
+      <Orb $bottom="12%" $right="10%" $size="220px" $color="var(--bg-elevated)" />
 
       <ShellCard>
         <FormCard>

@@ -573,34 +573,34 @@ export function ExpensesPage() {
 
         {/* Stat cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-          <div style={{ background: 'var(--surface)', border: '1.5px solid #e0eaff', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <WalletOutlined style={{ fontSize: 15, color: '#1677ff' }} />
-            </div>
+          <div style={{ background: 'var(--surface)', border: 'none', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>Total Expenses</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#1677ff', letterSpacing: '-0.3px' }}>{formatCurrency(fixedTotal)}</div>
-              <div style={{ fontSize: 10, color: '#aaa' }}>{formatMonthYear(selectedMonth)}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Total Expenses</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.3px' }}>{formatCurrency(fixedTotal)}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-disabled)' }}>{formatMonthYear(selectedMonth)}</div>
+            </div>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <WalletOutlined style={{ fontSize: 15, color: 'var(--primary)' }} />
             </div>
           </div>
-          <div style={{ background: 'var(--surface)', border: '1.5px solid #ede9fe', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ background: 'var(--surface)', border: 'none', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Per-person Share</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.3px' }}>{formatCurrency(perMemberShare)}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Each member owes</div>
+            </div>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <UserOutlined style={{ fontSize: 15, color: '#7c3aed' }} />
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>Per-person Share</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#7c3aed', letterSpacing: '-0.3px' }}>{formatCurrency(perMemberShare)}</div>
-              <div style={{ fontSize: 10, color: '#aaa' }}>Each member owes</div>
-            </div>
           </div>
-          <div style={{ background: 'var(--surface)', border: '1.5px solid #d1fae5', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TeamOutlined style={{ fontSize: 15, color: '#059669' }} />
-            </div>
+          <div style={{ background: 'var(--surface)', border: 'none', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>Member Count</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#059669', letterSpacing: '-0.3px' }}>{memberCount}</div>
-              <div style={{ fontSize: 10, color: '#aaa' }}>Active flatmates</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Member Count</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.3px' }}>{memberCount}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Active flatmates</div>
+            </div>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TeamOutlined style={{ fontSize: 15, color: '#059669' }} />
             </div>
           </div>
         </div>
@@ -925,7 +925,7 @@ export function ExpensesPage() {
         >
           {/* Header banner */}
           <div style={{
-            background: 'linear-gradient(135deg, #1677ff 0%, #4f46e5 100%)',
+            background: 'linear-gradient(135deg, var(--primary) 0%, var(--blue-700) 100%)',
             padding: '24px 28px 20px',
           }}>
             <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
@@ -945,9 +945,9 @@ export function ExpensesPage() {
             borderBottom: '1px solid #e8edf5',
           }}>
             {[
-              { label: 'Total Expenses', value: formatCurrency(fixedTotal), color: '#1677ff' },
-              { label: 'Per-person Share', value: formatCurrency(perMemberShare), color: '#4f46e5' },
-              { label: 'Members', value: String(memberCount), color: '#0ea5e9' },
+              { label: 'Total Expenses', value: formatCurrency(fixedTotal), color: 'var(--primary)' },
+              { label: 'Per-person Share', value: formatCurrency(perMemberShare), color: 'var(--blue-700)' },
+              { label: 'Members', value: String(memberCount), color: 'var(--info)' },
             ].map((pill) => (
               <div key={pill.label} style={{
                 flex: 1,
@@ -956,7 +956,7 @@ export function ExpensesPage() {
                 borderRadius: 10,
                 padding: '10px 14px',
               }}>
-                <div style={{ fontSize: 11, color: '#888', marginBottom: 3 }}>{pill.label}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 3 }}>{pill.label}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: pill.color }}>{pill.value}</div>
               </div>
             ))}
@@ -979,8 +979,8 @@ export function ExpensesPage() {
                     <td style={pTd}>{formatDate(exp.date)}</td>
                     <td style={pTd}>
                       <span style={{
-                        background: '#e8f0fe',
-                        color: '#1677ff',
+                        background: 'var(--primary-soft)',
+                        color: 'var(--primary)',
                         borderRadius: 6,
                         padding: '2px 8px',
                         fontWeight: 600,
@@ -995,10 +995,10 @@ export function ExpensesPage() {
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ background: 'linear-gradient(90deg, #1677ff11, #4f46e511)' }}>
-                  <td style={{ ...pTd, fontWeight: 700, color: '#1677ff' }} colSpan={2}>Total</td>
-                  <td style={{ ...pTd, fontWeight: 700, color: '#1677ff', fontSize: 14 }}>{formatCurrency(fixedTotal)}</td>
-                  <td style={{ ...pTd, fontWeight: 700, color: '#4f46e5' }}>
+                <tr style={{ background: 'linear-gradient(90deg, var(--primary-soft), var(--bg-elevated))' }}>
+                  <td style={{ ...pTd, fontWeight: 700, color: 'var(--primary)' }} colSpan={2}>Total</td>
+                  <td style={{ ...pTd, fontWeight: 700, color: 'var(--primary)', fontSize: 14 }}>{formatCurrency(fixedTotal)}</td>
+                  <td style={{ ...pTd, fontWeight: 700, color: 'var(--blue-700)' }}>
                     Per-person: {formatCurrency(perMemberShare)}
                   </td>
                 </tr>
@@ -1012,7 +1012,7 @@ export function ExpensesPage() {
             borderTop: '1px solid #e8edf5',
             padding: '10px 28px',
             fontSize: 11,
-            color: '#aaa',
+            color: 'var(--text-disabled)',
             textAlign: 'right',
           }}>
             Generated by MilBaant · {dayjs().format('DD MMM YYYY')}

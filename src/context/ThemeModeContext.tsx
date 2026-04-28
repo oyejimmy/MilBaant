@@ -71,3 +71,26 @@ export function useThemeMode() {
 
   return context
 }
+
+/**
+ * useTheme — extended hook with boolean helpers.
+ *
+ * Usage:
+ *   const { isDark, isLight, toggle, setLight, setDark, mode } = useTheme()
+ */
+export function useTheme() {
+  const { mode, toggleMode, setMode } = useThemeMode()
+
+  return {
+    mode,
+    isDark:   mode === 'dark',
+    isLight:  mode === 'light',
+    toggle:   toggleMode,
+    setLight: () => setMode('light'),
+    setDark:  () => setMode('dark'),
+    /** @deprecated use toggle() */
+    toggleMode,
+    /** @deprecated use setLight() / setDark() */
+    setMode,
+  }
+}

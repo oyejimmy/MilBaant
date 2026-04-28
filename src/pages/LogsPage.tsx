@@ -1,111 +1,193 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { Grid, Input, Table, Tag, Typography } from 'antd'
-import { AuditOutlined } from '@ant-design/icons'
+import { Avatar, Col, Input, Row, Select, Table, Tag, Typography } from 'antd'
+import {
+  AuditOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusCircleOutlined,
+  SearchOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageStack } from '@/components/Glass'
 import { useActivityLogs } from '@/hooks/useActivityLog'
 import type { ActivityLog } from '@/lib/types'
 
-const { useBreakpoint } = Grid
+/* ─── Constants ───────────────────────────────────────────────────────────── */
 
-const LogCard = styled.div`
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 10px 12px;
-  background: var(--card-bg);
+const ACTION_META: Record<ActivityLog['action'], { color: string; icon: React.ReactNode; label: string }> = {
+  create: { color: 'var(--success)', icon: <PlusCircleOutlined />, label: 'Created' },
+  update: { color: 'var(--primary)', icon: <EditOutlined />,       label: 'Updated' },
+  delete: { color: 'var(--error)',   icon: <DeleteOutlined />,     label: 'Deleted'  },
+}
+
+const ENTITY_LABELS: Record<string, string> = {
+  expense:       'Expense',
+  ride:          'Ride',
+  cook_advance:  'Cook Advance',
+  cook_purchase: 'Cook Purchase',
+  settlement:    'Settlement',
+  announcement:  'Announcement',
+}
+
+const ENTITY_TAG_COLOR: Record<string, string> = {
+  expense:       'purple',
+  ride:          'cyan',
+  cook_advance:  'orange',
+  cook_purchase: 'gold',
+  settlement:    'geekblue',
+  announcement:  'magenta',
+}
+
+/* ─── Styled ──────────────────────────────────────────────────────────────── */
+
+const StatBox = styled.div`
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 10px 14px;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 `
 
-const ACTION_COLOR: Record<ActivityLog['action'], string> = {
-  create: 'green',
-  update: 'blue',
-  delete: 'red',
-}
+const SearchInput = styled(Input)`
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: 1px solid var(--border-default) !important;
+  box-shadow: none !important;
 
-const ENTITY_COLOR: Record<string, string> = {
-  expense: 'purple',
-  ride: 'cyan',
-  cook_advance: 'orange',
-  cook_purchase: 'gold',
-  settlement: 'geekblue',
-  announcement: 'magenta',
-}
+  .ant-input {
+    background: transparent !important;
+    font-size: 13px !important;
+  }
+
+  &:hover {
+    border-color: var(--text-secondary) !important;
+  }
+
+  &:focus-within {
+    border-color: var(--primary) !important;
+    box-shadow: none !important;
+  }
+`
+
+const ActionCell = styled.div<{ $color: string }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ $color }) => $color};
+`
+
+/* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export function LogsPage() {
-  const [search, setSearch] = useState('')
+  const [search, setSearch]             = useState('')
+  const [actionFilter, setActionFilter] = useState<string | null>(null)
+  const [entityFilter, setEntityFilter] = useState<string | null>(null)
+
   const logsQuery = useActivityLogs()
   const logs = logsQuery.data ?? []
-  const screens = useBreakpoint()
-  const isMobile = !screens.md
 
-  const filtered = search.trim()
-    ? logs.filter(
-        (l) =>
-          l.description.toLowerCase().includes(search.toLowerCase()) ||
-          l.actor?.full_name.toLowerCase().includes(search.toLowerCase()) ||
-          l.entity.toLowerCase().includes(search.toLowerCase()),
-      )
-    : logs
+  const filtered = logs.filter((l) => {
+    const q = search.trim().toLowerCase()
+    const matchSearch = !q ||
+      l.description.toLowerCase().includes(q) ||
+      (l.actor?.full_name ?? '').toLowerCase().includes(q) ||
+      l.entity.toLowerCase().includes(q)
+    const matchAction = !actionFilter || l.action === actionFilter
+    const matchEntity = !entityFilter || l.entity === entityFilter
+    return matchSearch && matchAction && matchEntity
+  })
+
+  // Stats
+  const createCount = logs.filter((l) => l.action === 'create').length
+  const updateCount = logs.filter((l) => l.action === 'update').length
+  const deleteCount = logs.filter((l) => l.action === 'delete').length
 
   const columns: ColumnsType<ActivityLog> = [
     {
       title: 'Time',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 180,
-      render: (v: string) => dayjs(v).format('DD MMM YYYY, HH:mm'),
+      width: 160,
       sorter: (a, b) => a.created_at.localeCompare(b.created_at),
       defaultSortOrder: 'descend',
+      render: (v: string) => (
+        <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {dayjs(v).format('DD MMM YYYY, HH:mm')}
+        </Typography.Text>
+      ),
     },
     {
       title: 'User',
       key: 'actor',
-      width: 150,
-      render: (_: unknown, record: ActivityLog) => (
-        <Typography.Text strong>{record.actor?.full_name ?? 'Unknown'}</Typography.Text>
-      ),
+      width: 140,
+      render: (_: unknown, record: ActivityLog) => {
+        const name = record.actor?.full_name ?? 'Unknown'
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Avatar
+              size={22}
+              style={{ background: 'var(--primary)', color: '#fff', fontSize: 10, flexShrink: 0 }}
+              icon={<UserOutlined />}
+            />
+            <Typography.Text strong style={{ fontSize: 12 }}>{name}</Typography.Text>
+          </div>
+        )
+      },
     },
     {
       title: 'Action',
       dataIndex: 'action',
       key: 'action',
-      width: 90,
-      render: (v: ActivityLog['action']) => (
-        <Tag color={ACTION_COLOR[v]} style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-          {v}
-        </Tag>
-      ),
+      width: 100,
       filters: [
-        { text: 'Create', value: 'create' },
-        { text: 'Update', value: 'update' },
-        { text: 'Delete', value: 'delete' },
+        { text: 'Created', value: 'create' },
+        { text: 'Updated', value: 'update' },
+        { text: 'Deleted', value: 'delete' },
       ],
       onFilter: (value, record) => record.action === value,
+      render: (v: ActivityLog['action']) => {
+        const meta = ACTION_META[v]
+        return (
+          <ActionCell $color={meta.color}>
+            {meta.icon}
+            {meta.label}
+          </ActionCell>
+        )
+      },
     },
     {
       title: 'Module',
       dataIndex: 'entity',
       key: 'entity',
-      width: 140,
+      width: 130,
+      filters: Object.entries(ENTITY_LABELS).map(([v, l]) => ({ text: l, value: v })),
+      onFilter: (value, record) => record.entity === value,
       render: (v: string) => (
-        <Tag color={ENTITY_COLOR[v] ?? 'default'} style={{ textTransform: 'capitalize' }}>
-          {v.replace('_', ' ')}
+        <Tag
+          color={ENTITY_TAG_COLOR[v] ?? 'default'}
+          style={{ margin: 0, fontSize: 11, textTransform: 'capitalize' }}
+        >
+          {(ENTITY_LABELS[v] ?? v).replace('_', ' ')}
         </Tag>
       ),
-      filters: Object.keys(ENTITY_COLOR).map((e) => ({ text: e.replace('_', ' '), value: e })),
-      onFilter: (value, record) => record.entity === value,
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      render: (v: string) => <Typography.Text style={{ color: 'var(--text-base)' }}>{v}</Typography.Text>,
+      render: (v: string) => (
+        <Typography.Text style={{ fontSize: 13, color: 'var(--text-strong)' }}>{v}</Typography.Text>
+      ),
     },
   ]
 
@@ -115,60 +197,97 @@ export function LogsPage() {
         title="Activity Logs"
         subtitle="A read-only audit trail of all actions performed in the app. Logs cannot be edited or deleted."
       />
-      <SectionBlock>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-          <AuditOutlined style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0 }} />
-          <Input.Search
-            placeholder="Search by user, module or description…"
+
+      <QueryState isLoading={logsQuery.isLoading} error={logsQuery.error as Error | null}>
+
+        {/* Stats */}
+        <Row gutter={[10, 10]} style={{ marginBottom: 16 }}>
+          <Col xs={8}>
+            <StatBox>
+              <div>
+                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Created</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', lineHeight: 1.3 }}>{createCount}</Typography.Text>
+              </div>
+              <PlusCircleOutlined style={{ fontSize: 20, color: 'var(--success)', flexShrink: 0 }} />
+            </StatBox>
+          </Col>
+          <Col xs={8}>
+            <StatBox>
+              <div>
+                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Updated</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', lineHeight: 1.3 }}>{updateCount}</Typography.Text>
+              </div>
+              <EditOutlined style={{ fontSize: 20, color: 'var(--primary)', flexShrink: 0 }} />
+            </StatBox>
+          </Col>
+          <Col xs={8}>
+            <StatBox>
+              <div>
+                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Deleted</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', lineHeight: 1.3 }}>{deleteCount}</Typography.Text>
+              </div>
+              <DeleteOutlined style={{ fontSize: 20, color: 'var(--error)', flexShrink: 0 }} />
+            </StatBox>
+          </Col>
+        </Row>
+
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+          <SearchInput
+            prefix={<SearchOutlined style={{ color: 'var(--text-muted)', fontSize: 12 }} />}
+            placeholder="Search user, module or description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             allowClear
-            style={{ flex: 1, minWidth: 200, maxWidth: 400 }}
+            style={{ flex: 1, minWidth: 180, maxWidth: 340 }}
           />
-          <Typography.Text type="secondary" style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-            {filtered.length} entries
+          <Select
+            placeholder="Action"
+            allowClear
+            value={actionFilter}
+            onChange={(v) => setActionFilter(v ?? null)}
+            style={{ width: 120, height: 32 }}
+            options={[
+              { label: 'Created', value: 'create' },
+              { label: 'Updated', value: 'update' },
+              { label: 'Deleted', value: 'delete' },
+            ]}
+          />
+          <Select
+            placeholder="Module"
+            allowClear
+            value={entityFilter}
+            onChange={(v) => setEntityFilter(v ?? null)}
+            style={{ width: 150, height: 32 }}
+            options={Object.entries(ENTITY_LABELS).map(([v, l]) => ({ label: l, value: v }))}
+          />
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+            {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'}
           </Typography.Text>
         </div>
-        <QueryState isLoading={logsQuery.isLoading} error={logsQuery.error as Error | null}>
-          {isMobile ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {filtered.length === 0 && (
-                <Typography.Text type="secondary">No logs found.</Typography.Text>
-              )}
-              {filtered.slice(0, 100).map((log) => (
-                <LogCard key={log.id}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <Tag color={ACTION_COLOR[log.action]} style={{ margin: 0, textTransform: 'capitalize', fontWeight: 600 }}>
-                      {log.action}
-                    </Tag>
-                    <Tag color={ENTITY_COLOR[log.entity] ?? 'default'} style={{ margin: 0, textTransform: 'capitalize' }}>
-                      {log.entity.replace('_', ' ')}
-                    </Tag>
-                    <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-strong)' }}>
-                      {log.actor?.full_name ?? 'Unknown'}
-                    </Typography.Text>
-                  </div>
-                  <Typography.Text style={{ fontSize: 12, color: 'var(--text-base)' }}>
-                    {log.description}
-                  </Typography.Text>
-                  <Typography.Text style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                    {dayjs(log.created_at).format('DD MMM YYYY, HH:mm')}
-                  </Typography.Text>
-                </LogCard>
-              ))}
+
+        {/* Table */}
+        <Table<ActivityLog>
+          rowKey="id"
+          columns={columns}
+          dataSource={filtered}
+          size="small"
+          scroll={{ x: 700 }}
+          pagination={{
+            pageSize: 25,
+            showSizeChanger: true,
+            pageSizeOptions: ['25', '50', '100'],
+            showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`,
+            size: 'small',
+          }}
+          locale={{ emptyText: (
+            <div style={{ padding: '32px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <AuditOutlined style={{ fontSize: 32, color: 'var(--text-muted)', opacity: 0.4 }} />
+              <Typography.Text style={{ color: 'var(--text-muted)' }}>No logs match your filters.</Typography.Text>
             </div>
-          ) : (
-            <Table
-              rowKey="id"
-              columns={columns}
-              dataSource={filtered}
-              pagination={{ pageSize: 50, showSizeChanger: true }}
-              scroll={{ x: 700 }}
-              size="small"
-            />
-          )}
-        </QueryState>
-      </SectionBlock>
+          )}}
+        />
+      </QueryState>
     </PageStack>
   )
 }

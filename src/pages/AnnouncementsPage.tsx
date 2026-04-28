@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Button,
   Card,
+  FloatButton,
   Popconfirm,
   Space,
   Typography,
@@ -12,14 +13,18 @@ import { AnnouncementComposer } from '@/components/AnnouncementComposer'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
 import { PageStack, SectionBlock } from '@/components/Glass'
+import { IconButton } from '@/components/IconButton'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '@/hooks/useAnnouncements'
 import { useAuth } from '@/hooks/useAuth'
+import { useResponsive, useButtonSize } from '@/hooks/useResponsive'
 import { exportAnnouncementsToExcel } from '@/lib/export'
 import { formatDateTime } from '@/lib/formatters'
 
 export function AnnouncementsPage() {
   const [composerOpen, setComposerOpen] = useState(false)
   const { isAdmin, userId } = useAuth()
+  const { isMobile } = useResponsive()
+  const buttonSize = useButtonSize()
   const announcementsQuery = useAnnouncements()
   const createAnnouncement = useCreateAnnouncement()
   const deleteAnnouncement = useDeleteAnnouncement()
@@ -60,60 +65,85 @@ export function AnnouncementsPage() {
         title="Announcements"
         subtitle="A simple flat-wide board for updates, reminders, and operational notices."
         actions={
-          <Space wrap>
-            {isAdmin ? (
-              <>
-                <Button
-                  icon={<DownloadOutlined />}
-                  onClick={() => void exportAnnouncementsToExcel(announcements)}
-                >
-                  Download Excel
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setComposerOpen(true)}
-                >
-                  New Announcement
-                </Button>
-              </>
-            ) : null}
-          </Space>
+          isAdmin && !isMobile ? (
+            <Space wrap>
+              <Button
+                size={buttonSize}
+                icon={<DownloadOutlined />}
+                onClick={() => void exportAnnouncementsToExcel(announcements)}
+              >
+                Download Excel
+              </Button>
+              <Button
+                type="primary"
+                size={buttonSize}
+                icon={<PlusOutlined />}
+                onClick={() => setComposerOpen(true)}
+              >
+                New Announcement
+              </Button>
+            </Space>
+          ) : isAdmin && isMobile ? (
+            <IconButton
+              icon={<DownloadOutlined />}
+              tooltip="Download Excel"
+              onClick={() => void exportAnnouncementsToExcel(announcements)}
+            />
+          ) : null
         }
       />
 
       <QueryState
         isLoading={announcementsQuery.isLoading}
         error={(announcementsQuery.error as Error | null) ?? null}
-        isEmpty={!announcements.length}
-        emptyMessage="No announcements have been posted yet."
       >
         <SectionBlock>
-          <Space direction="vertical" size={18} style={{ width: '100%' }}>
+          {announcements.length === 0 ? (
+            <Typography.Text type="secondary">No announcements have been posted yet.</Typography.Text>
+          ) : (
+          <Space direction="vertical" size={isMobile ? 12 : 18} style={{ width: '100%' }}>
             {announcements.map((announcement) => (
               <Card
                 key={announcement.id}
+                size={isMobile ? 'small' : 'default'}
                 extra={
                   isAdmin ? (
                     <Popconfirm
                       title="Delete this announcement?"
                       onConfirm={() => void handleDelete(announcement.id)}
                     >
-                      <Button danger icon={<DeleteOutlined />} />
+                      <IconButton
+                        icon={<DeleteOutlined />}
+                        tooltip="Delete"
+                        danger
+                        type="text"
+                      />
                     </Popconfirm>
                   ) : null
                 }
               >
-                <Space direction="vertical" size={8}>
-                  <Typography.Title level={4} style={{ margin: 0, color: 'var(--text-strong)' }}>
+                <Space direction="vertical" size={isMobile ? 6 : 8}>
+                  <Typography.Title 
+                    level={isMobile ? 5 : 4} 
+                    style={{ margin: 0, color: 'var(--text-strong)' }}
+                  >
                     {announcement.title}
                   </Typography.Title>
                   <Typography.Paragraph
-                    style={{ margin: 0, color: 'var(--text-base)' }}
+                    style={{ 
+                      margin: 0, 
+                      color: 'var(--text-base)',
+                      fontSize: isMobile ? '13px' : '14px',
+                    }}
                   >
                     {announcement.content}
                   </Typography.Paragraph>
-                  <Typography.Text style={{ color: 'var(--text-muted)' }}>
+                  <Typography.Text 
+                    style={{ 
+                      color: 'var(--text-muted)',
+                      fontSize: isMobile ? '11px' : '12px',
+                    }}
+                  >
                     {announcement.creator?.full_name ?? 'Admin'} •{' '}
                     {formatDateTime(announcement.created_at)}
                   </Typography.Text>
@@ -121,8 +151,25 @@ export function AnnouncementsPage() {
               </Card>
             ))}
           </Space>
+          )}
         </SectionBlock>
       </QueryState>
+
+      {/* Mobile: Floating Action Button */}
+      {isAdmin && isMobile && (
+        <FloatButton
+          icon={<PlusOutlined />}
+          type="primary"
+          tooltip="New Announcement"
+          style={{
+            bottom: 72, // Above bottom nav (56px + 16px spacing)
+            right: 16,
+            width: 56,
+            height: 56,
+          }}
+          onClick={() => setComposerOpen(true)}
+        />
+      )}
 
       <AnnouncementComposer
         open={composerOpen}

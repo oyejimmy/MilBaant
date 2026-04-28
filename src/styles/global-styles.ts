@@ -1,91 +1,698 @@
 import { createGlobalStyle } from 'styled-components'
 import type { ThemeMode } from '@/context/ThemeModeContext'
-import { palette } from '@/styles/theme'
 
+/**
+ * Global styles — Ant Design overrides + base styles.
+ * Uses CSS variables from theme-variables.css.
+ * No hardcoded colors. All values reference var(--*).
+ */
 export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
-  :root {
-    --periwinkle-blue: ${palette.periwinkle};
-
-    /* Text */
-    --text-strong: ${({ $mode }) => ($mode === 'dark' ? '#f0f2f8' : '#1e2330')};
-    --text-base:   ${({ $mode }) => ($mode === 'dark' ? '#b8bdd0' : '#3d4455')};
-    --text-muted:  ${({ $mode }) => ($mode === 'dark' ? '#7a7f96' : '#7a8099')};
-
-    /* Page background */
-    --content-bg: ${({ $mode }) => ($mode === 'dark' ? '#141720' : '#f0f2f5')};
-
-    /* Surface (same as card-bg, used by stat cards) */
-    --surface: ${({ $mode }) => ($mode === 'dark' ? '#1c2030' : '#ffffff')};
-
-    /* Icon tint backgrounds */
-    --icon-bg-blue:   ${({ $mode }) => ($mode === 'dark' ? 'rgba(22,119,255,0.15)' : '#eff6ff')};
-    --icon-bg-purple: ${({ $mode }) => ($mode === 'dark' ? 'rgba(124,58,237,0.15)' : '#f5f3ff')};
-    --icon-bg-green:  ${({ $mode }) => ($mode === 'dark' ? 'rgba(5,150,105,0.15)'  : '#ecfdf5')};
-    --icon-bg-amber:  ${({ $mode }) => ($mode === 'dark' ? 'rgba(217,119,6,0.15)'  : '#fef3c7')};
-    --icon-bg-sky:    ${({ $mode }) => ($mode === 'dark' ? 'rgba(14,165,233,0.15)' : '#f0f9ff')};
-
-    /* Cards / panels */
-    --card-bg:     ${({ $mode }) => ($mode === 'dark' ? '#1c2030' : '#ffffff')};
-    --card-border: ${({ $mode }) => ($mode === 'dark' ? '#2a2f45' : '#e2e5ec')};
-
-    /* Sidebar */
-    --sidebar-bg:     ${({ $mode }) => ($mode === 'dark' ? '#161a27' : '#ffffff')};
-    --sidebar-border: ${({ $mode }) => ($mode === 'dark' ? '#252a3d' : '#e2e5ec')};
-
-    /* Navbar */
-    --navbar-bg:     ${({ $mode }) => ($mode === 'dark' ? '#161a27' : '#ffffff')};
-    --navbar-border: ${({ $mode }) => ($mode === 'dark' ? '#252a3d' : '#e2e5ec')};
-
-    /* Auth shell surface */
-    --app-bg:         ${({ $mode }) => ($mode === 'dark' ? '#141720' : '#f0f2f5')};
-    --surface-bg:     ${({ $mode }) => ($mode === 'dark' ? '#1c2030' : '#ffffff')};
-    --surface-border: ${({ $mode }) => ($mode === 'dark' ? '#2a2f45' : '#e2e5ec')};
-    --surface-shadow: ${({ $mode }) =>
-      $mode === 'dark'
-        ? '0 4px 24px rgba(0,0,0,0.4)'
-        : '0 4px 24px rgba(0,0,0,0.08)'};
-
-    /* Interactive */
-    --menu-hover-bg: ${({ $mode }) =>
-      $mode === 'dark' ? 'rgba(144, 159, 250, 0.08)' : 'rgba(144, 159, 250, 0.07)'};
-    --soft-accent:   ${({ $mode }) =>
-      $mode === 'dark' ? 'rgba(144, 159, 250, 0.07)' : 'rgba(144, 159, 250, 0.06)'};
-  }
-
+  /* ═══════════════════════════════════════════════════════════════════════
+     BASE STYLES
+     ═══════════════════════════════════════════════════════════════════════ */
   html, body, #root {
     min-height: 100%;
   }
 
-  body {
-    margin: 0;
-    color: var(--text-strong);
-    font-family: "Plus Jakarta Sans", sans-serif;
-    background: var(--content-bg);
-    transition: background 180ms ease, color 180ms ease;
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
 
-  a { color: inherit; }
+  body {
+    margin: 0;
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    background: var(--content-bg);
+    transition: background 180ms ease, color 180ms ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: contain;
+  }
 
-  .ant-layout { background: transparent; }
+  a {
+    color: inherit;
+  }
 
-  /* Tables */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  [role="button"],
+  [role="link"] {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  /* On desktop, Ant Design buttons don't need the 44px touch target */
+  @media (min-width: 768px) {
+    .ant-btn {
+      min-height: unset !important;
+      min-width: unset !important;
+    }
+  }
+
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ant-layout {
+    background: transparent;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     CARDS — Borderless with shadow
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-card {
+    border: none !important;
+    box-shadow: var(--surface-shadow);
+  }
+
+  .ant-card-bordered {
+    border: none !important;
+  }
+
+  .ant-card-head {
+    border-bottom: none !important;
+    padding-bottom: 12px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MODALS — Clean, borderless
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-modal-content {
+    border: none !important;
+    box-shadow: var(--surface-shadow);
+  }
+
+  .ant-modal-header {
+    border-bottom: none !important;
+  }
+
+  .ant-modal-footer {
+    border-top: none !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DRAWERS — Borderless
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-drawer-header {
+    border-bottom: none !important;
+  }
+
+  .ant-drawer-footer {
+    border-top: none !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DROPDOWNS — Clean elevation
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-dropdown-menu {
+    border: none !important;
+    box-shadow: var(--surface-shadow);
+  }
+
+  .ant-dropdown-menu-item {
+    border-radius: 6px !important;
+    margin: 2px 4px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     POPOVERS — Borderless
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-popover-inner {
+    border: none !important;
+    box-shadow: var(--surface-shadow);
+  }
+
+  .ant-popover-inner-content {
+    padding: 12px 16px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     TOOLTIPS
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-tooltip-inner {
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     INPUTS — Subtle border
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-input-number,
+  .ant-input-number-affix-wrapper {
+    border: 1px solid var(--border-default) !important;
+    transition: all 0.2s ease;
+  }
+
+  .ant-input:hover,
+  .ant-input-affix-wrapper:hover,
+  .ant-input-number:hover,
+  .ant-input-number-affix-wrapper:hover {
+    border-color: var(--text-secondary) !important;
+  }
+
+  .ant-input:focus,
+  .ant-input-affix-wrapper:focus-within,
+  .ant-input-number:focus-within,
+  .ant-input-number-affix-wrapper:focus-within {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary-soft) !important;
+  }
+
+  /* TextArea */
+  .ant-input-textarea {
+    border: 1px solid var(--border-default) !important;
+  }
+
+  .ant-input-textarea:hover {
+    border-color: var(--text-secondary) !important;
+  }
+
+  .ant-input-textarea-focused {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary-soft) !important;
+  }
+
+  /* Select */
+  .ant-select-selector {
+    border: 1px solid var(--border-default) !important;
+  }
+
+  .ant-select:hover .ant-select-selector {
+    border-color: var(--text-secondary) !important;
+  }
+
+  .ant-select-focused .ant-select-selector {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary-soft) !important;
+  }
+
+  /* DatePicker */
+  .ant-picker {
+    border: 1px solid var(--border-default) !important;
+  }
+
+  .ant-picker:hover {
+    border-color: var(--text-secondary) !important;
+  }
+
+  .ant-picker-focused {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary-soft) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     BUTTONS — Ant Design defaults, no overrides
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-btn {
+    box-shadow: none !important;
+    transition: all 0.2s ease;
+  }
+
+  /* Delete / danger buttons — red icon, no border */
+  .ant-btn-dangerous,
+  .ant-btn-default.ant-btn-dangerous {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .ant-btn-dangerous .anticon,
+  .ant-btn-default.ant-btn-dangerous .anticon {
+    color: var(--error) !important;
+  }
+
+  .ant-btn-dangerous:hover,
+  .ant-btn-default.ant-btn-dangerous:hover {
+    border: none !important;
+    background: var(--error-light) !important;
+  }
+
+  /* Button groups */
+  .ant-btn-group .ant-btn {
+    border-right: 1px solid var(--border-default) !important;
+  }
+
+  .ant-btn-group .ant-btn:last-child {
+    border-right: none !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DESKTOP — All buttons small size
+     ═══════════════════════════════════════════════════════════════════════ */
+  @media (min-width: 768px) {
+    .ant-btn:not(.ant-btn-lg):not(.ant-btn-icon-only.ant-btn-lg) {
+      height: 32px !important;
+      padding: 0 12px !important;
+      font-size: 13px !important;
+      line-height: 30px !important;
+    }
+
+    .ant-btn .anticon {
+      font-size: 13px !important;
+    }
+
+    .ant-btn-icon-only:not(.ant-btn-lg) {
+      width: 32px !important;
+      height: 32px !important;
+      padding: 0 !important;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     TABLES — Borderless with row separation
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-table {
+    background: transparent !important;
+  }
+
   .ant-table-wrapper {
-    border-radius: 7px;
+    border: none !important;
+    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid var(--card-border);
+  }
+
+  .ant-table-container {
+    border: none !important;
   }
 
   .ant-table-thead > tr > th {
-    color: var(--text-strong) !important;
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: none !important;
+    border-bottom: 2px solid var(--border-light) !important;
     font-weight: 600;
-    white-space: nowrap;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
-  .ant-table-tbody > tr.ant-table-row:hover > td {
+  .ant-table-tbody > tr > td {
+    border: none !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ant-table-tbody > tr:last-child > td {
+    border-bottom: none !important;
+  }
+
+  .ant-table-tbody > tr:hover > td {
+    background: var(--menu-hover-bg) !important;
+  }
+
+  .ant-table-tbody > tr.ant-table-row-selected > td {
     background: var(--soft-accent) !important;
   }
 
-  /* Mobile: tighter table padding + horizontal scroll */
+  .ant-table-pagination {
+    margin: 16px 0 !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     TYPOGRAPHY — Consistent colors
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-typography,
+  h1, h2, h3, h4, h5, h6,
+  p, span, div {
+    color: var(--text-primary);
+  }
+
+  .ant-typography-secondary {
+    color: var(--text-secondary) !important;
+    opacity: 1 !important;
+  }
+
+  .ant-typography-disabled {
+    color: var(--text-disabled) !important;
+    opacity: 0.6 !important;
+  }
+
+  /* Links */
+  a.ant-typography,
+  .ant-typography a {
+    color: var(--primary) !important;
+  }
+
+  a.ant-typography:hover,
+  .ant-typography a:hover {
+    color: var(--primary-hover) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     TAGS — Borderless with background
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-tag {
+    border: none !important;
+    background: var(--menu-hover-bg);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .ant-tag-blue {
+    background: var(--blue-50) !important;
+    color: var(--blue-700) !important;
+  }
+
+  .ant-tag-green {
+    background: var(--success-light) !important;
+    color: var(--success) !important;
+  }
+
+  .ant-tag-red {
+    background: var(--error-light) !important;
+    color: var(--error) !important;
+  }
+
+  .ant-tag-orange,
+  .ant-tag-gold {
+    background: var(--warning-light) !important;
+    color: var(--warning) !important;
+  }
+
+  .ant-tag-cyan {
+    background: var(--info-light) !important;
+    color: var(--info) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MENU / NAVIGATION — Clean selection states
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-menu {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    border-radius: 8px !important;
+    margin: 2px 0 !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .ant-menu-item-selected {
+    background: var(--soft-accent) !important;
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+  }
+
+  .ant-menu-item:hover,
+  .ant-menu-submenu-title:hover {
+    background: var(--menu-hover-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ant-menu-item-active {
+    background: var(--menu-hover-bg) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     PAGINATION — Clean, borderless
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-pagination-item {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 6px;
+  }
+
+  .ant-pagination-item a {
+    color: var(--text-secondary) !important;
+  }
+
+  .ant-pagination-item:hover {
+    background: var(--menu-hover-bg) !important;
+  }
+
+  .ant-pagination-item:hover a {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-pagination-item-active {
+    background: var(--primary) !important;
+    border: none !important;
+  }
+
+  .ant-pagination-item-active a {
+    color: var(--text-inverse) !important;
+  }
+
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    border: none !important;
+  }
+
+  .ant-pagination-prev button,
+  .ant-pagination-next button {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .ant-pagination-prev:hover button,
+  .ant-pagination-next:hover button {
+    background: var(--menu-hover-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     TABS — Clean design
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-tabs-nav {
+    margin-bottom: 16px !important;
+  }
+
+  .ant-tabs-nav::before {
+    border-bottom: 1px solid var(--border-light) !important;
+  }
+
+  .ant-tabs-tab {
+    color: var(--text-secondary) !important;
+    border: none !important;
+  }
+
+  .ant-tabs-tab:hover {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-tabs-tab-active {
+    color: var(--primary) !important;
+  }
+
+  .ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+  }
+
+  .ant-tabs-ink-bar {
+    background: var(--primary) !important;
+    height: 3px !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     COLLAPSE / ACCORDION — Borderless
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-collapse {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .ant-collapse-item {
+    border: none !important;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .ant-collapse-header {
+    background: var(--menu-hover-bg) !important;
+    border: none !important;
+    color: var(--text-primary) !important;
+    font-weight: 500;
+  }
+
+  .ant-collapse-content {
+    background: var(--card-bg) !important;
+    border: none !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     FORM — Clean labels and inputs
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-form-item-label > label {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .ant-form-item-label > label.ant-form-item-required::before {
+    color: var(--error) !important;
+  }
+
+  .ant-form-item-explain-error {
+    color: var(--error) !important;
+    font-size: 12px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MESSAGES & NOTIFICATIONS — Clean elevation
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-message-notice-content {
+    background: var(--card-bg) !important;
+    box-shadow: var(--surface-shadow);
+    border: none !important;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+
+  .ant-notification-notice {
+    background: var(--card-bg) !important;
+    box-shadow: var(--surface-shadow);
+    border: none !important;
+    border-radius: 12px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SEGMENTED CONTROL — Clean design
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-segmented {
+    background: var(--menu-hover-bg) !important;
+    border-radius: 8px;
+    padding: 2px;
+  }
+
+  .ant-segmented-item {
+    color: var(--text-secondary) !important;
+    border-radius: 6px;
+  }
+
+  .ant-segmented-item-selected {
+    background: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     BADGE — Clean design
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-badge-count {
+    background: var(--error);
+    color: var(--text-inverse);
+    box-shadow: none;
+    border: none;
+  }
+
+  .ant-badge-dot {
+    box-shadow: none;
+    border: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     AVATAR — Consistent styling
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-avatar {
+    background: var(--menu-hover-bg);
+    color: var(--text-primary);
+    border: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DIVIDER — Subtle separation
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-divider {
+    border-color: var(--border-light) !important;
+  }
+
+  .ant-divider-horizontal.ant-divider-with-text {
+    color: var(--text-secondary) !important;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     EMPTY STATE — Consistent colors
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-empty-description {
+    color: var(--text-disabled) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SPIN / LOADING — Consistent colors
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-spin-dot-item {
+    background-color: var(--primary) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SWITCH — Clean toggle
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-switch {
+    background: var(--border-default) !important;
+  }
+
+  .ant-switch-checked {
+    background: var(--primary) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     CHECKBOX & RADIO — Consistent styling
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-checkbox-wrapper,
+  .ant-radio-wrapper {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-checkbox-inner,
+  .ant-radio-inner {
+    border-color: var(--border-default) !important;
+  }
+
+  .ant-checkbox-checked .ant-checkbox-inner,
+  .ant-radio-checked .ant-radio-inner {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     SLIDER — Consistent colors
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-slider-rail {
+    background-color: var(--border-default) !important;
+  }
+
+  .ant-slider-track {
+    background-color: var(--primary) !important;
+  }
+
+  .ant-slider-handle::after {
+    background-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary-soft) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     PROGRESS — Consistent colors
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-progress-bg {
+    background-color: var(--primary) !important;
+  }
+
+  .ant-progress-text {
+    color: var(--text-primary) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MOBILE RESPONSIVE
+     ═══════════════════════════════════════════════════════════════════════ */
   @media (max-width: 767px) {
     .ant-table-wrapper {
       border-radius: 6px;
@@ -102,7 +709,6 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
       font-size: 11px !important;
     }
 
-    /* Ensure table container scrolls horizontally */
     .ant-table-content {
       overflow-x: auto !important;
       -webkit-overflow-scrolling: touch;
@@ -133,26 +739,22 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
       padding: 8px 14px !important;
     }
 
-    /* Page header actions wrap nicely */
     .ant-space-wrap {
       width: 100%;
     }
 
-    /* Descriptions responsive */
     .ant-descriptions-item-label,
     .ant-descriptions-item-content {
       padding: 6px 8px !important;
       font-size: 12px !important;
     }
 
-    /* Tags wrap */
     .ant-tag {
       margin-bottom: 2px;
       font-size: 11px !important;
       padding: 0 5px !important;
     }
 
-    /* Pagination compact */
     .ant-pagination {
       font-size: 12px !important;
     }
@@ -165,25 +767,21 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
       line-height: 26px !important;
     }
 
-    /* Form items tighter */
     .ant-form-item {
       margin-bottom: 12px !important;
     }
 
-    /* Select / picker full width in forms */
     .ant-form-item .ant-select,
     .ant-form-item .ant-picker,
     .ant-form-item .ant-input-number {
       width: 100% !important;
     }
 
-    /* Alert compact */
     .ant-alert {
       padding: 8px 10px !important;
       font-size: 12px !important;
     }
 
-    /* Typography headings smaller on mobile */
     .ant-typography h3,
     h3.ant-typography {
       font-size: 16px !important;
@@ -200,7 +798,6 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
     }
   }
 
-  /* Extra small screens */
   @media (max-width: 375px) {
     .ant-table-tbody > tr > td,
     .ant-table-thead > tr > th {
@@ -218,7 +815,9 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
     }
   }
 
-  /* Form inputs */
+  /* ═══════════════════════════════════════════════════════════════════════
+     FORM INPUTS — Consistent text colors
+     ═══════════════════════════════════════════════════════════════════════ */
   .ant-upload,
   .ant-select-selector,
   .ant-picker,
@@ -228,19 +827,28 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
   .ant-input-number-input-wrap input,
   .ant-input-outlined,
   .ant-input-number-outlined {
-    color: var(--text-strong) !important;
+    color: var(--text-primary) !important;
   }
 
   .ant-empty-description,
   .ant-form-item-explain-error {
-    color: var(--text-muted) !important;
+    color: var(--text-disabled) !important;
   }
 
-  /* Statistic / misc */
-  .ant-statistic-title { color: var(--text-muted) !important; }
-  .ant-statistic-content { color: var(--text-strong) !important; }
+  /* ═══════════════════════════════════════════════════════════════════════
+     STATISTIC
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ant-statistic-title {
+    color: var(--text-secondary) !important;
+  }
 
-  /* Menu items */
+  .ant-statistic-content {
+    color: var(--text-primary) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MENU ITEMS
+     ═══════════════════════════════════════════════════════════════════════ */
   .ant-menu-item,
   .ant-menu-submenu-title {
     border-radius: 7px !important;
@@ -248,30 +856,51 @@ export const GlobalStyles = createGlobalStyle<{ $mode: ThemeMode }>`
     width: 100% !important;
   }
 
-  /* Auth shell */
-  .auth-shell .ant-form { width: 100%; }
-  .auth-shell .ant-form-item { margin-bottom: 16px; }
+  /* ═══════════════════════════════════════════════════════════════════════
+     AUTH SHELL
+     ═══════════════════════════════════════════════════════════════════════ */
+  .auth-shell .ant-form {
+    width: 100%;
+  }
+
+  .auth-shell .ant-form-item {
+    margin-bottom: 16px;
+  }
+
   .auth-shell .ant-form-item-label > label {
-    color: var(--text-strong) !important;
+    color: var(--text-primary) !important;
     font-weight: 600;
   }
+
   .auth-shell .ant-input,
   .auth-shell .ant-input-password,
   .auth-shell .ant-input-affix-wrapper {
     min-height: 40px;
-    color: var(--text-strong) !important;
+    color: var(--text-primary) !important;
   }
+
   .auth-shell .ant-input::placeholder,
   .auth-shell .ant-input-password input::placeholder {
-    color: var(--text-muted) !important;
+    color: var(--text-disabled) !important;
   }
+
   .auth-shell .ant-input-password-icon,
-  .auth-shell .anticon { color: var(--text-muted); }
-  .auth-shell .ant-btn-primary { min-height: 40px; font-weight: 600; }
+  .auth-shell .anticon {
+    color: var(--text-disabled);
+  }
+
+  .auth-shell .ant-btn-primary {
+    min-height: 40px;
+    font-weight: 600;
+  }
+
   .auth-shell a {
-    color: var(--periwinkle-blue);
+    color: var(--primary);
     text-decoration: none;
     font-weight: 600;
   }
-  .auth-shell a:hover { opacity: 0.85; }
+
+  .auth-shell a:hover {
+    opacity: 0.85;
+  }
 `

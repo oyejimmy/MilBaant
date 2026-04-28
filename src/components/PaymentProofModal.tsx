@@ -206,7 +206,7 @@ export function PaymentProofModal({
               listType="picture"
             >
               <p className="ant-upload-drag-icon">
-                <InboxOutlined style={{ color: '#1677ff' }} />
+                <InboxOutlined style={{ color: 'var(--primary)' }} />
               </p>
               <p className="ant-upload-text">Click or drag image to upload</p>
               <p className="ant-upload-hint">

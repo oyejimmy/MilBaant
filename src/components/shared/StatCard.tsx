@@ -5,12 +5,13 @@ const Card = styled.div<{ $color?: string }>`
   padding: 16px 20px;
   background: var(--card-bg);
   border-radius: 10px;
-  border: 1.5px solid ${({ $color }) => $color || 'var(--card-border)'};
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 `
 

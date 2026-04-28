@@ -3,7 +3,7 @@ import dayjs, { type Dayjs } from 'dayjs'
 import { Button, Col, DatePicker, Flex, Form, Grid, Image, Input, InputNumber, Modal, Row, Space, Table, Tag, Typography, Upload, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { UploadFile } from 'antd/es/upload/interface'
-import { CalendarOutlined, DeleteOutlined, EyeOutlined, PictureOutlined, UploadOutlined, DollarOutlined } from '@ant-design/icons'
+import { CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, EyeOutlined, PictureOutlined, UploadOutlined, DollarOutlined, WalletOutlined } from '@ant-design/icons'
 import { PageStack, SectionBlock } from '@/components/Glass'
 import { QueryState } from '@/components/QueryState'
 import { useAuth } from '@/hooks/useAuth'
@@ -213,56 +213,44 @@ export function ContributionsPage() {
           </Flex>
 
           {/* Summary Cards */}
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
             <Col xs={24} sm={8}>
-              <div
-                style={{
-                  padding: '16px 20px',
-                  background: 'var(--content-bg)',
-                  borderRadius: 10,
-                  border: '1.5px solid #52c41a',
-                }}
-              >
-                <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block' }}>
-                  Paid
-                </Typography.Text>
-                <Typography.Title level={3} style={{ margin: '4px 0 0 0', color: '#52c41a' }}>
-                  {paidCount} / {summary.length}
-                </Typography.Title>
+              <div style={{ padding: '8px 14px', background: 'var(--content-bg)', borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
+                    Paid
+                  </Typography.Text>
+                  <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
+                    {paidCount} / {summary.length}
+                  </Typography.Text>
+                </div>
+                <CheckCircleOutlined style={{ fontSize: 22, color: 'var(--success)', flexShrink: 0 }} />
               </div>
             </Col>
             <Col xs={24} sm={8}>
-              <div
-                style={{
-                  padding: '16px 20px',
-                  background: 'var(--content-bg)',
-                  borderRadius: 10,
-                  border: '1.5px solid #ff4d4f',
-                }}
-              >
-                <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block' }}>
-                  Unpaid
-                </Typography.Text>
-                <Typography.Title level={3} style={{ margin: '4px 0 0 0', color: '#ff4d4f' }}>
-                  {unpaidCount}
-                </Typography.Title>
+              <div style={{ padding: '8px 14px', background: 'var(--content-bg)', borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
+                    Unpaid
+                  </Typography.Text>
+                  <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
+                    {unpaidCount}
+                  </Typography.Text>
+                </div>
+                <CloseCircleOutlined style={{ fontSize: 22, color: 'var(--error)', flexShrink: 0 }} />
               </div>
             </Col>
             <Col xs={24} sm={8}>
-              <div
-                style={{
-                  padding: '16px 20px',
-                  background: 'var(--content-bg)',
-                  borderRadius: 10,
-                  border: '1.5px solid #1677ff',
-                }}
-              >
-                <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block' }}>
-                  Total Collected
-                </Typography.Text>
-                <Typography.Title level={3} style={{ margin: '4px 0 0 0', color: '#1677ff' }}>
-                  {formatCurrency(totalCollected)}
-                </Typography.Title>
+              <div style={{ padding: '8px 14px', background: 'var(--content-bg)', borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
+                    Total Collected
+                  </Typography.Text>
+                  <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
+                    {formatCurrency(totalCollected)}
+                  </Typography.Text>
+                </div>
+                <WalletOutlined style={{ fontSize: 22, color: 'var(--primary)', flexShrink: 0 }} />
               </div>
             </Col>
           </Row>

@@ -27,7 +27,7 @@ export function QueryState({
           minHeight: '300px',
           gap: '16px'
         }}>
-          <LoadingOutlined style={{ fontSize: 48, color: '#909ffa' }} spin />
+          <LoadingOutlined style={{ fontSize: 48, color: 'var(--primary)' }} spin />
           <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading data...</span>
         </div>
       </SectionBlock>

@@ -259,7 +259,7 @@ export function FlatExpensesPage() {
         {/* Summary stats */}
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={8}>
-            <SummaryStat title="Total Allocated" value={formatCurrency(totalAllocated)} subtitle="Total flat fund given to members." icon={<WalletOutlined />} color="#1677ff" />
+            <SummaryStat title="Total Allocated" value={formatCurrency(totalAllocated)} subtitle="Total flat fund given to members." icon={<WalletOutlined />} color="var(--primary)" />
           </Col>
           <Col xs={24} sm={8}>
             <SummaryStat title="Total Spent" value={formatCurrency(totalSpent)} subtitle="Total spent from flat fund." icon={<DollarCircleOutlined />} color="#ff4d4f" />

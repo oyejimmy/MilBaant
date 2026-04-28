@@ -65,12 +65,18 @@ const MemberCard = styled.div`
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   transition: border-color 0.15s ease;
-  &:hover { border-color: #909ffa; }
+  &:hover { border-color: var(--primary); }
 `
 
 const AVATAR_COLORS = [
-  '#909ffa', '#52c41a', '#fa8c16', '#13c2c2',
-  '#eb2f96', '#722ed1', '#1677ff', '#f5222d',
+  '#1c8ee5',
+  '#6a6a6a',
+  '#212121',
+  '#52c41a',
+  '#fa8c16',
+  '#13c2c2',
+  '#eb2f96',
+  '#722ed1',
 ]
 
 function avatarColor(name: string) {
@@ -86,7 +92,7 @@ function initials(name: string) {
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export function AdminPage() {
-  const { isAdmin, userId } = useAuth()
+  const { isAdmin, userId, profileLoading } = useAuth()
   const [composerOpen, setComposerOpen] = useState(false)
   const [addUserOpen, setAddUserOpen] = useState(false)
   const [editUser, setEditUser] = useState<Profile | null>(null)
@@ -246,6 +252,11 @@ export function AdminPage() {
     (roomsQuery.error as Error | null) ?? (bedsQuery.error as Error | null) ??
     (assignmentsQuery.error as Error | null) ?? (announcementsQuery.error as Error | null)
 
+  // Wait for profile to load before checking admin status
+  if (profileLoading) {
+    return null
+  }
+
   if (!isAdmin) {
     return (
       <Result
@@ -291,7 +302,7 @@ export function AdminPage() {
         {/* Flat members overview */}
         <SectionBlock>
           <Flex align="center" gap={8} style={{ marginBottom: 16 }}>
-            <TeamOutlined style={{ color: '#909ffa', fontSize: 16 }} />
+            <TeamOutlined style={{ color: 'var(--primary)', fontSize: 16 }} />
             <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
               Flat Members ({profiles.length})
             </Typography.Title>
@@ -514,7 +525,7 @@ function AddUserModal({
       open
       title={
         <Flex align="center" gap={8}>
-          <UserAddOutlined style={{ color: '#909ffa' }} />
+          <UserAddOutlined style={{ color: 'var(--primary)' }} />
           <span>Add New Flatmate</span>
         </Flex>
       }

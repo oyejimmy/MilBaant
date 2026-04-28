@@ -1,8 +1,7 @@
 import { lazy, Suspense } from 'react'
-import { Flex } from 'antd'
-import { LoadingOutlined } from '@ant-design/icons'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/AppLayout'
+import { BrandLoader } from '@/components/BrandLoader'
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute'
 
 const LoginPage = lazy(() =>
@@ -62,32 +61,15 @@ const CookMenuPage = lazy(() =>
     default: module.CookMenuPage,
   })),
 )
-
-function RouteLoader() {
-  return (
-    <Flex 
-      align="center" 
-      justify="center" 
-      style={{ 
-        minHeight: '100vh', 
-        width: '100%',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'var(--content-bg)',
-        zIndex: 9999
-      }}
-    >
-      <LoadingOutlined style={{ fontSize: 48, color: '#909ffa' }} spin />
-    </Flex>
-  )
-}
+const FlatExpensesPage = lazy(() =>
+  import('@/pages/FlatExpensesPage').then((module) => ({
+    default: module.FlatExpensesPage,
+  })),
+)
 
 function App() {
   return (
-    <Suspense fallback={<RouteLoader />}>
+    <Suspense fallback={<BrandLoader />}>
       <Routes>
         <Route
           path="/login"
@@ -120,6 +102,7 @@ function App() {
           <Route path="rides" element={<RidesPage />} />
           <Route path="cook" element={<CookPage />} />
           <Route path="daily-menu" element={<CookMenuPage />} />
+          <Route path="flat-expenses" element={<FlatExpensesPage />} />
           <Route path="flat-view" element={<FlatViewPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="admin" element={<AdminPage />} />

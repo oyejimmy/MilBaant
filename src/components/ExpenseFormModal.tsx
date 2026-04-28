@@ -20,11 +20,10 @@ import { isWeekendDate } from '@/lib/formatters'
 import type { Expense, ExpenseFormValues, Profile } from '@/lib/types'
 
 const UploadArea = styled.div<{ $active: boolean }>`
-  border: 1px dashed var(--surface-border);
+  border: 1px dashed var(--border-default);
   border-radius: 18px;
   padding: 18px;
-  background: ${(props) =>
-    props.$active ? 'rgba(144, 159, 250, 0.16)' : 'rgba(202, 204, 213, 0.12)'};
+  background: ${(props) => (props.$active ? 'var(--primary-soft)' : 'var(--bg-elevated)')};
   transition: 180ms ease;
   cursor: pointer;
 `
