@@ -18,7 +18,7 @@
 import { Suspense, useMemo, useState, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
-import { Alert, Button, Skeleton, Space, Typography } from 'antd'
+import { Alert, Button, Skeleton, Typography } from 'antd'
 import { CompressOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import styled from 'styled-components'
 import { message } from 'antd'

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
   Avatar,
-  Badge,
   Breadcrumb,
   Button,
   Drawer,
@@ -36,7 +35,7 @@ import {
   WalletOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
 import { APP_NAME } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/context/ThemeModeContext'
@@ -71,7 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Activities',
+    label: '',
     items: [
       { key: '/weekend-expenses', label: 'Weekend Meals',  icon: <CoffeeOutlined /> },
       { key: '/rides',            label: 'Rides',          icon: <CarOutlined /> },
@@ -168,29 +167,6 @@ const NavWrap = styled.div`
   &::-webkit-scrollbar { width: 3px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: var(--sidebar-border); border-radius: 3px; }
-`
-
-// Group label shown in expanded mode
-const GroupLabel = styled.div<{ $collapsed: boolean }>`
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding: ${({ $collapsed }) => ($collapsed ? '10px 0 4px' : '10px 16px 4px')};
-  text-align: ${({ $collapsed }) => ($collapsed ? 'center' : 'left')};
-  opacity: ${({ $collapsed }) => ($collapsed ? 0 : 1)};
-  max-height: ${({ $collapsed }) => ($collapsed ? '0' : '28px')};
-  overflow: hidden;
-  transition: opacity 0.18s ease, max-height 0.18s ease, padding 0.18s ease;
-  white-space: nowrap;
-`
-
-const GroupDivider = styled.div`
-  height: 1px;
-  background: var(--sidebar-border);
-  margin: 4px 10px;
-  opacity: 0.6;
 `
 
 const StyledMenu = styled(Menu)`
@@ -442,7 +418,7 @@ function getActivePath(pathname: string) {
   return pathname === '/' ? '/' : `/${pathname.split('/')[1]}`
 }
 
-function getBreadcrumbs(activePath: string, isAdmin: boolean) {
+function getBreadcrumbs(activePath: string) {
   const all = NAV_GROUPS.flatMap((g) => g.items)
   const item = all.find((i) => i.key === activePath)
   if (!item) return [{ title: 'Dashboard' }]
@@ -462,7 +438,7 @@ export function AppLayout() {
 
   const siderWidth = collapsed ? COLLAPSED : EXPANDED
   const activePath = getActivePath(location.pathname)
-  const breadcrumbs = getBreadcrumbs(activePath, isAdmin)
+  const breadcrumbs = getBreadcrumbs(activePath)
 
   // Build Ant Design menu items with group dividers
   const menuItems = useMemo<MenuProps['items']>(() => {

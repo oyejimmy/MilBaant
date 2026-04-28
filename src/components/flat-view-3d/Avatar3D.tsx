@@ -10,7 +10,7 @@
  * and snaps back to bed height when released.
  */
 import { useRef, useState, useCallback } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { AVATAR_PALETTE } from './sceneConfig'
@@ -43,35 +43,31 @@ export function Avatar3D({
   // Current world position (mutable, updated every frame during drag)
   const posRef = useRef(new THREE.Vector3(...bedPosition).setY(0.3))
 
-  const { camera, gl, controls } = useThree()
+  const { gl, controls } = useThree()
   const palette   = AVATAR_PALETTE[colorIndex % AVATAR_PALETTE.length]
   const firstName = name.split(' ')[0]
 
   // ── Drag handlers ──────────────────────────────────────────────────────
-  const onPointerDown = useCallback((e: THREE.Event) => {
-    const pe = e as unknown as PointerEvent & THREE.Event
+  const onPointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
-    ;(gl.domElement as HTMLCanvasElement).setPointerCapture(pe.pointerId)
-    // Disable orbit controls while dragging
+    ;(gl.domElement as HTMLCanvasElement).setPointerCapture(e.pointerId)
     if (controls) (controls as unknown as { enabled: boolean }).enabled = false
     setDragging(true)
     document.body.style.cursor = 'grabbing'
   }, [gl, controls])
 
-  const onPointerUp = useCallback((e: THREE.Event) => {
-    const pe = e as unknown as PointerEvent & THREE.Event
-    ;(gl.domElement as HTMLCanvasElement).releasePointerCapture(pe.pointerId)
+  const onPointerUp = useCallback((e: ThreeEvent<PointerEvent>) => {
+    ;(gl.domElement as HTMLCanvasElement).releasePointerCapture(e.pointerId)
     if (controls) (controls as unknown as { enabled: boolean }).enabled = true
     setDragging(false)
     document.body.style.cursor = hovered ? 'grab' : 'default'
   }, [gl, controls, hovered])
 
-  const onPointerMove = useCallback((e: THREE.Event) => {
+  const onPointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!dragging) return
     e.stopPropagation()
-    const me = e as unknown as { ray: THREE.Ray }
     const target = new THREE.Vector3()
-    me.ray.intersectPlane(FLOOR_PLANE, target)
+    e.ray.intersectPlane(FLOOR_PLANE, target)
     if (target) {
       posRef.current.set(target.x, 0.3, target.z)
     }
