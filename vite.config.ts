@@ -14,7 +14,7 @@ export default defineConfig({
         name: 'MilBaant – Flatmate Expense Manager',
         short_name: 'MilBaant',
         description: 'Track flatmate expenses, rides, cook ledger, and contributions.',
-        theme_color: '#1c8ee5',
+        theme_color: '#4096ff',
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'portrait',
