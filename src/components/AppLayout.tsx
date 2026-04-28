@@ -21,7 +21,9 @@ import {
   DollarCircleOutlined,
   FundOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
   MenuOutlined,
+  MenuUnfoldOutlined,
   MoonOutlined,
   NotificationOutlined,
   ScheduleOutlined,
@@ -96,7 +98,7 @@ const Shell = styled(Layout)`
   background: var(--content-bg) !important;
 `
 
-const AppSider = styled(Sider)`
+const AppSider = styled(Sider)<{ $collapsed: boolean }>`
   position: fixed !important;
   top: 0;
   left: 0;
@@ -105,6 +107,7 @@ const AppSider = styled(Sider)`
   background: var(--sidebar-bg) !important;
   border-right: 1px solid var(--sidebar-border) !important;
   overflow: hidden;
+  transition: width 0.2s ease !important;
 
   .ant-layout-sider-children {
     display: flex;
@@ -114,7 +117,7 @@ const AppSider = styled(Sider)`
   }
 `
 
-const SiderTop = styled.div`
+const SiderTop = styled.div<{ $collapsed: boolean }>`
   display: flex;
   align-items: center;
   gap: 10px;
@@ -123,6 +126,7 @@ const SiderTop = styled.div`
   min-height: 56px;
   border-bottom: 1px solid var(--sidebar-border);
   flex-shrink: 0;
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
 `
 
 const LogoMark = styled.div`
@@ -140,12 +144,16 @@ const LogoMark = styled.div`
   flex-shrink: 0;
 `
 
-const BrandText = styled(Typography.Text)`
+const BrandText = styled(Typography.Text)<{ $visible: boolean }>`
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-size: 0.95rem !important;
   font-weight: 700 !important;
   color: var(--text-strong) !important;
   white-space: nowrap;
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  max-width: ${({ $visible }) => ($visible ? '160px' : '0')};
+  transition: opacity 0.2s ease, max-width 0.2s ease;
+  overflow: hidden;
 `
 
 const NavWrap = styled.div`
@@ -185,36 +193,59 @@ const StyledMenu = styled(Menu)`
   }
 `
 
-const SiderBottom = styled.div`
+const SiderBottom = styled.div<{ $collapsed: boolean }>`
   border-top: 1px solid var(--sidebar-border);
-  padding: 10px;
+  padding: ${({ $collapsed }) => ($collapsed ? '10px 6px' : '10px')};
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
 `
 
-const ProfileRow = styled.div`
+const ProfileRow = styled.div<{ $collapsed: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: ${({ $collapsed }) => ($collapsed ? '6px 0' : '6px 8px')};
   border-radius: 7px;
   cursor: pointer;
   transition: background 0.15s ease;
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
   &:hover { background: var(--menu-hover-bg); }
 `
 
-const ProfileMeta = styled.div`
+const ProfileMeta = styled.div<{ $visible: boolean }>`
   overflow: hidden;
   white-space: nowrap;
   flex: 1;
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  max-width: ${({ $visible }) => ($visible ? '160px' : '0')};
+  transition: opacity 0.2s ease, max-width 0.2s ease;
+`
+
+const CollapseBtn = styled(Button)<{ $collapsed: boolean }>`
+  width: 100% !important;
+  border-radius: 7px !important;
+  border-color: var(--sidebar-border) !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')} !important;
+  gap: 6px;
+
+  &:hover {
+    background: var(--menu-hover-bg) !important;
+    color: var(--text-strong) !important;
+    border-color: var(--sidebar-border) !important;
+  }
 `
 
 const MainLayout = styled(Layout)<{ $ml: number }>`
   background: transparent !important;
   margin-left: ${({ $ml }) => $ml}px;
   min-height: 100vh;
+  transition: margin-left 0.2s ease;
 `
 
 const TopHeader = styled(Header)`
@@ -404,10 +435,12 @@ export function AppLayout() {
   const isDesktop  = Boolean(screens.lg)
   const navigate   = useNavigate()
   const location   = useLocation()
+  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen]   = useState(false)
   const { isAdmin, profile, canManageExpenses, signOut } = useAuth()
   const { mode, toggleMode } = useThemeMode()
 
+  const siderWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
   const activePath = getActivePath(location.pathname)
   const breadcrumbs = getBreadcrumbs(activePath)
 
@@ -418,17 +451,18 @@ export function AppLayout() {
       const visibleItems = group.items.filter((i) => !i.adminOnly || isAdmin)
       if (visibleItems.length === 0) return
 
-      // Add nav items with labels
+      // Add nav items with labels (hidden when collapsed)
       visibleItems.forEach((item) => {
         items.push({
           key: item.key,
           icon: item.icon,
-          label: item.label,
+          label: collapsed ? null : item.label,
+          title: item.label, // Tooltip for collapsed state
         })
       })
     })
     return items
-  }, [isAdmin])
+  }, [isAdmin, collapsed])
 
   // Flat list for mobile bottom nav (first 5 most important)
   const mobileItems = useMemo(() => {
@@ -497,27 +531,28 @@ export function AppLayout() {
       {/* ── Desktop sidebar ── */}
       {isDesktop && (
         <AppSider
-          width={SIDEBAR_WIDTH}
-          collapsedWidth={SIDEBAR_WIDTH}
-          collapsed={false}
+          $collapsed={collapsed}
+          width={SIDEBAR_WIDTH_EXPANDED}
+          collapsedWidth={SIDEBAR_WIDTH_COLLAPSED}
+          collapsed={collapsed}
           trigger={null}
         >
-          <SiderTop>
+          <SiderTop $collapsed={collapsed}>
             <LogoMark>M</LogoMark>
-            <BrandText>{APP_NAME}</BrandText>
+            <BrandText $visible={!collapsed}>{APP_NAME}</BrandText>
           </SiderTop>
 
           <NavWrap>{desktopMenu}</NavWrap>
 
-          <SiderBottom>
+          <SiderBottom $collapsed={collapsed}>
             <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
-              <ProfileRow>
+              <ProfileRow $collapsed={collapsed}>
                 <Avatar
                   size={28}
                   style={{ background: '#909ffa', color: '#fff', flexShrink: 0 }}
                   icon={<UserOutlined />}
                 />
-                <ProfileMeta>
+                <ProfileMeta $visible={!collapsed}>
                   <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
                     {profile?.full_name ?? 'Flatmate'}
                   </Typography.Text>
@@ -527,6 +562,14 @@ export function AppLayout() {
                 </ProfileMeta>
               </ProfileRow>
             </Dropdown>
+
+            <CollapseBtn
+              $collapsed={collapsed}
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed((c) => !c)}
+            >
+              {!collapsed && <span style={{ fontSize: '0.78rem' }}>Collapse</span>}
+            </CollapseBtn>
           </SiderBottom>
         </AppSider>
       )}
@@ -575,7 +618,7 @@ export function AppLayout() {
       )}
 
       {/* ── Main area ── */}
-      <MainLayout $ml={isDesktop ? SIDEBAR_WIDTH : 0}>
+      <MainLayout $ml={isDesktop ? siderWidth : 0}>
         <TopHeader>
           <NavLeft>
             {!isDesktop && (
