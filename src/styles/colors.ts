@@ -16,8 +16,8 @@ export const lightColors = {
   blue200: '#97cbf3',
   blue300: '#67b3ee',
   blue400: '#49a5ea',
-  blue500: '#1c8ee5',
-  blue600: '#1981d0',
+  blue500: '#4096ff',
+  blue600: '#1677ff',
   blue700: '#1465a3',
   blue800: '#0f4e7e',
   blue900: '#0c3c60',
@@ -76,8 +76,8 @@ export const lightColors = {
   shadowLg: '0 10px 15px rgba(0,0,0,0.1)',
 
   // Derived aliases used by Ant Design theme
-  primary:        '#1c8ee5',   // blue500
-  primaryHover:   '#1981d0',   // blue600
+  primary:        '#4096ff',   // blue500
+  primaryHover:   '#1677ff',   // blue600
   primarySoft:    '#e8f4fc',   // blue50
   secondary:      '#6a6a6a',   // textSecondary
   secondaryHover: '#212121',   // textPrimary
@@ -178,7 +178,7 @@ export function getColors(mode: 'light' | 'dark'): ColorPalette {
  * @deprecated Use CSS variables (var(--primary), etc.) or getColors() instead.
  */
 export const colors = {
-  midnightBlue:  '#1c8ee5',
+  midnightBlue:  '#4096ff',
   dustyBlue:     '#6a6a6a',
   ivory:         '#f8fafc',
   deepNavy:      '#212121',

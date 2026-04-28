@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Alert, Button, Form, Input, Typography, message } from 'antd'
+import { Alert, Button, Form, Input, message } from 'antd'
+import { LockOutlined, MailOutlined } from '@ant-design/icons'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthShell } from '@/components/AuthShell'
+import { AuthShell, FormBody, FormFooter } from '@/components/AuthShell'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 interface LoginValues {
@@ -15,27 +16,18 @@ export function LoginPage() {
 
   async function handleLogin(values: LoginValues) {
     if (!isSupabaseConfigured) {
-      message.error(
-        'Supabase is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to .env and restart the app.',
-      )
+      message.error('Supabase is not configured. Add environment variables and restart.')
       return
     }
 
     setSubmitting(true)
-
     try {
       const { error } = await supabase.auth.signInWithPassword(values)
-
-      if (error) {
-        throw new Error(error.message)
-      }
-
-      message.success('Welcome back.')
+      if (error) throw new Error(error.message)
+      message.success('Welcome back!')
       navigate('/', { replace: true })
     } catch (error) {
-      message.error(
-        error instanceof Error ? error.message : 'Unable to sign in right now.',
-      )
+      message.error(error instanceof Error ? error.message : 'Unable to sign in.')
     } finally {
       setSubmitting(false)
     }
@@ -43,52 +35,72 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="Sign In"
-      subtitle="Log in with your email and password to manage shared flat expenses."
+      title="Welcome back"
+      subtitle="Sign in to manage your flat expenses and shared bills."
     >
-      {!isSupabaseConfigured ? (
+      {!isSupabaseConfigured && (
         <Alert
           type="warning"
           showIcon
-          message="Supabase environment variables are missing."
-          description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY before signing in."
+          message="Supabase not configured"
+          description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file."
+          style={{ marginBottom: 20, borderRadius: 10 }}
         />
-      ) : null}
+      )}
 
-      <Form layout="vertical" onFinish={(values) => void handleLogin(values)}>
-        <Form.Item
-          label="Email"
-          name="email"
-          rules={[
-            { required: true, message: 'Please enter your email.' },
-            { type: 'email', message: 'Please enter a valid email.' },
-          ]}
-        >
-          <Input placeholder="you@example.com" />
-        </Form.Item>
+      <Form
+        layout="vertical"
+        onFinish={(values) => void handleLogin(values)}
+        requiredMark={false}
+      >
+        <FormBody>
+          <Form.Item
+            label="Email address"
+            name="email"
+            rules={[
+              { required: true, message: 'Email is required.' },
+              { type: 'email', message: 'Enter a valid email.' },
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined style={{ color: 'var(--text-muted)' }} />}
+              placeholder="yasir@milbaant.com"
+              size="large"
+              autoComplete="email"
+            />
+          </Form.Item>
 
-        <Form.Item
-          label="Password"
-          name="password"
-          rules={[{ required: true, message: 'Please enter your password.' }]}
-        >
-          <Input.Password placeholder="Your password" />
-        </Form.Item>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[{ required: true, message: 'Password is required.' }]}
+            style={{ marginBottom: 24 }}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: 'var(--text-muted)' }} />}
+              placeholder="Enter your password"
+              size="large"
+              autoComplete="current-password"
+            />
+          </Form.Item>
 
-        <Button
-          htmlType="submit"
-          type="primary"
-          block
-          loading={submitting}
-          disabled={!isSupabaseConfigured}
-        >
-          Sign In
-        </Button>
+          <Button
+            htmlType="submit"
+            type="primary"
+            block
+            size="large"
+            loading={submitting}
+            disabled={!isSupabaseConfigured}
+            style={{ fontWeight: 600, height: 48 }}
+          >
+            Sign In
+          </Button>
+        </FormBody>
       </Form>
 
-      <Typography.Text style={{ color: 'var(--text-base)' }}>
-        Need an account? <Link to="/register">Create one</Link>
-      </Typography.Text>
+      <FormFooter>
+        Don't have an account? <Link to="/register">Create one</Link>
+      </FormFooter>
     </AuthShell>
   )
 }

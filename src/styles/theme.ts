@@ -13,8 +13,8 @@ export function createAntTheme(mode: ThemeMode): ThemeConfig {
   return {
     token: {
       // ─── Primary ─────────────────────────────────────────────────────
-      colorPrimary:       c.primary,       // #1c8ee5 light / #49a5ea dark
-      colorPrimaryHover:  c.primaryHover,  // #1981d0 / #67b3ee
+      colorPrimary:       c.primary,       // #4096ff light / #49a5ea dark
+      colorPrimaryHover:  c.primaryHover,  // #1677ff / #67b3ee
       colorPrimaryActive: c.primaryHover,
       colorInfo:          c.info,          // #039be5 / #29b6f6
       colorLink:          c.primary,
@@ -193,6 +193,8 @@ export function createAntTheme(mode: ThemeMode): ThemeConfig {
         primaryShadow: 'none',
         defaultShadow: 'none',
         dangerShadow:  'none',
+        // Force white text & icons on all filled (primary) buttons
+        colorTextLightSolid: '#ffffff',
         // Sizing
         controlHeight:   40,
         controlHeightLG: 48,

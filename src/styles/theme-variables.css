@@ -18,8 +18,8 @@
   --blue-200: #97cbf3;
   --blue-300: #67b3ee;
   --blue-400: #49a5ea;
-  --blue-500: #1c8ee5;
-  --blue-600: #1981d0;
+  --blue-500: #4096ff;
+  --blue-600: #1677ff;
   --blue-700: #1465a3;
   --blue-800: #0f4e7e;
   --blue-900: #0c3c60;
@@ -82,8 +82,8 @@
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.12);
 
   /* ── Primary aliases (point to blue-500) ────────────────────────────── */
-  --primary:       #1c8ee5;
-  --primary-hover: #1981d0;
+  --primary:       #4096ff;
+  --primary-hover: #1677ff;
   --primary-soft:  #e8f4fc;
 
   /* ── Surface / component aliases ────────────────────────────────────── */

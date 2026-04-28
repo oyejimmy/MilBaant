@@ -44,3 +44,22 @@ body {
     touch-action: manipulation;
   }
 }
+
+/* ── Primary buttons: always white text & icons ─────────────────────────── */
+.ant-btn-primary,
+.ant-btn-primary:hover,
+.ant-btn-primary:focus,
+.ant-btn-primary:active {
+  color: #ffffff !important;
+}
+
+.ant-btn-primary .anticon,
+.ant-btn-primary .ant-btn-icon,
+.ant-btn-primary span {
+  color: #ffffff !important;
+}
+
+/* ── Auth page: remove Ant Design form label colon ──────────────────────── */
+.auth-shell .ant-form-item-label > label::after {
+  display: none;
+}
