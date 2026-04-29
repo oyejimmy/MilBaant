@@ -30,6 +30,8 @@ import {
   PlusCircleOutlined,
   UserOutlined,
   WalletOutlined,
+  CalendarOutlined,
+  DollarOutlined,
 } from '@ant-design/icons'
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
@@ -74,6 +76,53 @@ const MemberBalanceCard = styled.div<{ $status: 'surplus' | 'deficit' | 'zero' }
   background: var(--card-bg);
   border-left: 4px solid ${({ $status }) =>
     $status === 'surplus' ? '#52c41a' : $status === 'deficit' ? '#ff4d4f' : '#909ffa'};
+`
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 0;
+`
+
+const HeaderIcon = styled.div<{ $gradient: string; $shadow: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: ${({ $gradient }) => $gradient};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: ${({ $shadow }) => $shadow};
+  .anticon {
+    color: white;
+    font-size: 18px;
+  }
+`
+
+const FormBody = styled.div`
+  padding: 16px 24px 0;
+`
+
+const TwoCol = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`
+
+const SectionLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  .anticon {
+    color: var(--primary);
+    font-size: 13px;
+  }
 `
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -469,36 +518,99 @@ function AllocateModal({
   return (
     <Modal
       open
-      title={<Flex align="center" gap={8}><PlusCircleOutlined style={{ color: '#52c41a' }} /><span>Allocate Flat Fund</span></Flex>}
-      okText="Allocate"
+      title={null}
+      okText="Allocate Funds"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width="min(440px, 95vw)"
+      width="min(460px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form form={form} layout="vertical" initialValues={{ date: dayjs() }} style={{ paddingTop: 8 }}>
-        <Form.Item label="Member" name="userId" rules={[{ required: true, message: 'Select a member.' }]}>
-          <Select
-            placeholder="Select member"
-            options={profiles.map((p) => ({ label: p.full_name, value: p.id }))}
-          />
-        </Form.Item>
-        <Row gutter={12}>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Amount (PKR)" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
-              <InputNumber min={1} precision={2} style={{ width: '100%' }} placeholder="e.g. 5000" />
+      {/* Header */}
+      <ModalHeader>
+        <HeaderIcon
+          $gradient="linear-gradient(135deg, #1465a3 0%, #52c41a 100%)"
+          $shadow="0 4px 12px rgba(20,101,163,0.35)"
+        >
+          <PlusCircleOutlined />
+        </HeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Allocate Flat Fund
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Assign flat fund money to a member
+          </Typography.Text>
+        </div>
+      </ModalHeader>
+
+      <FormBody>
+        <Form form={form} layout="vertical" requiredMark={false} initialValues={{ date: dayjs() }}>
+          {/* Section label */}
+          <SectionLabel>
+            <PlusCircleOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Allocation Details
+            </Typography.Text>
+          </SectionLabel>
+
+          <Form.Item
+            label="Member"
+            name="userId"
+            rules={[{ required: true, message: 'Select a member.' }]}
+            style={{ marginBottom: 12 }}
+          >
+            <Select
+              placeholder="Who is receiving the funds?"
+              suffixIcon={<UserOutlined />}
+              options={profiles.map((p) => ({ label: p.full_name, value: p.id }))}
+            />
+          </Form.Item>
+
+          <TwoCol>
+            <Form.Item
+              label="Amount (PKR)"
+              name="amount"
+              rules={[{ required: true, message: 'Enter amount.' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <InputNumber
+                min={1}
+                precision={2}
+                style={{ width: '100%' }}
+                placeholder="e.g. 5000"
+                prefix={<DollarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
             </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Date" name="date" rules={[{ required: true }]}>
-              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            <Form.Item
+              label="Date"
+              name="date"
+              rules={[{ required: true }]}
+              style={{ marginBottom: 12 }}
+            >
+              <DatePicker
+                style={{ width: '100%' }}
+                format="DD/MM/YYYY"
+                suffixIcon={<CalendarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
             </Form.Item>
-          </Col>
-        </Row>
-        <Form.Item label="Note (optional)" name="note">
-          <Input.TextArea rows={2} placeholder="e.g. For water bottles this month" />
-        </Form.Item>
-      </Form>
+          </TwoCol>
+
+          <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 16 }}>
+            <Input.TextArea
+              rows={2}
+              placeholder="e.g. For water bottles this month"
+              style={{ resize: 'none' }}
+            />
+          </Form.Item>
+        </Form>
+      </FormBody>
     </Modal>
   )
 }
@@ -536,39 +648,113 @@ function LogExpenseModal({
   return (
     <Modal
       open
-      title={<Flex align="center" gap={8}><MinusCircleOutlined style={{ color: '#ff4d4f' }} /><span>Log Flat Expense</span></Flex>}
+      title={null}
       okText="Log Expense"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width="min(440px, 95vw)"
+      width="min(480px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form form={form} layout="vertical" initialValues={{ date: dayjs(), userId, category: 'other' }} style={{ paddingTop: 8 }}>
-        <Form.Item label="Spent By (Member)" name="userId" rules={[{ required: true, message: 'Select a member.' }]}>
-          <Select
-            placeholder="Select member"
-            options={profiles.map((p) => ({ label: p.full_name, value: p.id }))}
-          />
-        </Form.Item>
-        <Form.Item label="Description" name="description" rules={[{ required: true, message: 'Enter description.' }]}>
-          <Input placeholder="e.g. Bought 2 water bottles from shop" />
-        </Form.Item>
-        <Row gutter={12}>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Category" name="category" rules={[{ required: true }]}>
+      {/* Header */}
+      <ModalHeader>
+        <HeaderIcon
+          $gradient="linear-gradient(135deg, #e65100 0%, #ff7043 100%)"
+          $shadow="0 4px 12px rgba(230,81,0,0.35)"
+        >
+          <MinusCircleOutlined />
+        </HeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Log Flat Expense
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Record what a member spent from flat fund
+          </Typography.Text>
+        </div>
+      </ModalHeader>
+
+      <FormBody>
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          initialValues={{ date: dayjs(), userId, category: 'other' }}
+        >
+          {/* Section label */}
+          <SectionLabel>
+            <MinusCircleOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Expense Details
+            </Typography.Text>
+          </SectionLabel>
+
+          <Form.Item
+            label="Spent By"
+            name="userId"
+            rules={[{ required: true, message: 'Select a member.' }]}
+            style={{ marginBottom: 12 }}
+          >
+            <Select
+              placeholder="Who spent the money?"
+              options={profiles.map((p) => ({ label: p.full_name, value: p.id }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Description"
+            name="description"
+            rules={[{ required: true, message: 'Enter description.' }]}
+            style={{ marginBottom: 12 }}
+          >
+            <Input placeholder="e.g. Bought 2 water bottles" />
+          </Form.Item>
+
+          <TwoCol>
+            <Form.Item
+              label="Category"
+              name="category"
+              rules={[{ required: true }]}
+              style={{ marginBottom: 12 }}
+            >
               <Select options={FLAT_FUND_CATEGORY_OPTIONS.map((o) => ({ label: o.label, value: o.value }))} />
             </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Amount (PKR)" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
-              <InputNumber min={1} precision={2} style={{ width: '100%' }} placeholder="e.g. 120" />
+            <Form.Item
+              label="Amount (PKR)"
+              name="amount"
+              rules={[{ required: true, message: 'Enter amount.' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <InputNumber
+                min={1}
+                precision={2}
+                style={{ width: '100%' }}
+                placeholder="e.g. 120"
+                prefix={<DollarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
             </Form.Item>
-          </Col>
-        </Row>
-        <Form.Item label="Date" name="date" rules={[{ required: true }]}>
-          <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
-        </Form.Item>
-      </Form>
+          </TwoCol>
+
+          <Form.Item
+            label="Date"
+            name="date"
+            rules={[{ required: true }]}
+            style={{ marginBottom: 16 }}
+          >
+            <DatePicker
+              style={{ width: '100%' }}
+              format="DD/MM/YYYY"
+              suffixIcon={<CalendarOutlined style={{ color: 'var(--text-muted)' }} />}
+            />
+          </Form.Item>
+        </Form>
+      </FormBody>
     </Modal>
   )
 }

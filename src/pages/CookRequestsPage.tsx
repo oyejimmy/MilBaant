@@ -501,6 +501,45 @@ export function CookRequestsPage() {
 
 /* ─── Add Request Modal ───────────────────────────────────────────────────── */
 
+// ── Shared modal styled components ────────────────────────────────────────
+const ReqModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 0;
+`
+
+const ReqHeaderIcon = styled.div<{ $gradient: string; $shadow: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: ${({ $gradient }) => $gradient};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: ${({ $shadow }) => $shadow};
+  .anticon { color: white; font-size: 18px; }
+`
+
+const ReqFormBody = styled.div`
+  padding: 16px 24px 0;
+`
+
+const ReqSectionLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  .anticon { color: var(--primary); font-size: 13px; }
+`
+
+const ReqDivider = styled.div`
+  height: 1px;
+  background: var(--border-light);
+  margin: 14px 0;
+`
+
 interface AddFormValues { item: string; quantity?: string; note?: string }
 
 function AddRequestModal({ submitting, onClose, onSubmit }: {
@@ -517,24 +556,82 @@ function AddRequestModal({ submitting, onClose, onSubmit }: {
   return (
     <Modal
       open
-      title={<Flex align="center" gap={8}><InboxOutlined style={{ color: 'var(--primary)' }} /><span>Request Item from Cook</span></Flex>}
+      title={null}
       okText="Submit Request"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
       width="min(460px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form form={form} layout="vertical" style={{ paddingTop: 8 }}>
-        <Form.Item label="Item Name" name="item" rules={[{ required: true, message: 'Please enter the item name.' }]}>
-          <Input placeholder="e.g. Chicken, Tomatoes, Bread, Eggs" prefix={<InboxOutlined style={{ color: 'var(--text-muted)' }} />} autoFocus />
-        </Form.Item>
-        <Form.Item label="Quantity (optional)" name="quantity">
-          <Input placeholder="e.g. 2 kg, 1 dozen, 500g" />
-        </Form.Item>
-        <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 0 }}>
-          <Input.TextArea rows={2} placeholder="Any special instructions…" maxLength={200} showCount />
-        </Form.Item>
-      </Form>
+      {/* Header */}
+      <ReqModalHeader>
+        <ReqHeaderIcon
+          $gradient="linear-gradient(135deg, #e65100 0%, #ff7043 100%)"
+          $shadow="0 4px 12px rgba(230,81,0,0.35)"
+        >
+          <InboxOutlined />
+        </ReqHeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Request Item from Cook
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Ask the cook to buy or prepare something
+          </Typography.Text>
+        </div>
+      </ReqModalHeader>
+
+      <ReqFormBody>
+        <Form form={form} layout="vertical" requiredMark={false}>
+          <ReqSectionLabel>
+            <InboxOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Item Details
+            </Typography.Text>
+          </ReqSectionLabel>
+
+          <Form.Item
+            label="Item Name"
+            name="item"
+            rules={[{ required: true, message: 'Please enter the item name.' }]}
+            style={{ marginBottom: 12 }}
+          >
+            <Input
+              placeholder="e.g. Chicken, Tomatoes, Bread, Eggs"
+              prefix={<InboxOutlined style={{ color: 'var(--text-muted)' }} />}
+              autoFocus
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item label="Quantity (optional)" name="quantity" style={{ marginBottom: 12 }}>
+            <Input placeholder="e.g. 2 kg, 1 dozen, 500g" size="large" />
+          </Form.Item>
+
+          <ReqDivider />
+
+          <Form.Item
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <MessageOutlined style={{ color: 'var(--primary)', fontSize: 12 }} />
+                Note
+                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</Typography.Text>
+              </span>
+            }
+            name="note"
+            style={{ marginBottom: 16 }}
+          >
+            <Input.TextArea rows={2} placeholder="Any special instructions or context…" maxLength={200} showCount style={{ resize: 'none' }} />
+          </Form.Item>
+        </Form>
+      </ReqFormBody>
     </Modal>
   )
 }

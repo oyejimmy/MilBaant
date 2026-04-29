@@ -6,7 +6,6 @@ import {
   Avatar,
   Button,
   Checkbox,
-  Col,
   DatePicker,
   Flex,
   Form,
@@ -15,7 +14,6 @@ import {
   InputNumber,
   Modal,
   Popconfirm,
-  Row,
   Select,
   Space,
   Table,
@@ -26,9 +24,11 @@ import {
 import {
   ArrowRightOutlined,
   AuditOutlined,
+  CalendarOutlined,
   CarOutlined,
   CheckCircleOutlined,
   DeleteOutlined,
+  DollarOutlined,
   EyeOutlined,
   PlusOutlined,
   TeamOutlined,
@@ -560,6 +560,73 @@ interface RideFormValues {
   riderIds: string[]
 }
 
+// ── Shared modal styled components ────────────────────────────────────────
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 0;
+`
+
+const HeaderIcon = styled.div<{ $gradient: string; $shadow: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: ${({ $gradient }) => $gradient};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: ${({ $shadow }) => $shadow};
+  .anticon { color: white; font-size: 18px; }
+`
+
+const FormBody = styled.div`
+  padding: 16px 24px 0;
+`
+
+const TwoCol = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+`
+
+const ModalDivider = styled.div`
+  height: 1px;
+  background: var(--border-light);
+  margin: 14px 0;
+`
+
+const ModalSectionLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  .anticon { color: var(--primary); font-size: 13px; }
+`
+
+// Rider chip for the participant selector
+const RiderChipLabel = styled.label<{ $checked: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1.5px solid ${({ $checked }) => ($checked ? 'var(--primary)' : 'var(--border-light)')};
+  background: ${({ $checked }) => ($checked ? 'var(--primary-soft)' : 'var(--bg-elevated)')};
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  &:hover { border-color: var(--primary); background: var(--primary-soft); }
+`
+
+const RiderGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+`
+
 function AddRideModal({
   profiles,
   userId,
@@ -574,8 +641,14 @@ function AddRideModal({
   onSubmit: (input: CreateRideInput) => Promise<void>
 }) {
   const [form] = Form.useForm<RideFormValues>()
+  const riderIds: string[] = Form.useWatch('riderIds', form) ?? []
 
   const profileOptions = profiles.map((p) => ({ label: p.full_name, value: p.id }))
+
+  function toggleRider(id: string, checked: boolean) {
+    const current: string[] = form.getFieldValue('riderIds') ?? []
+    form.setFieldValue('riderIds', checked ? [...current, id] : current.filter((x) => x !== id))
+  }
 
   async function handleOk() {
     const values = await form.validateFields()
@@ -595,75 +668,118 @@ function AddRideModal({
   return (
     <Modal
       open
-      title={
-        <Flex align="center" gap={8}>
-          <CarOutlined style={{ color: '#909ffa' }} />
-          <span>Add Ride</span>
-        </Flex>
-      }
+      title={null}
       okText="Save Ride"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width="min(480px, 95vw)"
+      width="min(520px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          date: dayjs(),
-          service: 'Yango',
-          paidBy: userId,
-          riderIds: [userId],
-        }}
-        style={{ paddingTop: 8 }}
-      >
-        <Row gutter={12}>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Date" name="date" rules={[{ required: true }]}>
-              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+      {/* Header */}
+      <ModalHeader>
+        <HeaderIcon
+          $gradient="linear-gradient(135deg, #4527a0 0%, #909ffa 100%)"
+          $shadow="0 4px 12px rgba(69,39,160,0.35)"
+        >
+          <CarOutlined />
+        </HeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Add Ride
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Log a shared taxi ride and split the fare
+          </Typography.Text>
+        </div>
+      </ModalHeader>
+
+      <FormBody>
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          initialValues={{ date: dayjs(), service: 'Yango', paidBy: userId, riderIds: [userId] }}
+        >
+          {/* Section: Ride Info */}
+          <ModalSectionLabel>
+            <CarOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Ride Details
+            </Typography.Text>
+          </ModalSectionLabel>
+
+          <TwoCol>
+            <Form.Item label="Date" name="date" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
+              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" suffixIcon={<CalendarOutlined style={{ color: 'var(--text-muted)' }} />} />
             </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Service" name="service" rules={[{ required: true }]}>
+            <Form.Item label="Service" name="service" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
               <Select options={RIDE_SERVICES.map((s) => ({ label: s, value: s }))} />
             </Form.Item>
-          </Col>
-        </Row>
+          </TwoCol>
 
-        <Form.Item label="Route" name="route">
-          <Input placeholder="e.g. Home → Mall" prefix={<CarOutlined style={{ color: 'var(--text-muted)' }} />} />
-        </Form.Item>
+          <Form.Item label="Route (optional)" name="route" style={{ marginBottom: 12 }}>
+            <Input placeholder="e.g. Home → Mall of Lahore" prefix={<CarOutlined style={{ color: 'var(--text-muted)' }} />} />
+          </Form.Item>
 
-        <Row gutter={12}>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Total Fare (PKR)" name="amount" rules={[{ required: true, message: 'Enter fare.' }]}>
-              <InputNumber min={1} precision={2} style={{ width: '100%' }} placeholder="350" />
+          <TwoCol>
+            <Form.Item label="Total Fare (PKR)" name="amount" rules={[{ required: true, message: 'Enter fare.' }]} style={{ marginBottom: 12 }}>
+              <InputNumber min={1} precision={2} style={{ width: '100%' }} placeholder="350" prefix={<DollarOutlined style={{ color: 'var(--text-muted)' }} />} />
             </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Paid By" name="paidBy" rules={[{ required: true }]}>
+            <Form.Item label="Paid By" name="paidBy" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
               <Select options={profileOptions} />
             </Form.Item>
-          </Col>
-        </Row>
+          </TwoCol>
 
-        <Form.Item
-          label="Riders (select everyone in the ride)"
-          name="riderIds"
-          rules={[{
-            validator: async (_, v: string[]) => {
-              if (!v?.length) throw new Error('Select at least one rider.')
-            },
-          }]}
-        >
-          <Checkbox.Group options={profileOptions} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} />
-        </Form.Item>
+          {/* Section: Riders */}
+          <ModalDivider />
+          <ModalSectionLabel>
+            <TeamOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Riders
+            </Typography.Text>
+            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+              {riderIds.length} / {profiles.length} selected
+            </Typography.Text>
+          </ModalSectionLabel>
 
-        <Form.Item label="Note (optional)" name="note">
-          <Input.TextArea rows={2} placeholder="e.g. Late night ride back from dinner" />
-        </Form.Item>
-      </Form>
+          <Form.Item
+            name="riderIds"
+            rules={[{ validator: async (_, v: string[]) => { if (!v?.length) throw new Error('Select at least one rider.') } }]}
+            style={{ marginBottom: 12 }}
+          >
+            <RiderGrid>
+              {profiles.map((p) => {
+                const checked = riderIds.includes(p.id)
+                const initials = p.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                return (
+                  <RiderChipLabel key={p.id} $checked={checked} onClick={() => toggleRider(p.id, !checked)}>
+                    <Avatar size={22} style={{ background: checked ? 'var(--primary)' : 'var(--border-default)', color: 'white', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>
+                      {initials}
+                    </Avatar>
+                    <Typography.Text style={{ fontSize: 12, fontWeight: checked ? 600 : 400, color: checked ? 'var(--primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.full_name}
+                    </Typography.Text>
+                    <Checkbox checked={checked} style={{ marginLeft: 'auto', flexShrink: 0 }} />
+                  </RiderChipLabel>
+                )
+              })}
+            </RiderGrid>
+          </Form.Item>
+
+          {/* Note */}
+          <ModalDivider />
+          <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 16 }}>
+            <Input.TextArea rows={2} placeholder="e.g. Late night ride back from dinner" style={{ resize: 'none' }} />
+          </Form.Item>
+        </Form>
+      </FormBody>
     </Modal>
   )
 }

@@ -4,6 +4,7 @@ import { Button, App, Col, DatePicker, Flex, Form, Grid, Image, Input, InputNumb
 import type { ColumnsType } from 'antd/es/table'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, EyeOutlined, PictureOutlined, UploadOutlined, DollarOutlined, WalletOutlined, HomeOutlined } from '@ant-design/icons'
+import styled from 'styled-components'
 import { PageStack, SectionBlock } from '@/components/Glass'
 import { PageHeader } from '@/components/PageHeader'
 import { SummaryStat } from '@/components/SummaryStat'
@@ -363,6 +364,92 @@ export function ContributionsPage() {
 
 /* ─── Payment Submit Modal ────────────────────────────────────────────────── */
 
+// ── Shared modal styled components ────────────────────────────────────────
+
+const PayModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 0;
+`
+
+const PayHeaderIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1b5e20 0%, #52c41a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(27,94,32,0.35);
+  .anticon { color: white; font-size: 18px; }
+`
+
+const PayFormBody = styled.div`
+  padding: 16px 24px 0;
+`
+
+const PayTwoCol = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+`
+
+const PaySectionLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  .anticon { color: var(--primary); font-size: 13px; }
+`
+
+const PayDivider = styled.div`
+  height: 1px;
+  background: var(--border-light);
+  margin: 14px 0;
+`
+
+const MonthBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(82,196,26,0.10);
+  border: 1px solid rgba(82,196,26,0.25);
+  color: #52c41a;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+`
+
+const UploadZone = styled.div<{ $hasFile: boolean }>`
+  border: 1.5px dashed ${({ $hasFile }) => ($hasFile ? '#52c41a' : 'var(--border-default)')};
+  border-radius: 12px;
+  padding: 16px;
+  background: ${({ $hasFile }) => ($hasFile ? 'rgba(82,196,26,0.05)' : 'var(--bg-elevated)')};
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  &:hover { border-color: var(--primary); background: var(--primary-soft); }
+`
+
+const UploadIconBox = styled.div<{ $hasFile: boolean }>`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: ${({ $hasFile }) => ($hasFile ? 'rgba(82,196,26,0.12)' : 'rgba(64,150,255,0.10)')};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  .anticon { font-size: 16px; color: ${({ $hasFile }) => ($hasFile ? '#52c41a' : 'var(--primary)')}; }
+`
+
 interface PaymentSubmitModalProps {
   open: boolean
   userId: string
@@ -385,20 +472,18 @@ function PaymentSubmitModal({ open, userId, userName, month, currentUserId, onCl
       setUploading(true)
 
       let screenshotUrl: string | null = null
-
-      // Upload screenshot if provided
       if (fileList.length > 0 && fileList[0].originFileObj) {
         screenshotUrl = await uploadPaymentScreenshot(userId, fileList[0].originFileObj)
       }
 
       await onSubmit.mutateAsync({
-        userId, // The user this payment is for
+        userId,
         month,
         amount: values.amount,
         paidAt: values.paidAt.format('YYYY-MM-DD'),
         screenshotUrl,
         note: values.note?.trim() || undefined,
-        createdBy: currentUserId, // The user who is submitting (could be admin)
+        createdBy: currentUserId,
       })
 
       message.success('Payment submitted successfully!')
@@ -412,103 +497,146 @@ function PaymentSubmitModal({ open, userId, userName, month, currentUserId, onCl
     }
   }
 
+  const hasFile = fileList.length > 0
+
   return (
     <Modal
       open={open}
-      title={
-        <Flex align="center" gap={8}>
-          <DollarOutlined style={{ color: '#52c41a' }} />
-          <span>Submit Payment - {userName}</span>
-        </Flex>
-      }
+      title={null}
       okText="Submit Payment"
       confirmLoading={uploading || onSubmit.isPending}
       onCancel={onClose}
       onOk={() => void handleSubmit()}
       width="min(500px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          paidAt: dayjs(),
-        }}
-        style={{ paddingTop: 16 }}
-      >
-        <Typography.Text style={{ display: 'block', marginBottom: 16, color: 'var(--text-muted)' }}>
-          Month: <strong>{dayjs(month, 'YYYY-MM').format('MMMM YYYY')}</strong>
-        </Typography.Text>
+      {/* Header */}
+      <PayModalHeader>
+        <PayHeaderIcon>
+          <DollarOutlined />
+        </PayHeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Submit Payment
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            {userName}
+          </Typography.Text>
+        </div>
+      </PayModalHeader>
 
-        <Form.Item
-          label="Amount (PKR)"
-          name="amount"
-          rules={[{ required: true, message: 'Please enter the amount' }]}
-        >
-          <InputNumber
-            min={1}
-            precision={2}
-            style={{ width: '100%' }}
-            placeholder="e.g. 5000"
-            size="large"
-          />
-        </Form.Item>
+      <PayFormBody>
+        {/* Month badge */}
+        <MonthBadge>
+          <CalendarOutlined style={{ fontSize: 12 }} />
+          {dayjs(month, 'YYYY-MM').format('MMMM YYYY')}
+        </MonthBadge>
 
-        <Form.Item
-          label="Payment Date"
-          name="paidAt"
-          rules={[{ required: true, message: 'Please select payment date' }]}
-        >
-          <DatePicker
-            style={{ width: '100%' }}
-            format="DD/MM/YYYY"
-            size="large"
-          />
-        </Form.Item>
+        <Form form={form} layout="vertical" requiredMark={false} initialValues={{ paidAt: dayjs() }}>
 
-        <Form.Item
-          label="Payment Screenshot"
-          name="screenshot"
-          extra="Upload a screenshot of your payment confirmation (optional)"
-        >
-          <Upload
-            listType="picture-card"
-            fileList={fileList}
-            beforeUpload={(file) => {
-              const isImage = file.type.startsWith('image/')
-              if (!isImage) {
-                message.error('You can only upload image files!')
+          {/* Section: Payment Details */}
+          <PaySectionLabel>
+            <DollarOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Payment Details
+            </Typography.Text>
+          </PaySectionLabel>
+
+          <PayTwoCol>
+            <Form.Item
+              label="Amount (PKR)"
+              name="amount"
+              rules={[{ required: true, message: 'Please enter the amount' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <InputNumber
+                min={1}
+                precision={2}
+                style={{ width: '100%' }}
+                placeholder="e.g. 5000"
+                prefix={<DollarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Payment Date"
+              name="paidAt"
+              rules={[{ required: true, message: 'Please select payment date' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <DatePicker
+                style={{ width: '100%' }}
+                format="DD/MM/YYYY"
+                suffixIcon={<CalendarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
+            </Form.Item>
+          </PayTwoCol>
+
+          {/* Section: Screenshot */}
+          <PayDivider />
+          <PaySectionLabel>
+            <PictureOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Payment Screenshot
+              <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 4 }}>(optional)</Typography.Text>
+            </Typography.Text>
+          </PaySectionLabel>
+
+          <Form.Item name="screenshot" style={{ marginBottom: 12 }}>
+            <Upload
+              listType="text"
+              fileList={fileList}
+              showUploadList={false}
+              beforeUpload={(file) => {
+                if (!file.type.startsWith('image/')) { message.error('Only image files allowed!'); return false }
+                if (file.size / 1024 / 1024 > 5) { message.error('Image must be under 5MB!'); return false }
+                setFileList([file])
                 return false
-              }
-              const isLt5M = file.size / 1024 / 1024 < 5
-              if (!isLt5M) {
-                message.error('Image must be smaller than 5MB!')
-                return false
-              }
-              setFileList([file])
-              return false
-            }}
-            onRemove={() => {
-              setFileList([])
-            }}
-            maxCount={1}
-          >
-            {fileList.length === 0 && (
-              <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
-              </div>
-            )}
-          </Upload>
-        </Form.Item>
+              }}
+              onRemove={() => setFileList([])}
+              maxCount={1}
+            >
+              <UploadZone $hasFile={hasFile}>
+                <UploadIconBox $hasFile={hasFile}>
+                  {hasFile ? <CheckCircleOutlined /> : <UploadOutlined />}
+                </UploadIconBox>
+                <div>
+                  <Typography.Text strong style={{ fontSize: 13, color: 'var(--text-strong)', display: 'block' }}>
+                    {hasFile ? fileList[0].name : 'Upload screenshot'}
+                  </Typography.Text>
+                  <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {hasFile
+                      ? `${((fileList[0].size ?? 0) / 1024).toFixed(0)} KB — click to change`
+                      : 'PNG, JPG, WEBP — click to browse'}
+                  </Typography.Text>
+                </div>
+                {hasFile && (
+                  <Button
+                    size="small"
+                    danger
+                    type="text"
+                    icon={<CloseCircleOutlined />}
+                    style={{ marginLeft: 'auto', flexShrink: 0 }}
+                    onClick={(e) => { e.stopPropagation(); setFileList([]) }}
+                  />
+                )}
+              </UploadZone>
+            </Upload>
+          </Form.Item>
 
-        <Form.Item label="Note (optional)" name="note">
-          <Input.TextArea
-            rows={2}
-            placeholder="e.g. Paid via Easypaisa"
-            maxLength={200}
-          />
-        </Form.Item>
-      </Form>
+          {/* Note */}
+          <PayDivider />
+          <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 16 }}>
+            <Input.TextArea rows={2} placeholder="e.g. Paid via Easypaisa" maxLength={200} style={{ resize: 'none' }} />
+          </Form.Item>
+        </Form>
+      </PayFormBody>
     </Modal>
   )
 }

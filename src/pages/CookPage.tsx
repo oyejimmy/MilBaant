@@ -27,6 +27,8 @@ import {
   DeleteOutlined,
   WalletOutlined,
   ShoppingCartOutlined,
+  CalendarOutlined,
+  DollarOutlined,
 } from '@ant-design/icons'
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
@@ -84,6 +86,59 @@ const BalanceAmount = styled.div<{ $status: 'surplus' | 'deficit' | 'zero' }>`
   color: ${({ $status }) =>
     $status === 'surplus' ? '#52c41a' : $status === 'deficit' ? '#ff4d4f' : '#909ffa'};
   font-family: 'Plus Jakarta Sans', sans-serif;
+`
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 0;
+`
+
+const HeaderIcon = styled.div<{ $gradient: string; $shadow: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: ${({ $gradient }) => $gradient};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: ${({ $shadow }) => $shadow};
+  .anticon {
+    color: white;
+    font-size: 18px;
+  }
+`
+
+const FormBody = styled.div`
+  padding: 16px 24px 0;
+`
+
+const TwoCol = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`
+
+const SectionDivider = styled.div`
+  height: 1px;
+  background: var(--border-light);
+  margin: 16px 0;
+`
+
+const SectionLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  .anticon {
+    color: var(--primary);
+    font-size: 13px;
+  }
 `
 
 /* ─── Page ────────────────────────────────────────────────────────────────── */
@@ -568,29 +623,82 @@ function AdvanceModal({
   return (
     <Modal
       open
-      title={
-        <Flex align="center" gap={8}>
-          <WalletOutlined style={{ color: '#52c41a' }} />
-          <span>Give Advance to Cook</span>
-        </Flex>
-      }
+      title={null}
       okText="Record Advance"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width="min(400px, 95vw)"
+      width="min(460px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form form={form} layout="vertical" initialValues={{ date: dayjs() }} style={{ paddingTop: 8 }}>
-        <Form.Item label="Amount (PKR)" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
-          <InputNumber min={1} precision={2} style={{ width: '100%' }} placeholder="e.g. 5000" />
-        </Form.Item>
-        <Form.Item label="Date" name="date" rules={[{ required: true }]}>
-          <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
-        </Form.Item>
-        <Form.Item label="Note (optional)" name="note">
-          <Input.TextArea rows={2} placeholder="e.g. Monthly advance for groceries" />
-        </Form.Item>
-      </Form>
+      {/* Header */}
+      <ModalHeader>
+        <HeaderIcon
+          $gradient="linear-gradient(135deg, #2e7d32 0%, #52c41a 100%)"
+          $shadow="0 4px 12px rgba(46,125,50,0.35)"
+        >
+          <WalletOutlined />
+        </HeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Give Advance to Cook
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Record money given to the cook
+          </Typography.Text>
+        </div>
+      </ModalHeader>
+
+      <FormBody>
+        <Form form={form} layout="vertical" requiredMark={false} initialValues={{ date: dayjs() }}>
+          {/* Section label */}
+          <SectionLabel>
+            <WalletOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Advance Details
+            </Typography.Text>
+          </SectionLabel>
+
+          <TwoCol>
+            <Form.Item
+              label="Amount (PKR)"
+              name="amount"
+              rules={[{ required: true, message: 'Enter amount.' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <InputNumber
+                min={1}
+                precision={2}
+                style={{ width: '100%' }}
+                placeholder="e.g. 5000"
+                prefix={<DollarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Date"
+              name="date"
+              rules={[{ required: true }]}
+              style={{ marginBottom: 12 }}
+            >
+              <DatePicker
+                style={{ width: '100%' }}
+                format="DD/MM/YYYY"
+                suffixIcon={<CalendarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
+            </Form.Item>
+          </TwoCol>
+
+          <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 16 }}>
+            <Input.TextArea rows={2} placeholder="e.g. Monthly advance for groceries" style={{ resize: 'none' }} />
+          </Form.Item>
+        </Form>
+      </FormBody>
     </Modal>
   )
 }
@@ -617,54 +725,112 @@ function PurchaseModal({
   return (
     <Modal
       open
-      title={
-        <Flex align="center" gap={8}>
-          <ShoppingCartOutlined style={{ color: '#ff4d4f' }} />
-          <span>Log Cook Purchase</span>
-        </Flex>
-      }
+      title={null}
       okText="Save Purchase"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
-      width="min(420px, 95vw)"
+      width="min(480px, 95vw)"
+      style={{ top: 24 }}
+      styles={{
+        body: { padding: 0, maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' },
+        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+      }}
+      okButtonProps={{ size: 'large' }}
+      cancelButtonProps={{ size: 'large' }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ date: dayjs(), category: 'grocery' }}
-        style={{ paddingTop: 8 }}
-      >
-        <Row gutter={12}>
-          <Col xs={24} sm={14}>
-            <Form.Item label="Item Name" name="item" rules={[{ required: true, message: 'Enter item.' }]}>
-              <Input placeholder="e.g. Chicken, Tomatoes, Rice" prefix={<CoffeeOutlined style={{ color: 'var(--text-muted)' }} />} />
+      {/* Header */}
+      <ModalHeader>
+        <HeaderIcon
+          $gradient="linear-gradient(135deg, #c62828 0%, #ff4d4f 100%)"
+          $shadow="0 4px 12px rgba(198,40,40,0.35)"
+        >
+          <ShoppingCartOutlined />
+        </HeaderIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+            Log Cook Purchase
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Record an item bought by the cook
+          </Typography.Text>
+        </div>
+      </ModalHeader>
+
+      <FormBody>
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          initialValues={{ date: dayjs(), category: 'grocery' }}
+        >
+          {/* Section: Item Details */}
+          <SectionLabel>
+            <ShoppingCartOutlined />
+            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Item Details
+            </Typography.Text>
+          </SectionLabel>
+
+          <TwoCol>
+            <Form.Item
+              label="Item Name"
+              name="item"
+              rules={[{ required: true, message: 'Enter item.' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <Input
+                placeholder="e.g. Chicken, Tomatoes, Rice"
+                prefix={<CoffeeOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
             </Form.Item>
-          </Col>
-          <Col xs={24} sm={10}>
-            <Form.Item label="Category" name="category" rules={[{ required: true }]}>
+            <Form.Item
+              label="Category"
+              name="category"
+              rules={[{ required: true }]}
+              style={{ marginBottom: 12 }}
+            >
               <Select options={PURCHASE_CATEGORY_OPTIONS.map((o) => ({ label: o.label, value: o.value }))} />
             </Form.Item>
-          </Col>
-        </Row>
+          </TwoCol>
 
-        <Row gutter={12}>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Amount (PKR)" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
-              <InputNumber min={1} precision={2} style={{ width: '100%' }} placeholder="e.g. 850" />
+          <TwoCol>
+            <Form.Item
+              label="Amount (PKR)"
+              name="amount"
+              rules={[{ required: true, message: 'Enter amount.' }]}
+              style={{ marginBottom: 12 }}
+            >
+              <InputNumber
+                min={1}
+                precision={2}
+                style={{ width: '100%' }}
+                placeholder="e.g. 850"
+                prefix={<DollarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
             </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Date" name="date" rules={[{ required: true }]}>
-              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            <Form.Item
+              label="Date"
+              name="date"
+              rules={[{ required: true }]}
+              style={{ marginBottom: 12 }}
+            >
+              <DatePicker
+                style={{ width: '100%' }}
+                format="DD/MM/YYYY"
+                suffixIcon={<CalendarOutlined style={{ color: 'var(--text-muted)' }} />}
+              />
             </Form.Item>
-          </Col>
-        </Row>
+          </TwoCol>
 
-        <Form.Item label="Note (optional)" name="note">
-          <Input.TextArea rows={2} placeholder="e.g. Bought from local market" />
-        </Form.Item>
-      </Form>
+          {/* Section: Note */}
+          <SectionDivider />
+
+          <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 16 }}>
+            <Input.TextArea rows={2} placeholder="e.g. Bought from local market" style={{ resize: 'none' }} />
+          </Form.Item>
+        </Form>
+      </FormBody>
     </Modal>
   )
 }
