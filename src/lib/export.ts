@@ -1,7 +1,7 @@
 import { CATEGORY_LABELS } from '@/lib/constants'
 import { calculateWeekendExpenseShare } from '@/lib/expense-helpers'
-import { formatDate, formatDateTime } from '@/lib/formatters'
-import type { Announcement, Expense, Profile } from '@/lib/types'
+import { formatDate } from '@/lib/formatters'
+import type { Expense, Profile } from '@/lib/types'
 
 async function loadWorkbookTools() {
   const { utils, writeFileXLSX } = await import('xlsx')
@@ -49,19 +49,4 @@ export async function exportUsersToExcel(profiles: Profile[]) {
   const worksheet = utils.json_to_sheet(rows)
   utils.book_append_sheet(workbook, worksheet, 'Users')
   writeFileXLSX(workbook, 'flat-users.xlsx')
-}
-
-export async function exportAnnouncementsToExcel(announcements: Announcement[]) {
-  const { utils, writeFileXLSX } = await loadWorkbookTools()
-  const rows = announcements.map((announcement) => ({
-    Title: announcement.title,
-    Content: announcement.content,
-    'Created By': announcement.creator?.full_name ?? 'Unknown',
-    'Created At': formatDateTime(announcement.created_at),
-  }))
-
-  const workbook = utils.book_new()
-  const worksheet = utils.json_to_sheet(rows)
-  utils.book_append_sheet(workbook, worksheet, 'Announcements')
-  writeFileXLSX(workbook, 'announcements.xlsx')
 }

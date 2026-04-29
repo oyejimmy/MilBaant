@@ -1,880 +1,686 @@
 -- ============================================================
--- Full schema — run this once in the Supabase SQL editor
+-- MilBaant — Complete Database Schema
+-- Run this to set up the entire database from scratch
+-- All statements are idempotent (safe to run multiple times)
 -- ============================================================
 
 -- ── Extensions ───────────────────────────────────────────────────────────────
-create extension if not exists pgcrypto;
 
--- ── Core tables ──────────────────────────────────────────────────────────────
-create table if not exists public.profiles (
-    id uuid primary key references auth.users (id) on delete cascade,
-    full_name text not null default '',
-    role text not null default 'user' check (role in ('admin', 'user')),
-    can_add_expenses boolean not null default false
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- ── Tables ───────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id             uuid    PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
+    full_name      text    NOT NULL DEFAULT '',
+    role           text    NOT NULL DEFAULT 'user'
+                           CHECK (role IN ('admin', 'user', 'cook')),
+    can_add_expenses boolean NOT NULL DEFAULT false,
+    is_active      boolean NOT NULL DEFAULT true,
+    avatar_url     text,
+    phone          text,
+    bio            text
 );
 
-create table if not exists public.rooms (
-    id integer generated always as identity primary key,
-    name text not null unique,
-    type text not null check (
-        type in (
-            'bedroom',
-            'washroom',
-            'kitchen',
-            'lounge',
-            'dining'
-        )
-    )
+-- Ensure profile columns added after initial deploy exist on existing databases
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_active   boolean NOT NULL DEFAULT true;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url  text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone       text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS bio         text;
+
+-- Ensure the role check constraint includes 'cook'
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles ADD  CONSTRAINT profiles_role_check
+    CHECK (role IN ('admin', 'user', 'cook'));
+
+CREATE TABLE IF NOT EXISTS public.rooms (
+    id   integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name text    NOT NULL UNIQUE,
+    type text    NOT NULL CHECK (type IN ('bedroom','washroom','kitchen','lounge','dining'))
 );
 
-create table if not exists public.beds (
-    id integer generated always as identity primary key,
-    room_id integer not null references public.rooms (id) on delete cascade,
-    label text not null
+CREATE TABLE IF NOT EXISTS public.beds (
+    id      integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    room_id integer NOT NULL REFERENCES public.rooms (id) ON DELETE CASCADE,
+    label   text    NOT NULL
 );
 
-create table if not exists public.bed_assignments (
-    id integer generated always as identity primary key,
-    user_id uuid not null unique references public.profiles (id) on delete cascade,
-    bed_id integer not null unique references public.beds (id) on delete cascade
+CREATE TABLE IF NOT EXISTS public.bed_assignments (
+    id      integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id uuid    NOT NULL UNIQUE REFERENCES public.profiles (id) ON DELETE CASCADE,
+    bed_id  integer NOT NULL UNIQUE REFERENCES public.beds (id)     ON DELETE CASCADE
 );
 
-create table if not exists public.expenses (
-    id uuid primary key default gen_random_uuid (),
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    category text not null check (
-        category in (
-            'gas_bill',
-            'light_bill',
-            'cook_salary',
-            'kitchen_daily',
-            'water_roti',
-            'meat',
-            'maintenance',
-            'pcc_grocery',
-            'weekend_meal'
-        )
-    ),
-    description text,
-    amount numeric(10, 2) not null check (amount >= 0),
-    date date not null,
-    last_date date,
-    split_type text not null check (
-        split_type in (
-            'all_members',
-            'custom_participants'
-        )
-    ),
+CREATE TABLE IF NOT EXISTS public.expenses (
+    id            uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_by    uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    category      text         NOT NULL CHECK (category IN (
+                                   'gas_bill','light_bill','cook_salary','kitchen_daily',
+                                   'water_roti','meat','maintenance','pcc_grocery','weekend_meal'
+                               )),
+    description   text,
+    amount        numeric(10,2) NOT NULL CHECK (amount >= 0),
+    date          date          NOT NULL,
+    last_date     date,
+    split_type    text          NOT NULL CHECK (split_type IN ('all_members','custom_participants')),
     bill_image_url text,
-    created_at timestamptz not null default timezone ('utc', now())
+    created_at    timestamptz   NOT NULL DEFAULT timezone('utc', now())
 );
 
-create table if not exists public.expense_participants (
-    expense_id uuid not null references public.expenses (id) on delete cascade,
-    user_id uuid not null references public.profiles (id) on delete cascade,
-    primary key (expense_id, user_id)
+CREATE TABLE IF NOT EXISTS public.expense_participants (
+    expense_id uuid NOT NULL REFERENCES public.expenses (id) ON DELETE CASCADE,
+    user_id    uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    PRIMARY KEY (expense_id, user_id)
 );
 
-create table if not exists public.announcements (
-    id uuid primary key default gen_random_uuid (),
-    title text not null,
-    content text not null,
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.announcements (
+    id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    title      text        NOT NULL,
+    content    text        NOT NULL,
+    created_by uuid        NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
-create table if not exists public.settings (
-    key text primary key,
-    value text not null
+CREATE TABLE IF NOT EXISTS public.settings (
+    key   text PRIMARY KEY,
+    value text NOT NULL
 );
 
--- ── Settlements ───────────────────────────────────────────────────────────────
-create table if not exists public.debt_settlements (
-    id uuid primary key default gen_random_uuid (),
-    payer_id uuid not null references public.profiles (id) on delete cascade,
-    payee_id uuid not null references public.profiles (id) on delete cascade,
-    amount numeric(10, 2) not null check (amount > 0),
-    note text,
-    settled_at date not null default current_date,
-    created_at timestamptz not null default timezone ('utc', now()),
-    created_by uuid not null references public.profiles (id) on delete restrict
+CREATE TABLE IF NOT EXISTS public.debt_settlements (
+    id         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    payer_id   uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    payee_id   uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    amount     numeric(10,2) NOT NULL CHECK (amount > 0),
+    note       text,
+    settled_at date          NOT NULL DEFAULT current_date,
+    created_at timestamptz   NOT NULL DEFAULT timezone('utc', now()),
+    created_by uuid          NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT
 );
 
--- ── Rides ─────────────────────────────────────────────────────────────────────
-create table if not exists public.rides (
-    id uuid primary key default gen_random_uuid (),
-    date date not null,
-    service text not null default 'Other',
-    route text,
-    amount numeric(10, 2) not null check (amount >= 0),
-    paid_by uuid not null references public.profiles (id) on delete restrict,
-    note text,
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.rides (
+    id         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    date       date         NOT NULL,
+    service    text         NOT NULL DEFAULT 'Other',
+    route      text,
+    amount     numeric(10,2) NOT NULL CHECK (amount >= 0),
+    paid_by    uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    note       text,
+    created_by uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at timestamptz  NOT NULL DEFAULT timezone('utc', now())
 );
 
-create table if not exists public.ride_riders (
-    ride_id uuid not null references public.rides (id) on delete cascade,
-    user_id uuid not null references public.profiles (id) on delete cascade,
-    primary key (ride_id, user_id)
+CREATE TABLE IF NOT EXISTS public.ride_riders (
+    ride_id uuid NOT NULL REFERENCES public.rides (id)    ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    PRIMARY KEY (ride_id, user_id)
 );
 
--- ── Cook ──────────────────────────────────────────────────────────────────────
-create table if not exists public.cook_advances (
-    id uuid primary key default gen_random_uuid (),
-    amount numeric(10, 2) not null check (amount > 0),
-    date date not null default current_date,
-    note text,
-    given_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.cook_advances (
+    id         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    amount     numeric(10,2) NOT NULL CHECK (amount > 0),
+    date       date          NOT NULL DEFAULT current_date,
+    note       text,
+    given_by   uuid          NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at timestamptz   NOT NULL DEFAULT timezone('utc', now())
 );
 
-create table if not exists public.cook_purchases (
-    id uuid primary key default gen_random_uuid (),
-    date date not null default current_date,
-    item text not null,
-    amount numeric(10, 2) not null check (amount > 0),
-    category text not null default 'grocery' check (
-        category in (
-            'grocery',
-            'meat',
-            'vegetables',
-            'spices',
-            'dairy',
-            'other'
-        )
-    ),
-    note text,
-    created_at timestamptz not null default timezone ('utc', now()),
-    created_by uuid not null references public.profiles (id) on delete restrict
+CREATE TABLE IF NOT EXISTS public.cook_purchases (
+    id         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    date       date         NOT NULL DEFAULT current_date,
+    item       text         NOT NULL,
+    amount     numeric(10,2) NOT NULL CHECK (amount > 0),
+    category   text         NOT NULL DEFAULT 'grocery'
+                            CHECK (category IN ('grocery','meat','vegetables','spices','dairy','other')),
+    note       text,
+    created_at timestamptz  NOT NULL DEFAULT timezone('utc', now()),
+    created_by uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT
 );
 
-create table if not exists public.daily_menu (
-    id uuid primary key default gen_random_uuid (),
-    date date not null unique,
-    breakfast text,
-    lunch text,
-    dinner text,
-    notes text,
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now()),
-    updated_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.daily_menu (
+    id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    date       date        NOT NULL UNIQUE,
+    breakfast  text,
+    lunch      text,
+    dinner     text,
+    notes      text,
+    created_by uuid        NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+    updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
--- ── Activity logs ─────────────────────────────────────────────────────────────
-create table if not exists public.activity_logs (
-    id uuid primary key default gen_random_uuid (),
-    user_id uuid not null references public.profiles (id) on delete restrict,
-    action text not null check (
-        action in ('create', 'update', 'delete')
-    ),
-    entity text not null,
-    entity_id text,
-    description text not null,
-    created_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.activity_logs (
+    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     uuid        NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    action      text        NOT NULL CHECK (action IN ('create','update','delete')),
+    entity      text        NOT NULL,
+    entity_id   text,
+    description text        NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
--- ── Flat Fund ─────────────────────────────────────────────────────────────────
--- Tracks money allocated to members from the shared flat fund,
--- and expenses they spend from it.
-
-create table if not exists public.flat_fund_allocations (
-    id uuid primary key default gen_random_uuid (),
-    user_id uuid not null references public.profiles (id) on delete cascade,
-    amount numeric(10, 2) not null check (amount > 0),
-    note text,
-    allocated_by uuid not null references public.profiles (id) on delete restrict,
-    date date not null default current_date,
-    created_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.flat_fund_allocations (
+    id           uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id      uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    amount       numeric(10,2) NOT NULL CHECK (amount > 0),
+    note         text,
+    allocated_by uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    date         date         NOT NULL DEFAULT current_date,
+    created_at   timestamptz  NOT NULL DEFAULT timezone('utc', now())
 );
 
-create table if not exists public.flat_fund_expenses (
-    id uuid primary key default gen_random_uuid (),
-    user_id uuid not null references public.profiles (id) on delete cascade,
-    amount numeric(10, 2) not null check (amount > 0),
-    description text not null,
-    category text not null default 'other' check (
-        category in (
-            'bulb',
-            'bread',
-            'water_bottle',
-            'cleaning',
-            'maintenance',
-            'grocery',
-            'other'
-        )
-    ),
-    date date not null default current_date,
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now())
+CREATE TABLE IF NOT EXISTS public.flat_fund_expenses (
+    id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    amount      numeric(10,2) NOT NULL CHECK (amount > 0),
+    description text         NOT NULL,
+    category    text         NOT NULL DEFAULT 'other'
+                             CHECK (category IN ('bulb','bread','water_bottle','cleaning','maintenance','grocery','other')),
+    date        date         NOT NULL DEFAULT current_date,
+    created_by  uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at  timestamptz  NOT NULL DEFAULT timezone('utc', now())
 );
 
--- ── Contribution Payments ─────────────────────────────────────────────────────
--- Members submit proof of payment (screenshot + amount + date) for their
--- monthly share. Admins can see who paid and who is overdue.
-
-create table if not exists public.contribution_payments (
-    id uuid primary key default gen_random_uuid (),
-    user_id uuid not null references public.profiles (id) on delete cascade,
-    month text not null, -- 'YYYY-MM'
-    amount numeric(10, 2) not null check (amount > 0),
-    paid_at date not null default current_date,
+CREATE TABLE IF NOT EXISTS public.contribution_payments (
+    id             uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id        uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+    month          text         NOT NULL,
+    amount         numeric(10,2) NOT NULL CHECK (amount > 0),
+    paid_at        date         NOT NULL DEFAULT current_date,
     screenshot_url text,
-    note text,
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now())
+    note           text,
+    created_by     uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at     timestamptz  NOT NULL DEFAULT timezone('utc', now())
 );
 
 -- ── Indexes ───────────────────────────────────────────────────────────────────
-create index if not exists expenses_date_idx on public.expenses (date);
 
-create index if not exists expenses_category_idx on public.expenses (category);
+CREATE INDEX IF NOT EXISTS expenses_date_idx                ON public.expenses (date);
+CREATE INDEX IF NOT EXISTS expenses_category_idx            ON public.expenses (category);
+CREATE INDEX IF NOT EXISTS expense_participants_user_idx    ON public.expense_participants (user_id);
+CREATE INDEX IF NOT EXISTS settlements_payer_idx            ON public.debt_settlements (payer_id);
+CREATE INDEX IF NOT EXISTS settlements_payee_idx            ON public.debt_settlements (payee_id);
+CREATE INDEX IF NOT EXISTS settlements_date_idx             ON public.debt_settlements (settled_at);
+CREATE INDEX IF NOT EXISTS rides_date_idx                   ON public.rides (date);
+CREATE INDEX IF NOT EXISTS rides_paid_by_idx                ON public.rides (paid_by);
+CREATE INDEX IF NOT EXISTS ride_riders_user_idx             ON public.ride_riders (user_id);
+CREATE INDEX IF NOT EXISTS cook_advances_date_idx           ON public.cook_advances (date);
+CREATE INDEX IF NOT EXISTS cook_purchases_date_idx          ON public.cook_purchases (date);
+CREATE INDEX IF NOT EXISTS daily_menu_date_idx              ON public.daily_menu (date);
+CREATE INDEX IF NOT EXISTS activity_logs_user_idx           ON public.activity_logs (user_id);
+CREATE INDEX IF NOT EXISTS activity_logs_created_at_idx     ON public.activity_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS flat_fund_alloc_user_idx         ON public.flat_fund_allocations (user_id);
+CREATE INDEX IF NOT EXISTS flat_fund_alloc_date_idx         ON public.flat_fund_allocations (date);
+CREATE INDEX IF NOT EXISTS flat_fund_exp_user_idx           ON public.flat_fund_expenses (user_id);
+CREATE INDEX IF NOT EXISTS flat_fund_exp_date_idx           ON public.flat_fund_expenses (date);
+CREATE INDEX IF NOT EXISTS contrib_payments_user_idx        ON public.contribution_payments (user_id);
+CREATE INDEX IF NOT EXISTS contrib_payments_month_idx       ON public.contribution_payments (month);
+CREATE INDEX IF NOT EXISTS profiles_is_active_idx           ON public.profiles (is_active);
+CREATE INDEX IF NOT EXISTS profiles_has_avatar_idx          ON public.profiles (id) WHERE avatar_url IS NOT NULL;
 
-create index if not exists expense_participants_user_idx on public.expense_participants (user_id);
+-- ── Functions ─────────────────────────────────────────────────────────────────
 
-create index if not exists settlements_payer_idx on public.debt_settlements (payer_id);
-
-create index if not exists settlements_payee_idx on public.debt_settlements (payee_id);
-
-create index if not exists settlements_date_idx on public.debt_settlements (settled_at);
-
-create index if not exists rides_date_idx on public.rides (date);
-
-create index if not exists rides_paid_by_idx on public.rides (paid_by);
-
-create index if not exists ride_riders_user_idx on public.ride_riders (user_id);
-
-create index if not exists cook_advances_date_idx on public.cook_advances (date);
-
-create index if not exists cook_purchases_date_idx on public.cook_purchases (date);
-
-create index if not exists daily_menu_date_idx on public.daily_menu (date);
-
-create index if not exists activity_logs_user_idx on public.activity_logs (user_id);
-
-create index if not exists activity_logs_created_at_idx on public.activity_logs (created_at desc);
-
-create index if not exists flat_fund_alloc_user_idx on public.flat_fund_allocations (user_id);
-
-create index if not exists flat_fund_alloc_date_idx on public.flat_fund_allocations (date);
-
-create index if not exists flat_fund_exp_user_idx on public.flat_fund_expenses (user_id);
-
-create index if not exists flat_fund_exp_date_idx on public.flat_fund_expenses (date);
-
-create index if not exists contrib_payments_user_idx on public.contribution_payments (user_id);
-
-create index if not exists contrib_payments_month_idx on public.contribution_payments (month);
-
--- ── Helper functions ──────────────────────────────────────────────────────────
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
+-- Triggered on new auth.users row — inserts a matching profile.
+-- First user ever registered becomes admin automatically.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
   existing_profiles integer;
-begin
-  select count(*) into existing_profiles from public.profiles;
+BEGIN
+  SELECT count(*) INTO existing_profiles FROM public.profiles;
 
-  insert into public.profiles (id, full_name, role, can_add_expenses)
-  values (
-    new.id,
-    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
-    case when existing_profiles = 0 then 'admin' else 'user' end,
-    case when existing_profiles = 0 then true else false end
+  INSERT INTO public.profiles (id, full_name, role, can_add_expenses, is_active)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
+    CASE WHEN existing_profiles = 0 THEN 'admin' ELSE 'user' END,
+    CASE WHEN existing_profiles = 0 THEN true    ELSE false  END,
+    true
   );
 
-  return new;
-end;
+  RETURN NEW;
+END;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-
-create or replace function public.is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
-  );
-$$;
-
-create or replace function public.can_current_user_add_expenses()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.profiles
-    where id = auth.uid()
-      and (role = 'admin' or can_add_expenses = true)
+-- Returns true if the currently authenticated user has role = 'admin'.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
   );
 $$;
 
--- ── Seed data ─────────────────────────────────────────────────────────────────
+-- Returns true if the current user can add expenses (admin or explicit permission).
+CREATE OR REPLACE FUNCTION public.can_current_user_add_expenses()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
+      AND (role = 'admin' OR can_add_expenses = true)
+  );
+$$;
 
--- Flatmates (6 members)
--- Room 1: Yasir Ajmal Mehmand & Muhammad Haris
--- Room 2: Sajid Ali & Ahmad Raza
--- Room 3: Babar Jamil Ur Rahman (Jimmy) & Ateeb Raza
--- Cook: Muhammad Sajid Khan
+-- ── Enable Row Level Security ─────────────────────────────────────────────────
 
-insert into
-    public.rooms (name, type)
-values (
-        'Yasir & Haris Room',
-        'bedroom'
-    ),
-    (
-        'Sajid & Raza Room',
-        'bedroom'
-    ),
-    (
-        'Jimmy & Ateeb Room',
-        'bedroom'
-    ),
-    (
-        'Yasir & Haris Washroom',
-        'washroom'
-    ),
-    (
-        'Sajid & Raza Washroom',
-        'washroom'
-    ),
-    (
-        'Jimmy & Ateeb Washroom',
-        'washroom'
-    ),
-    ('Kitchen', 'kitchen'),
-    ('TV Lounge', 'lounge'),
-    ('Dining', 'dining') on conflict (name) do nothing;
-
-insert into
-    public.beds (room_id, label)
-select rooms.id, bed_labels.label
-from public.rooms
-    cross join (
-        values ('Bed A'), ('Bed B')
-    ) as bed_labels (label)
-where
-    rooms.name in (
-        'Yasir & Haris Room',
-        'Sajid & Raza Room',
-        'Jimmy & Ateeb Room'
-    )
-    and not exists (
-        select 1
-        from public.beds existing_beds
-        where
-            existing_beds.room_id = rooms.id
-            and existing_beds.label = bed_labels.label
-    );
-
-insert into
-    public.settings (key, value)
-values ('member_count', '6'),
-    (
-        'flatmates',
-        'Yasir Ajmal Mehmand, Muhammad Haris, Sajid Ali, Ahmad Raza, Babar Jamil Ur Rahman (Jimmy), Ateeb Raza'
-    ),
-    (
-        'cook_name',
-        'Muhammad Sajid Khan'
-    ) on conflict (key) do
-update
-set
-    value = excluded.value;
-
--- ── Storage bucket ────────────────────────────────────────────────────────────
-insert into
-    storage.buckets (id, name, public)
-values (
-        'bill-images',
-        'bill-images',
-        true
-    ) on conflict (id) do nothing;
-
-insert into
-    storage.buckets (id, name, public)
-values (
-        'payment-screenshots',
-        'payment-screenshots',
-        true
-    ) on conflict (id) do nothing;
-
--- ── Enable RLS ────────────────────────────────────────────────────────────────
-alter table public.profiles enable row level security;
-
-alter table public.rooms enable row level security;
-
-alter table public.beds enable row level security;
-
-alter table public.bed_assignments enable row level security;
-
-alter table public.expenses enable row level security;
-
-alter table public.expense_participants enable row level security;
-
-alter table public.announcements enable row level security;
-
-alter table public.settings enable row level security;
-
-alter table public.debt_settlements enable row level security;
-
-alter table public.rides enable row level security;
-
-alter table public.ride_riders enable row level security;
-
-alter table public.cook_advances enable row level security;
-
-alter table public.cook_purchases enable row level security;
-
-alter table public.activity_logs enable row level security;
-
-alter table public.flat_fund_allocations enable row level security;
-
-alter table public.flat_fund_expenses enable row level security;
-
-alter table public.contribution_payments enable row level security;
-
-alter table public.daily_menu enable row level security;
+ALTER TABLE public.profiles              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rooms                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.beds                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bed_assignments       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_participants  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.announcements         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.debt_settlements      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rides                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ride_riders           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cook_advances         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cook_purchases        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.flat_fund_allocations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.flat_fund_expenses    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contribution_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_menu            ENABLE ROW LEVEL SECURITY;
 
 -- ── RLS Policies ─────────────────────────────────────────────────────────────
 
 -- profiles
-drop policy if exists "profiles_select_authenticated" on public.profiles;
+DROP POLICY IF EXISTS "profiles_select_authenticated" ON public.profiles;
+CREATE POLICY "profiles_select_authenticated" ON public.profiles
+  FOR SELECT TO authenticated USING (true);
 
-create policy "profiles_select_authenticated" on public.profiles for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "profiles_insert_self" ON public.profiles;
+CREATE POLICY "profiles_insert_self" ON public.profiles
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
 
-drop policy if exists "profiles_insert_self" on public.profiles;
+-- Admins can update any profile (role, permissions, name, is_active, avatar, etc.)
+DROP POLICY IF EXISTS "profiles_admin_update" ON public.profiles;
+CREATE POLICY "profiles_admin_update" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
-create policy "profiles_insert_self" on public.profiles for
-insert
-    to authenticated
-with
-    check (auth.uid () = id);
-
-drop policy if exists "profiles_admin_update" on public.profiles;
-
-create policy "profiles_admin_update" on public.profiles for
-update to authenticated using (public.is_admin ())
-with
-    check (public.is_admin ());
+-- Any user can update their own profile (name, phone, bio, avatar_url).
+DROP POLICY IF EXISTS "profiles_self_update" ON public.profiles;
+CREATE POLICY "profiles_self_update" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id AND NOT public.is_admin())
+  WITH CHECK (auth.uid() = id);
 
 -- rooms
-drop policy if exists "rooms_select_authenticated" on public.rooms;
+DROP POLICY IF EXISTS "rooms_select_authenticated" ON public.rooms;
+CREATE POLICY "rooms_select_authenticated" ON public.rooms
+  FOR SELECT TO authenticated USING (true);
 
-create policy "rooms_select_authenticated" on public.rooms for
-select to authenticated using (true);
-
-drop policy if exists "rooms_admin_modify" on public.rooms;
-
-create policy "rooms_admin_modify" on public.rooms for all to authenticated using (public.is_admin ())
-with
-    check (public.is_admin ());
+DROP POLICY IF EXISTS "rooms_admin_modify" ON public.rooms;
+CREATE POLICY "rooms_admin_modify" ON public.rooms
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- beds
-drop policy if exists "beds_select_authenticated" on public.beds;
+DROP POLICY IF EXISTS "beds_select_authenticated" ON public.beds;
+CREATE POLICY "beds_select_authenticated" ON public.beds
+  FOR SELECT TO authenticated USING (true);
 
-create policy "beds_select_authenticated" on public.beds for
-select to authenticated using (true);
-
-drop policy if exists "beds_admin_modify" on public.beds;
-
-create policy "beds_admin_modify" on public.beds for all to authenticated using (public.is_admin ())
-with
-    check (public.is_admin ());
+DROP POLICY IF EXISTS "beds_admin_modify" ON public.beds;
+CREATE POLICY "beds_admin_modify" ON public.beds
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- bed_assignments
-drop policy if exists "bed_assignments_select_authenticated" on public.bed_assignments;
+DROP POLICY IF EXISTS "bed_assignments_select_authenticated" ON public.bed_assignments;
+CREATE POLICY "bed_assignments_select_authenticated" ON public.bed_assignments
+  FOR SELECT TO authenticated USING (true);
 
-create policy "bed_assignments_select_authenticated" on public.bed_assignments for
-select to authenticated using (true);
-
-drop policy if exists "bed_assignments_admin_modify" on public.bed_assignments;
-
-create policy "bed_assignments_admin_modify" on public.bed_assignments for all to authenticated using (public.is_admin ())
-with
-    check (public.is_admin ());
+DROP POLICY IF EXISTS "bed_assignments_admin_modify" ON public.bed_assignments;
+CREATE POLICY "bed_assignments_admin_modify" ON public.bed_assignments
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- expenses
-drop policy if exists "expenses_select_authenticated" on public.expenses;
+DROP POLICY IF EXISTS "expenses_select_authenticated" ON public.expenses;
+CREATE POLICY "expenses_select_authenticated" ON public.expenses
+  FOR SELECT TO authenticated USING (true);
 
-create policy "expenses_select_authenticated" on public.expenses for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "expenses_insert_authenticated" ON public.expenses;
+CREATE POLICY "expenses_insert_authenticated" ON public.expenses
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
 
-drop policy if exists "expenses_insert_authenticated" on public.expenses;
+DROP POLICY IF EXISTS "expenses_update_authenticated" ON public.expenses;
+CREATE POLICY "expenses_update_authenticated" ON public.expenses
+  FOR UPDATE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
-create policy "expenses_insert_authenticated" on public.expenses for
-insert
-    to authenticated
-with
-    check (auth.uid () = created_by);
-
-drop policy if exists "expenses_update_authenticated" on public.expenses;
-
-create policy "expenses_update_authenticated" on public.expenses for
-update to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
-
-drop policy if exists "expenses_delete_authenticated" on public.expenses;
-
-create policy "expenses_delete_authenticated" on public.expenses for delete to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
+DROP POLICY IF EXISTS "expenses_delete_authenticated" ON public.expenses;
+CREATE POLICY "expenses_delete_authenticated" ON public.expenses
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 -- expense_participants
-drop policy if exists "expense_participants_select_authenticated" on public.expense_participants;
+DROP POLICY IF EXISTS "expense_participants_select_authenticated" ON public.expense_participants;
+CREATE POLICY "expense_participants_select_authenticated" ON public.expense_participants
+  FOR SELECT TO authenticated USING (true);
 
-create policy "expense_participants_select_authenticated" on public.expense_participants for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "expense_participants_insert" ON public.expense_participants;
+CREATE POLICY "expense_participants_insert" ON public.expense_participants
+  FOR INSERT TO authenticated WITH CHECK (true);
 
-drop policy if exists "expense_participants_insert" on public.expense_participants;
-
-create policy "expense_participants_insert" on public.expense_participants for
-insert
-    to authenticated
-with
-    check (true);
-
-drop policy if exists "expense_participants_admin_delete" on public.expense_participants;
-
-create policy "expense_participants_admin_delete" on public.expense_participants for delete to authenticated using (public.is_admin ());
+DROP POLICY IF EXISTS "expense_participants_admin_delete" ON public.expense_participants;
+CREATE POLICY "expense_participants_admin_delete" ON public.expense_participants
+  FOR DELETE TO authenticated USING (public.is_admin());
 
 -- announcements
-drop policy if exists "announcements_select_authenticated" on public.announcements;
+DROP POLICY IF EXISTS "announcements_select_authenticated" ON public.announcements;
+CREATE POLICY "announcements_select_authenticated" ON public.announcements
+  FOR SELECT TO authenticated USING (true);
 
-create policy "announcements_select_authenticated" on public.announcements for
-select to authenticated using (true);
-
-drop policy if exists "announcements_admin_modify" on public.announcements;
-
-create policy "announcements_admin_modify" on public.announcements for all to authenticated using (public.is_admin ())
-with
-    check (public.is_admin ());
+DROP POLICY IF EXISTS "announcements_admin_modify" ON public.announcements;
+CREATE POLICY "announcements_admin_modify" ON public.announcements
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- settings
-drop policy if exists "settings_select_authenticated" on public.settings;
+DROP POLICY IF EXISTS "settings_select_authenticated" ON public.settings;
+CREATE POLICY "settings_select_authenticated" ON public.settings
+  FOR SELECT TO authenticated USING (true);
 
-create policy "settings_select_authenticated" on public.settings for
-select to authenticated using (true);
-
-drop policy if exists "settings_admin_modify" on public.settings;
-
-create policy "settings_admin_modify" on public.settings for all to authenticated using (public.is_admin ())
-with
-    check (public.is_admin ());
+DROP POLICY IF EXISTS "settings_admin_modify" ON public.settings;
+CREATE POLICY "settings_admin_modify" ON public.settings
+  FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- debt_settlements
-drop policy if exists "settlements_select_authenticated" on public.debt_settlements;
+DROP POLICY IF EXISTS "settlements_select_authenticated" ON public.debt_settlements;
+CREATE POLICY "settlements_select_authenticated" ON public.debt_settlements
+  FOR SELECT TO authenticated USING (true);
 
-create policy "settlements_select_authenticated" on public.debt_settlements for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "settlements_insert_authenticated" ON public.debt_settlements;
+CREATE POLICY "settlements_insert_authenticated" ON public.debt_settlements
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
 
-drop policy if exists "settlements_insert_authenticated" on public.debt_settlements;
-
-create policy "settlements_insert_authenticated" on public.debt_settlements for
-insert
-    to authenticated
-with
-    check (auth.uid () = created_by);
-
-drop policy if exists "settlements_delete_authenticated" on public.debt_settlements;
-
-create policy "settlements_delete_authenticated" on public.debt_settlements for delete to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
+DROP POLICY IF EXISTS "settlements_delete_authenticated" ON public.debt_settlements;
+CREATE POLICY "settlements_delete_authenticated" ON public.debt_settlements
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 -- rides
-drop policy if exists "rides_select_authenticated" on public.rides;
+DROP POLICY IF EXISTS "rides_select_authenticated" ON public.rides;
+CREATE POLICY "rides_select_authenticated" ON public.rides
+  FOR SELECT TO authenticated USING (true);
 
-create policy "rides_select_authenticated" on public.rides for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "rides_insert_authenticated" ON public.rides;
+CREATE POLICY "rides_insert_authenticated" ON public.rides
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
 
-drop policy if exists "rides_insert_authenticated" on public.rides;
-
-create policy "rides_insert_authenticated" on public.rides for
-insert
-    to authenticated
-with
-    check (auth.uid () = created_by);
-
-drop policy if exists "rides_delete_authenticated" on public.rides;
-
-create policy "rides_delete_authenticated" on public.rides for delete to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
+DROP POLICY IF EXISTS "rides_delete_authenticated" ON public.rides;
+CREATE POLICY "rides_delete_authenticated" ON public.rides
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 -- ride_riders
-drop policy if exists "ride_riders_select_authenticated" on public.ride_riders;
+DROP POLICY IF EXISTS "ride_riders_select_authenticated" ON public.ride_riders;
+CREATE POLICY "ride_riders_select_authenticated" ON public.ride_riders
+  FOR SELECT TO authenticated USING (true);
 
-create policy "ride_riders_select_authenticated" on public.ride_riders for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "ride_riders_insert_authenticated" ON public.ride_riders;
+CREATE POLICY "ride_riders_insert_authenticated" ON public.ride_riders
+  FOR INSERT TO authenticated WITH CHECK (true);
 
-drop policy if exists "ride_riders_insert_authenticated" on public.ride_riders;
-
-create policy "ride_riders_insert_authenticated" on public.ride_riders for
-insert
-    to authenticated
-with
-    check (true);
-
-drop policy if exists "ride_riders_delete_authenticated" on public.ride_riders;
-
-create policy "ride_riders_delete_authenticated" on public.ride_riders for delete to authenticated using (true);
+DROP POLICY IF EXISTS "ride_riders_delete_authenticated" ON public.ride_riders;
+CREATE POLICY "ride_riders_delete_authenticated" ON public.ride_riders
+  FOR DELETE TO authenticated USING (true);
 
 -- cook_advances
-drop policy if exists "cook_advances_select" on public.cook_advances;
+DROP POLICY IF EXISTS "cook_advances_select" ON public.cook_advances;
+CREATE POLICY "cook_advances_select" ON public.cook_advances
+  FOR SELECT TO authenticated USING (true);
 
-create policy "cook_advances_select" on public.cook_advances for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "cook_advances_insert_authenticated" ON public.cook_advances;
+CREATE POLICY "cook_advances_insert_authenticated" ON public.cook_advances
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = given_by);
 
-drop policy if exists "cook_advances_insert_authenticated" on public.cook_advances;
-
-create policy "cook_advances_insert_authenticated" on public.cook_advances for
-insert
-    to authenticated
-with
-    check (auth.uid () = given_by);
-
-drop policy if exists "cook_advances_delete_authenticated" on public.cook_advances;
-
-create policy "cook_advances_delete_authenticated" on public.cook_advances for delete to authenticated using (
-    auth.uid () = given_by
-    or public.is_admin ()
-);
+DROP POLICY IF EXISTS "cook_advances_delete_authenticated" ON public.cook_advances;
+CREATE POLICY "cook_advances_delete_authenticated" ON public.cook_advances
+  FOR DELETE TO authenticated USING (auth.uid() = given_by OR public.is_admin());
 
 -- cook_purchases
-drop policy if exists "cook_purchases_select" on public.cook_purchases;
+DROP POLICY IF EXISTS "cook_purchases_select" ON public.cook_purchases;
+CREATE POLICY "cook_purchases_select" ON public.cook_purchases
+  FOR SELECT TO authenticated USING (true);
 
-create policy "cook_purchases_select" on public.cook_purchases for
-select to authenticated using (true);
+DROP POLICY IF EXISTS "cook_purchases_insert_authenticated" ON public.cook_purchases;
+CREATE POLICY "cook_purchases_insert_authenticated" ON public.cook_purchases
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
 
-drop policy if exists "cook_purchases_insert_authenticated" on public.cook_purchases;
-
-create policy "cook_purchases_insert_authenticated" on public.cook_purchases for
-insert
-    to authenticated
-with
-    check (auth.uid () = created_by);
-
-drop policy if exists "cook_purchases_delete_authenticated" on public.cook_purchases;
-
-create policy "cook_purchases_delete_authenticated" on public.cook_purchases for delete to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
+DROP POLICY IF EXISTS "cook_purchases_delete_authenticated" ON public.cook_purchases;
+CREATE POLICY "cook_purchases_delete_authenticated" ON public.cook_purchases
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 -- daily_menu
-drop policy if exists "daily_menu_select" on public.daily_menu;
-
-create policy "daily_menu_select" on public.daily_menu for
-select to authenticated using (true);
-
-drop policy if exists "daily_menu_insert_authenticated" on public.daily_menu;
-
-create policy "daily_menu_insert_authenticated" on public.daily_menu for
-insert
-    to authenticated
-with
-    check (auth.uid () = created_by);
-
-drop policy if exists "daily_menu_update_authenticated" on public.daily_menu;
-
-create policy "daily_menu_update_authenticated" on public.daily_menu for
-update to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
-
-drop policy if exists "daily_menu_delete_authenticated" on public.daily_menu;
-
-create policy "daily_menu_delete_authenticated" on public.daily_menu for delete to authenticated using (
-    auth.uid () = created_by
-    or public.is_admin ()
-);
-
--- activity_logs
-drop policy if exists "activity_logs_select" on public.activity_logs;
-
-create policy "activity_logs_select" on public.activity_logs for
-select to authenticated using (true);
-
-drop policy if exists "activity_logs_insert" on public.activity_logs;
-
-create policy "activity_logs_insert" on public.activity_logs for
-insert
-    to authenticated
-with
-    check (true);
-
--- flat_fund_allocations
-drop policy if exists "flat_fund_alloc_select" on public.flat_fund_allocations;
-
-create policy "flat_fund_alloc_select" on public.flat_fund_allocations for
-select using (true);
-
-drop policy if exists "flat_fund_alloc_insert" on public.flat_fund_allocations;
-
-create policy "flat_fund_alloc_insert" on public.flat_fund_allocations for
-insert
-with
-    check (auth.uid () is not null);
-
-drop policy if exists "flat_fund_alloc_delete" on public.flat_fund_allocations;
-
-create policy "flat_fund_alloc_delete" on public.flat_fund_allocations for delete using (auth.uid () = allocated_by);
-
--- flat_fund_expenses
-drop policy if exists "flat_fund_exp_select" on public.flat_fund_expenses;
-
-create policy "flat_fund_exp_select" on public.flat_fund_expenses for
-select using (true);
-
-drop policy if exists "flat_fund_exp_insert" on public.flat_fund_expenses;
-
-create policy "flat_fund_exp_insert" on public.flat_fund_expenses for
-insert
-with
-    check (auth.uid () is not null);
-
-drop policy if exists "flat_fund_exp_delete" on public.flat_fund_expenses;
-
-create policy "flat_fund_exp_delete" on public.flat_fund_expenses for delete using (auth.uid () = created_by);
-
--- contribution_payments
-drop policy if exists "contrib_payments_select" on public.contribution_payments;
-
-create policy "contrib_payments_select" on public.contribution_payments for
-select using (true);
-
-drop policy if exists "contrib_payments_insert" on public.contribution_payments;
-
-create policy "contrib_payments_insert" on public.contribution_payments for
-insert
-with
-    check (auth.uid () is not null);
-
-drop policy if exists "contrib_payments_delete" on public.contribution_payments;
-
-create policy "contrib_payments_delete" on public.contribution_payments for delete using (auth.uid () = created_by);
-
--- storage
-drop policy if exists "bill_images_authenticated_insert" on storage.objects;
-
-create policy "bill_images_authenticated_insert" on storage.objects for
-insert
-    to authenticated
-with
-    check (bucket_id = 'bill-images');
-
-drop policy if exists "bill_images_public_read" on storage.objects;
-
-create policy "bill_images_public_read" on storage.objects for
-select using (bucket_id = 'bill-images');
-
-drop policy if exists "bill_images_admin_delete" on storage.objects;
-
-create policy "bill_images_admin_delete" on storage.objects for delete to authenticated using (
-    bucket_id = 'bill-images'
-    and public.is_admin ()
-);
-
-drop policy if exists "bill_images_owner_delete" on storage.objects;
-
-create policy "bill_images_owner_delete" on storage.objects
-  for delete to authenticated
-  using (bucket_id = 'bill-images' and auth.uid()::text = (storage.foldername(name))[1]);
-
--- payment-screenshots storage policies
-drop policy if exists "payment_screenshots_authenticated_insert" on storage.objects;
-
-create policy "payment_screenshots_authenticated_insert" on storage.objects for
-insert
-    to authenticated
-with
-    check (bucket_id = 'payment-screenshots');
-
-drop policy if exists "payment_screenshots_public_read" on storage.objects;
-
-create policy "payment_screenshots_public_read" on storage.objects for
-select using (bucket_id = 'payment-screenshots');
-
-drop policy if exists "payment_screenshots_admin_delete" on storage.objects;
-
-create policy "payment_screenshots_admin_delete" on storage.objects for delete to authenticated using (
-    bucket_id = 'payment-screenshots'
-    and public.is_admin ()
-);
-
-drop policy if exists "payment_screenshots_owner_delete" on storage.objects;
-
-create policy "payment_screenshots_owner_delete" on storage.objects
-  for delete to authenticated
-  using (bucket_id = 'payment-screenshots' and auth.uid()::text = (storage.foldername(name))[1]);
-
--- Add missing column
-ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS last_date date;
-
--- Add missing table
-CREATE TABLE IF NOT EXISTS public.daily_menu (
-    id uuid primary key default gen_random_uuid (),
-    date date not null unique,
-    breakfast text,
-    lunch text,
-    dinner text,
-    notes text,
-    created_by uuid not null references public.profiles (id) on delete restrict,
-    created_at timestamptz not null default timezone ('utc', now()),
-    updated_at timestamptz not null default timezone ('utc', now())
-);
-
-CREATE INDEX IF NOT EXISTS daily_menu_date_idx ON public.daily_menu (date);
-
-ALTER TABLE public.daily_menu ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "daily_menu_select" ON public.daily_menu;
-
-CREATE POLICY "daily_menu_select" ON public.daily_menu FOR
-SELECT TO authenticated USING (true);
+CREATE POLICY "daily_menu_select" ON public.daily_menu
+  FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "daily_menu_insert_authenticated" ON public.daily_menu;
-
-CREATE POLICY "daily_menu_insert_authenticated" ON public.daily_menu FOR
-INSERT
-    TO authenticated
-WITH
-    CHECK (auth.uid () = created_by);
+CREATE POLICY "daily_menu_insert_authenticated" ON public.daily_menu
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
 
 DROP POLICY IF EXISTS "daily_menu_update_authenticated" ON public.daily_menu;
-
-CREATE POLICY "daily_menu_update_authenticated" ON public.daily_menu FOR
-UPDATE TO authenticated USING (
-    auth.uid () = created_by
-    OR public.is_admin ()
-);
+CREATE POLICY "daily_menu_update_authenticated" ON public.daily_menu
+  FOR UPDATE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 DROP POLICY IF EXISTS "daily_menu_delete_authenticated" ON public.daily_menu;
+CREATE POLICY "daily_menu_delete_authenticated" ON public.daily_menu
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
-CREATE POLICY "daily_menu_delete_authenticated" ON public.daily_menu FOR DELETE TO authenticated USING (
-    auth.uid () = created_by
-    OR public.is_admin ()
-);
+-- activity_logs
+DROP POLICY IF EXISTS "activity_logs_select" ON public.activity_logs;
+CREATE POLICY "activity_logs_select" ON public.activity_logs
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "activity_logs_insert" ON public.activity_logs;
+CREATE POLICY "activity_logs_insert" ON public.activity_logs
+  FOR INSERT TO authenticated WITH CHECK (true);
+
+-- flat_fund_allocations
+DROP POLICY IF EXISTS "flat_fund_alloc_select" ON public.flat_fund_allocations;
+CREATE POLICY "flat_fund_alloc_select" ON public.flat_fund_allocations
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "flat_fund_alloc_insert" ON public.flat_fund_allocations;
+CREATE POLICY "flat_fund_alloc_insert" ON public.flat_fund_allocations
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "flat_fund_alloc_delete" ON public.flat_fund_allocations;
+CREATE POLICY "flat_fund_alloc_delete" ON public.flat_fund_allocations
+  FOR DELETE USING (auth.uid() = allocated_by);
+
+-- flat_fund_expenses
+DROP POLICY IF EXISTS "flat_fund_exp_select" ON public.flat_fund_expenses;
+CREATE POLICY "flat_fund_exp_select" ON public.flat_fund_expenses
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "flat_fund_exp_insert" ON public.flat_fund_expenses;
+CREATE POLICY "flat_fund_exp_insert" ON public.flat_fund_expenses
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "flat_fund_exp_delete" ON public.flat_fund_expenses;
+CREATE POLICY "flat_fund_exp_delete" ON public.flat_fund_expenses
+  FOR DELETE USING (auth.uid() = created_by);
+
+-- contribution_payments
+DROP POLICY IF EXISTS "contrib_payments_select" ON public.contribution_payments;
+CREATE POLICY "contrib_payments_select" ON public.contribution_payments
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "contrib_payments_insert" ON public.contribution_payments;
+CREATE POLICY "contrib_payments_insert" ON public.contribution_payments
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "contrib_payments_delete" ON public.contribution_payments;
+CREATE POLICY "contrib_payments_delete" ON public.contribution_payments
+  FOR DELETE USING (auth.uid() = created_by);
+
+-- ── Storage Buckets ───────────────────────────────────────────────────────────
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES
+  ('bill-images',          'bill-images',          true),
+  ('payment-screenshots',  'payment-screenshots',  true),
+  ('avatars',              'avatars',              true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── Storage RLS Policies ──────────────────────────────────────────────────────
+
+-- bill-images
+DROP POLICY IF EXISTS "bill_images_public_read"            ON storage.objects;
+DROP POLICY IF EXISTS "bill_images_authenticated_insert"   ON storage.objects;
+DROP POLICY IF EXISTS "bill_images_admin_delete"           ON storage.objects;
+DROP POLICY IF EXISTS "bill_images_owner_delete"           ON storage.objects;
+
+CREATE POLICY "bill_images_public_read" ON storage.objects
+  FOR SELECT USING (bucket_id = 'bill-images');
+
+CREATE POLICY "bill_images_authenticated_insert" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'bill-images');
+
+CREATE POLICY "bill_images_admin_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'bill-images' AND public.is_admin());
+
+CREATE POLICY "bill_images_owner_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'bill-images' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- payment-screenshots
+DROP POLICY IF EXISTS "payment_screenshots_public_read"           ON storage.objects;
+DROP POLICY IF EXISTS "payment_screenshots_authenticated_insert"  ON storage.objects;
+DROP POLICY IF EXISTS "payment_screenshots_admin_delete"          ON storage.objects;
+DROP POLICY IF EXISTS "payment_screenshots_owner_delete"          ON storage.objects;
+
+CREATE POLICY "payment_screenshots_public_read" ON storage.objects
+  FOR SELECT USING (bucket_id = 'payment-screenshots');
+
+CREATE POLICY "payment_screenshots_authenticated_insert" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'payment-screenshots');
+
+CREATE POLICY "payment_screenshots_admin_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'payment-screenshots' AND public.is_admin());
+
+CREATE POLICY "payment_screenshots_owner_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'payment-screenshots' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- avatars — users manage their own, public read
+DROP POLICY IF EXISTS "avatars_public_read"   ON storage.objects;
+DROP POLICY IF EXISTS "avatars_owner_upsert"  ON storage.objects;
+DROP POLICY IF EXISTS "avatars_owner_update"  ON storage.objects;
+DROP POLICY IF EXISTS "avatars_owner_delete"  ON storage.objects;
+
+CREATE POLICY "avatars_public_read" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "avatars_owner_upsert" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "avatars_owner_update" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "avatars_owner_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ── Seed Data ─────────────────────────────────────────────────────────────────
+
+INSERT INTO public.rooms (name, type) VALUES
+  ('Yasir & Haris Room',     'bedroom'),
+  ('Sajid & Raza Room',      'bedroom'),
+  ('Jimmy & Ateeb Room',     'bedroom'),
+  ('Yasir & Haris Washroom', 'washroom'),
+  ('Sajid & Raza Washroom',  'washroom'),
+  ('Jimmy & Ateeb Washroom', 'washroom'),
+  ('Kitchen',                'kitchen'),
+  ('TV Lounge',              'lounge'),
+  ('Dining',                 'dining')
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO public.beds (room_id, label)
+SELECT r.id, b.label
+FROM public.rooms r
+CROSS JOIN (VALUES ('Bed A'), ('Bed B')) AS b(label)
+WHERE r.name IN ('Yasir & Haris Room', 'Sajid & Raza Room', 'Jimmy & Ateeb Room')
+  AND NOT EXISTS (
+    SELECT 1 FROM public.beds e WHERE e.room_id = r.id AND e.label = b.label
+  );
+
+INSERT INTO public.settings (key, value) VALUES
+  ('member_count', '6'),
+  ('flatmates',    'Yasir Ajmal Mehmand, Muhammad Haris, Sajid Ali, Ahmad Raza, Babar Jamil Ur Rahman (Jimmy), Ateeb Raza'),
+  ('cook_name',    'Muhammad Sajid Khan')
+ON CONFLICT (key) DO UPDATE SET value = excluded.value;
+
+-- ============================================================
+-- VERIFICATION: Check if everything is created
+-- ============================================================
+
+-- Check tables
+SELECT 
+  schemaname,
+  tablename,
+  rowsecurity as rls_enabled
+FROM pg_tables 
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+-- Check functions
+SELECT 
+  proname as function_name,
+  prosecdef as is_security_definer
+FROM pg_proc 
+WHERE pronamespace = 'public'::regnamespace
+ORDER BY proname;
+
+-- Check storage buckets
+SELECT id, name, public FROM storage.buckets;
+
+-- Check RLS policies count
+SELECT 
+  schemaname,
+  tablename,
+  COUNT(*) as policy_count
+FROM pg_policies 
+WHERE schemaname = 'public'
+GROUP BY schemaname, tablename
+ORDER BY tablename;
+
+-- ============================================================
+-- SUCCESS MESSAGE
+-- ============================================================
+
+DO $$
+BEGIN
+  RAISE NOTICE '✅ MilBaant database schema created successfully!';
+  RAISE NOTICE '📊 Tables: 17 created';
+  RAISE NOTICE '🔒 RLS: Enabled on all tables';
+  RAISE NOTICE '🗂️  Storage: 3 buckets created';
+  RAISE NOTICE '⚙️  Functions: 3 created';
+  RAISE NOTICE '';
+  RAISE NOTICE '🎉 Your database is ready to use!';
+  RAISE NOTICE '';
+  RAISE NOTICE '📝 Next steps:';
+  RAISE NOTICE '   1. Create your first user (will become admin automatically)';
+  RAISE NOTICE '   2. Configure your .env file with Supabase credentials';
+  RAISE NOTICE '   3. Run: npm run dev';
+END $$;

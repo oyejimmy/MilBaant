@@ -1,9 +1,11 @@
 import styled from 'styled-components'
 
+/* ─── Page wrapper ────────────────────────────────────────────────────────── */
 export const PageStack = styled.div`
-  display: grid;
-  gap: 12px;
-  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
 
   @media (min-width: 768px) {
     gap: 20px;
@@ -11,43 +13,36 @@ export const PageStack = styled.div`
   }
 `
 
+/* ─── Section card ────────────────────────────────────────────────────────── */
 export const SectionBlock = styled.div`
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  transition: border-color 0.2s ease;
-
-  @media (min-width: 768px) {
-    padding: 18px 20px;
-    border-radius: 10px;
-  }
-
-  &:hover {
-    border-color: rgba(144, 159, 250, 0.3);
-  }
-`
-
-export const PageIntro = styled.div`
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 16px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 
   @media (min-width: 768px) {
     padding: 20px 24px;
+    border-radius: 14px;
   }
 `
 
-export const GlassPanel = styled.div`
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 7px;
+/* ─── Page header intro block ─────────────────────────────────────────────── */
+export const PageIntro = styled.div`
+  background: transparent;
+  padding: 0;
 `
 
+/* ─── Generic panel ───────────────────────────────────────────────────────── */
+export const GlassPanel = styled.div`
+  background: var(--card-bg);
+  border-radius: 12px;
+`
+
+/* ─── Typography ──────────────────────────────────────────────────────────── */
 export const PageTitle = styled.h1`
   margin: 0;
-  font-size: clamp(1.2rem, 5vw, 1.9rem);
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
   line-height: 1.15;
   font-family: "Plus Jakarta Sans", sans-serif;
   font-weight: 700;
@@ -57,10 +52,12 @@ export const PageTitle = styled.h1`
 export const PageSubtitle = styled.p`
   margin: 0;
   color: var(--text-muted);
-  font-size: clamp(0.8rem, 3vw, 0.9rem);
+  font-size: clamp(0.8rem, 3vw, 0.875rem);
   max-width: 720px;
+  line-height: 1.5;
 `
 
+/* ─── Stat grid ───────────────────────────────────────────────────────────── */
 export const ResponsiveGrid = styled.div`
   display: grid;
   gap: 12px;
@@ -76,6 +73,7 @@ export const ResponsiveGrid = styled.div`
   }
 `
 
+/* ─── Actions row ─────────────────────────────────────────────────────────── */
 export const ActionsRow = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -87,40 +85,25 @@ export const ActionsRow = styled.div`
     flex-direction: column;
     gap: 12px;
 
-    > * {
-      width: 100%;
-    }
+    > * { width: 100%; }
 
-    .ant-space {
-      width: 100%;
-    }
-
-    .ant-space-item {
-      width: 100%;
-    }
-
-    .ant-btn,
-    .ant-picker {
-      width: 100% !important;
-    }
+    .ant-space { width: 100%; }
+    .ant-space-item { width: 100%; }
+    .ant-btn, .ant-picker { width: 100% !important; }
   }
 `
 
-/* ─── Shared mobile card primitives (used across all pages) ──────────────── */
-
+/* ─── Mobile card primitives ──────────────────────────────────────────────── */
 export const MobileCard = styled.div`
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px 14px;
   background: var(--card-bg);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: opacity 0.15s ease;
 
-  &:active {
-    transform: scale(0.98);
-  }
+  &:active { opacity: 0.75; }
 `
 
 export const MobileRow = styled.div`

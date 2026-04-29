@@ -40,7 +40,7 @@ export function AnnouncementComposer({
         rules={[{ required: true, message: 'Please add a title.' }]}
       >
         <Input 
-          placeholder="Water tanker timing for this weekend"
+          placeholder="Enter announcement title"
           size={isMobile ? 'large' : 'middle'}
         />
       </Form.Item>
@@ -51,7 +51,7 @@ export function AnnouncementComposer({
       >
         <Input.TextArea 
           rows={isMobile ? 6 : 5} 
-          placeholder="Write the update for the flatmates."
+          placeholder="Write the announcement content"
           style={{ fontSize: isMobile ? '16px' : '14px' }}
         />
       </Form.Item>
@@ -94,7 +94,7 @@ export function AnnouncementComposer({
       onCancel={handleCancel}
       onOk={() => void handleOk()}
       confirmLoading={confirmLoading}
-      destroyOnClose
+      destroyOnHidden
     >
       {formContent}
     </Modal>

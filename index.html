@@ -2,26 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/pwa-icon.png" />
+    <link rel="apple-touch-icon" href="/pwa-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- Mobile-optimized viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
     <!-- Theme colors for mobile browsers -->
-    <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#1c8ee5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
 
     <!-- PWA / iOS specific meta tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MilBaant" />
     <meta name="application-name" content="MilBaant" />
 
     <!-- Prevent automatic phone number detection -->
     <meta name="format-detection" content="telephone=no" />
+
+    <!-- SEO -->
+    <meta name="description" content="Track flatmate expenses, rides, cook ledger, and contributions with MilBaant." />
+    <meta name="keywords" content="flatmate, expense tracker, shared expenses, roommate, flat management" />
 
     <title>MilBaant - Flatmate Expense Manager</title>
   </head>

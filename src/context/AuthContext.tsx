@@ -8,7 +8,6 @@ import {
 } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { useQuery } from '@tanstack/react-query'
-import { message } from 'antd'
 import { QUERY_KEYS } from '@/lib/constants'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
@@ -19,7 +18,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 async function fetchCurrentProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, role, can_add_expenses')
+    .select('id, full_name, role, can_add_expenses, avatar_url, phone, bio')
     .eq('id', userId)
     .single()
 
@@ -38,8 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true
 
     supabase.auth.getSession().then(({ data, error }) => {
+      // Silently handle error — no message needed on mount
       if (error) {
-        message.error(error.message)
+        console.error('Auth session error:', error.message)
       }
 
       if (mounted) {
@@ -78,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: session?.user.email ?? null,
       profile: profileQuery.data ?? null,
       isAdmin: profileQuery.data?.role === 'admin',
+      isCook: profileQuery.data?.role === 'cook',
       canManageExpenses:
         profileQuery.data?.role === 'admin' ||
         profileQuery.data?.can_add_expenses === true,

@@ -18,10 +18,9 @@
 import { Suspense, useMemo, useState, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
-import { Alert, Button, Skeleton, Typography } from 'antd'
+import { Alert, App, Button, Skeleton, Typography } from 'antd'
 import { CompressOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import styled from 'styled-components'
-import { message } from 'antd'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 import { useAuth } from '@/hooks/useAuth'
@@ -192,6 +191,7 @@ function Scene({ isAdmin, currentUserId, assignments, profiles, onBedClick, bedK
 // ── Main exported component ────────────────────────────────────────────────
 export default function FlatView3D() {
   const { isAdmin, userId: currentUserId } = useAuth()
+  const { message } = App.useApp()
   const profilesQuery = useProfiles()
   const bedsQuery = useBeds()
   const assignmentsQuery = useBedAssignments()
@@ -293,7 +293,7 @@ export default function FlatView3D() {
       <WebGLFallback>
         <Alert
           type="warning"
-          message="3D View Not Available"
+          title="3D View Not Available"
           description="Your browser or device doesn't support WebGL. Please try a modern browser like Chrome or Firefox."
           showIcon
         />

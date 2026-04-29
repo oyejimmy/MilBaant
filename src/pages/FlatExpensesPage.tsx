@@ -239,6 +239,7 @@ export function FlatExpensesPage() {
       <PageHeader
         title="Flat Expenses"
         subtitle="Track shared flat money — allocate funds to members and log what they spend on flat items like bulbs, bread, water bottles, and more."
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Flat Fund' }]}
         actions={
           <Space wrap>
             {!!userId && (
@@ -281,7 +282,7 @@ export function FlatExpensesPage() {
             Member Balances
           </Typography.Title>
           {summaries.length === 0 ? (
-            <Alert type="info" showIcon message="No allocations yet. Admins can allocate flat fund money to members." />
+            <Alert type="info" showIcon title="No allocations yet. Admins can allocate flat fund money to members." />
           ) : (
             <Row gutter={[10, 10]}>
               {summaries.map((s) => {
@@ -302,7 +303,7 @@ export function FlatExpensesPage() {
                           showInfo={false}
                           size="small"
                           strokeColor={status === 'deficit' ? '#ff4d4f' : '#52c41a'}
-                          trailColor="var(--card-border)"
+                          railColor="var(--card-border)"
                           style={{ marginTop: 4 }}
                         />
                       </div>

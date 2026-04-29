@@ -92,10 +92,8 @@ export function createAntTheme(mode: ThemeMode): ThemeConfig {
       Card: {
         colorBgContainer:  c.bgCard,
         headerBg:          'transparent',
-        borderRadiusLG:    12,
-        boxShadowTertiary: isDark
-          ? '0 1px 3px rgba(0,0,0,0.5)'
-          : '0 1px 3px rgba(0,0,0,0.06)',
+        borderRadiusLG:    14,
+        boxShadowTertiary: 'none',
         colorBorderSecondary: 'transparent',
         paddingLG: 20,
       },
@@ -144,6 +142,11 @@ export function createAntTheme(mode: ThemeMode): ThemeConfig {
         colorBorder:         c.borderDefault,
         paddingBlock:        8,
         paddingInline:       12,
+        // Remove the inner separator line next to prefix/suffix icons
+        colorIcon:           c.textTertiary,
+        colorIconHover:      c.textSecondary,
+        // Remove the internal separator border on password fields
+        // inputAffixPadding removed — not a valid token in antd v6
       },
 
       // ─── InputNumber ───────────────────────────────────────────────

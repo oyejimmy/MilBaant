@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Alert, Button, Form, Input, message } from 'antd'
-import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
+import { Alert, App, Button, Form, Input } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthShell, FormBody, FormFooter } from '@/components/AuthShell'
+import { AuthShell, FormFooter } from '@/components/AuthShell'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 interface RegisterValues {
@@ -13,6 +12,7 @@ interface RegisterValues {
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  const { message } = App.useApp()
   const [submitting, setSubmitting] = useState(false)
 
   async function handleRegister(values: RegisterValues) {
@@ -20,7 +20,6 @@ export function RegisterPage() {
       message.error('Supabase is not configured. Add environment variables and restart.')
       return
     }
-
     setSubmitting(true)
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -28,7 +27,6 @@ export function RegisterPage() {
         password: values.password,
         options: { data: { full_name: values.full_name } },
       })
-
       if (error) throw new Error(error.message)
 
       if (data.session) {
@@ -38,8 +36,8 @@ export function RegisterPage() {
         message.success('Account created. Check your inbox if email confirmation is enabled.')
         navigate('/login', { replace: true })
       }
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to register.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to register.')
     } finally {
       setSubmitting(false)
     }
@@ -54,9 +52,9 @@ export function RegisterPage() {
         <Alert
           type="warning"
           showIcon
-          message="Supabase not configured"
+          title="Supabase not configured"
           description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file."
-          style={{ marginBottom: 20, borderRadius: 10 }}
+          style={{ marginBottom: 20 }}
         />
       )}
 
@@ -65,53 +63,51 @@ export function RegisterPage() {
         onFinish={(values) => void handleRegister(values)}
         requiredMark={false}
       >
-        <FormBody>
-          <Form.Item
-            label="Full name"
-            name="full_name"
-            rules={[{ required: true, message: 'Full name is required.' }]}
-          >
-            <Input
-              prefix={<UserOutlined style={{ color: 'var(--text-muted)' }} />}
-              placeholder="e.g. Yasir Momand"
-              size="large"
-              autoComplete="name"
-            />
-          </Form.Item>
+        <Form.Item
+          label="Full name"
+          name="full_name"
+          rules={[{ required: true, message: 'Full name is required.' }]}
+        >
+          <Input
+            placeholder="Enter your full name"
+            size="large"
+            autoComplete="name"
+          />
+        </Form.Item>
 
-          <Form.Item
-            label="Email address"
-            name="email"
-            rules={[
-              { required: true, message: 'Email is required.' },
-              { type: 'email', message: 'Enter a valid email.' },
-            ]}
-          >
-            <Input
-              prefix={<MailOutlined style={{ color: 'var(--text-muted)' }} />}
-              placeholder="yasir@milbaant.com"
-              size="large"
-              autoComplete="email"
-            />
-          </Form.Item>
+        <Form.Item
+          label="Email address"
+          name="email"
+          rules={[
+            { required: true, message: 'Email is required.' },
+            { type: 'email', message: 'Enter a valid email.' },
+          ]}
+        >
+          <Input
+            placeholder="Enter your email"
+            size="large"
+            autoComplete="email"
+          />
+        </Form.Item>
 
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[
-              { required: true, message: 'Password is required.' },
-              { min: 6, message: 'Use at least 6 characters.' },
-            ]}
-            style={{ marginBottom: 24 }}
-          >
-            <Input.Password
-              prefix={<LockOutlined style={{ color: 'var(--text-muted)' }} />}
-              placeholder="At least 6 characters"
-              size="large"
-              autoComplete="new-password"
-            />
-          </Form.Item>
+        <Form.Item
+          label="Password"
+          name="password"
+          rules={[
+            { required: true, message: 'Password is required.' },
+            { min: 6, message: 'Use at least 6 characters.' },
+          ]}
+          style={{ marginBottom: 24 }}
+        >
+          <Input.Password
+            placeholder="At least 6 characters"
+            size="large"
+            autoComplete="new-password"
+            styles={{ suffix: { borderInlineStart: 'none', boxShadow: 'none' } }}
+          />
+        </Form.Item>
 
+        <Form.Item style={{ marginBottom: 0 }}>
           <Button
             htmlType="submit"
             type="primary"
@@ -119,11 +115,11 @@ export function RegisterPage() {
             size="large"
             loading={submitting}
             disabled={!isSupabaseConfigured}
-            style={{ fontWeight: 600, height: 48 }}
+            style={{ fontWeight: 600, height: 46 }}
           >
             Create Account
           </Button>
-        </FormBody>
+        </Form.Item>
       </Form>
 
       <FormFooter>

@@ -31,7 +31,7 @@ import {
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel, ResponsiveGrid } from '@/components/Glass'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -318,6 +318,7 @@ export function CookPage() {
       <PageHeader
         title="Cook Ledger"
         subtitle="Track advance money given to the cook and every item purchased with it. Full transparency for all flatmates."
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Cook Ledger' }]}
         actions={
           <Space wrap>
             <DatePicker
@@ -380,36 +381,18 @@ export function CookPage() {
               percent={usedPercent}
               showInfo={false}
               strokeColor={balanceStatus === 'deficit' ? '#ff4d4f' : '#52c41a'}
-              trailColor="var(--card-border)"
+              railColor="var(--card-border)"
               size="small"
             />
           </div>
         </BalanceCard>
 
         {/* Stats */}
-        <Row gutter={[12, 12]}>
-          <Col xs={24} sm={8}>
-            <SummaryStat
-              title="Total Advanced"
-              value={formatCurrency(totalAdvanced)}
-              subtitle="Money given to cook."
-            />
-          </Col>
-          <Col xs={24} sm={8}>
-            <SummaryStat
-              title="Total Spent"
-              value={formatCurrency(totalSpent)}
-              subtitle="Items purchased by cook."
-            />
-          </Col>
-          <Col xs={24} sm={8}>
-            <SummaryStat
-              title="Purchases"
-              value={purchases.length}
-              subtitle="Items logged this period."
-            />
-          </Col>
-        </Row>
+        <ResponsiveGrid>
+          <SummaryStat title="Total Advanced" value={formatCurrency(totalAdvanced)} subtitle="Money given to cook."      icon={<WalletOutlined />}   color="var(--primary)" />
+          <SummaryStat title="Total Spent"    value={formatCurrency(totalSpent)}    subtitle="Items purchased by cook."  icon={<CoffeeOutlined />}   color="#ff4d4f" />
+          <SummaryStat title="Purchases"      value={purchases.length}              subtitle="Items logged this period." icon={<ShoppingCartOutlined />} color="#d46b08" />
+        </ResponsiveGrid>
 
         {/* Category breakdown */}
         {categoryBreakdown.length > 0 && (
@@ -536,7 +519,7 @@ export function CookPage() {
           <Alert
             type="warning"
             showIcon
-            message={`Cook overspent by ${formatCurrency(Math.abs(balance))}`}
+            title={`Cook overspent by ${formatCurrency(Math.abs(balance))}`}
             description="The cook has spent more than the advance given. Consider recording a new advance or reviewing the purchases."
           />
         )}

@@ -1,13 +1,13 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '@/lib/constants'
 import { queryClient } from '@/lib/query-client'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseSignup } from '@/lib/supabase'
 import type { Profile, Role } from '@/lib/types'
 
 async function fetchProfiles() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, role, can_add_expenses')
+    .select('id, full_name, role, can_add_expenses, is_active')
     .order('full_name', { ascending: true })
 
   if (error) {
@@ -31,18 +31,37 @@ export function useUpdateProfilePermissions() {
       role?: Role
       canAddExpenses?: boolean
       fullName?: string
+      isActive?: boolean
     }) => {
-      const updates: Record<string, unknown> = {}
-      if (payload.role) updates.role = payload.role
-      if (typeof payload.canAddExpenses === 'boolean') updates.can_add_expenses = payload.canAddExpenses
-      if (payload.fullName) updates.full_name = payload.fullName
+      // Nothing to update
+      const hasChanges =
+        payload.role !== undefined ||
+        typeof payload.canAddExpenses === 'boolean' ||
+        payload.fullName !== undefined ||
+        typeof payload.isActive === 'boolean'
+      if (!hasChanges) return
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', payload.userId)
+      // Use the SECURITY DEFINER RPC so the update runs as the DB owner,
+      // bypassing RLS entirely. This is the only reliable way to let an admin
+      // update another user's row without hitting the policy conflict that
+      // browsers surface as a CORS / network error.
+      const { error } = await supabase.rpc('admin_update_profile', {
+        target_user_id: payload.userId,
+        p_role:         payload.role         ?? null,
+        p_can_add_exp:  payload.canAddExpenses ?? null,
+        p_full_name:    payload.fullName      ?? null,
+        p_is_active:    payload.isActive      ?? null,
+      })
 
-      if (error) throw new Error(error.message)
+      if (error) {
+        if (
+          error.message.includes('Permission denied') ||
+          error.message.includes('admin role required')
+        ) {
+          throw new Error('Admin access required. Please refresh the page and try again.')
+        }
+        throw new Error(error.message)
+      }
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
@@ -52,14 +71,51 @@ export function useUpdateProfilePermissions() {
 }
 
 /**
+ * Any authenticated user can update their own profile fields:
+ * full_name, phone, bio, avatar_url.
+ * Uses the profiles_self_update RLS policy.
+ */
+export function useUpdateOwnProfile() {
+  return useMutation({
+    mutationFn: async (payload: {
+      userId: string
+      fullName?: string
+      phone?: string
+      bio?: string
+      avatarUrl?: string | null
+    }) => {
+      const updates: Record<string, unknown> = {}
+      if (payload.fullName  !== undefined) updates.full_name  = payload.fullName
+      if (payload.phone     !== undefined) updates.phone      = payload.phone
+      if (payload.bio       !== undefined) updates.bio        = payload.bio
+      if (payload.avatarUrl !== undefined) updates.avatar_url = payload.avatarUrl
+
+      if (Object.keys(updates).length === 0) return
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', payload.userId)
+
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profile })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
+    },
+  })
+}
+
+/**
  * Admin creates a new user by signing them up.
- * Supabase will create the auth user and trigger handle_new_user()
- * which inserts a profile. We then update the profile with the correct name.
  *
- * Note: This uses the anon key signUp — works when "Confirm email" is
- * disabled in Supabase Auth settings (recommended for private flat apps).
- * The admin should disable email confirmation in Supabase Dashboard →
- * Auth → Settings → "Enable email confirmations" OFF.
+ * Uses a separate isolated Supabase client (supabaseSignup) with in-memory
+ * storage so the signUp call never overwrites the admin's session in the
+ * primary client. This is the only reliable way to create users without
+ * losing the admin session and triggering RLS failures on subsequent requests.
+ *
+ * Requires "Enable email confirmations" to be OFF in Supabase Dashboard →
+ * Auth → Settings (recommended for private flat apps).
  */
 export function useAdminCreateUser() {
   return useMutation({
@@ -70,8 +126,8 @@ export function useAdminCreateUser() {
       role: Role
       canAddExpenses: boolean
     }) => {
-      // 1. Sign up the new user (creates auth.users row + triggers profile insert)
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Sign up via the isolated client — admin session is untouched
+      const { data, error } = await supabaseSignup.auth.signUp({
         email: payload.email.trim().toLowerCase(),
         password: payload.password,
         options: {
@@ -84,13 +140,13 @@ export function useAdminCreateUser() {
 
       const newUserId = data.user.id
 
-      // 2. Update profile with correct name, role, and permissions
-      // (handle_new_user trigger may have already inserted with email-derived name)
+      // 2. Update the new profile using the primary (admin) client
+      //    Admin session is still intact, so the RLS policy allows this
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: payload.fullName.trim(),
-          role: payload.role,
+          full_name:        payload.fullName.trim(),
+          role:             payload.role,
           can_add_expenses: payload.canAddExpenses,
         })
         .eq('id', newUserId)

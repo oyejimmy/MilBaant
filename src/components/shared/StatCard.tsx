@@ -25,10 +25,10 @@ const Label = styled(Typography.Text)`
 `
 
 const Value = styled(Typography.Title)<{ $color?: string }>`
-  margin: 4px 0 0 0 !important;
-  color: ${({ $color }) => $color || 'var(--text-strong)'} !important;
-  font-size: clamp(1.2rem, 3vw, 1.5rem) !important;
-  font-weight: 700 !important;
+  margin: 4px 0 0 0  ;
+  color: ${({ $color }) => $color || 'var(--text-strong)'}  ;
+  font-size: clamp(1.2rem, 3vw, 1.5rem)  ;
+  font-weight: 700  ;
 `
 
 const Subtitle = styled(Typography.Text)`

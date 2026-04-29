@@ -4,7 +4,6 @@ import {
   DashboardOutlined,
   WalletOutlined,
   ApartmentOutlined,
-  NotificationOutlined,
   MenuOutlined,
 } from '@ant-design/icons'
 
@@ -18,7 +17,6 @@ const NAV_ITEMS: NavItem[] = [
   { key: '/', label: 'Home', icon: <DashboardOutlined /> },
   { key: '/expenses', label: 'Expenses', icon: <WalletOutlined /> },
   { key: '/flat-view', label: 'Flat', icon: <ApartmentOutlined /> },
-  { key: '/announcements', label: 'News', icon: <NotificationOutlined /> },
 ]
 
 const BottomNavContainer = styled.nav`

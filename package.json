@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "seed:demo": "node ./scripts/seed-demo-data.mjs"
+    "seed:demo": "node ./scripts/seed-demo-data.mjs",
+    "generate:icons": "node ./scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.1",

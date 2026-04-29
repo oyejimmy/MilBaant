@@ -40,7 +40,7 @@ export function QueryState({
         <Alert
           type="error"
           showIcon
-          message="Something went wrong"
+          title="Something went wrong"
           description={error.message}
         />
       </SectionBlock>

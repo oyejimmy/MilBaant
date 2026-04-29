@@ -1,6 +1,6 @@
 import type { Dayjs } from 'dayjs'
 
-export type Role = 'admin' | 'user'
+export type Role = 'admin' | 'user' | 'cook'
 
 export type ExpenseCategory =
   | 'gas_bill'
@@ -20,6 +20,10 @@ export interface Profile {
   full_name: string
   role: Role
   can_add_expenses: boolean
+  is_active?: boolean
+  avatar_url?: string | null
+  phone?: string | null
+  bio?: string | null
 }
 
 export interface Room {
@@ -110,6 +114,7 @@ export interface AuthContextValue {
   email: string | null
   profile: Profile | null
   isAdmin: boolean
+  isCook: boolean
   canManageExpenses: boolean
   signOut: () => Promise<void>
 }
@@ -342,4 +347,28 @@ export interface UpdateDailyMenuInput {
   lunch?: string
   dinner?: string
   notes?: string
+}
+
+/* ─── Cook Requests ───────────────────────────────────────────────────────── */
+
+export type CookRequestStatus = 'pending' | 'acknowledged' | 'done' | 'rejected'
+
+export interface CookRequest {
+  id: string
+  item: string
+  quantity: string | null
+  note: string | null
+  cook_comment: string | null
+  status: CookRequestStatus
+  requested_by: string
+  created_at: string
+  updated_at: string
+  requester?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+export interface CreateCookRequestInput {
+  item: string
+  quantity?: string
+  note?: string
+  requestedBy: string
 }

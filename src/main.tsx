@@ -14,6 +14,7 @@ import { ThemeModeProvider, useThemeMode } from '@/context/ThemeModeContext'
 import { queryClient } from '@/lib/query-client'
 import { GlobalStyles } from '@/styles/global-styles'
 import { createAntTheme } from '@/styles/theme'
+import { InstallPrompt } from '@/components/InstallPrompt'
 import './index.css'
 
 dayjs.extend(advancedFormat)
@@ -29,6 +30,7 @@ function AppTheme() {
           <AuthProvider>
             <GlobalStyles $mode={mode} />
             <App />
+            <InstallPrompt />
           </AuthProvider>
         </BrowserRouter>
       </AntApp>

@@ -8,12 +8,12 @@ const StyledButton = styled(Button)<{ $touchFriendly: boolean }>`
   ${({ $touchFriendly }) =>
     $touchFriendly &&
     `
-    min-width: 44px !important;
-    min-height: 44px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
+    min-width: 44px  ;
+    min-height: 44px  ;
+    display: flex  ;
+    align-items: center  ;
+    justify-content: center  ;
+    padding: 0  ;
   `}
 `
 

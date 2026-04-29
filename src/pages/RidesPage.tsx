@@ -25,17 +25,19 @@ import {
 } from 'antd'
 import {
   ArrowRightOutlined,
+  AuditOutlined,
   CarOutlined,
   CheckCircleOutlined,
   DeleteOutlined,
   EyeOutlined,
   PlusOutlined,
+  TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel, ResponsiveGrid } from '@/components/Glass'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import { useRides, useCreateRide, useDeleteRide } from '@/hooks/useRides'
@@ -348,6 +350,7 @@ export function RidesPage() {
       <PageHeader
         title="Rides"
         subtitle={`Shared taxi rides for ${formatMonthYear(selectedMonth)} — Yango, InDriver, and more. One person pays, everyone splits.`}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Rides' }]}
         actions={
           <Space wrap>
             <DatePicker
@@ -370,29 +373,11 @@ export function RidesPage() {
 
       <QueryState isLoading={isLoading} error={error}>
         {/* Stats */}
-        <Row gutter={[12, 12]}>
-          <Col xs={24} sm={8}>
-            <SummaryStat
-              title="Total Spend"
-              value={formatCurrency(totalSpend)}
-              subtitle="All rides this month."
-            />
-          </Col>
-          <Col xs={24} sm={8}>
-            <SummaryStat
-              title="Total Rides"
-              value={totalRides}
-              subtitle="Number of shared rides."
-            />
-          </Col>
-          <Col xs={24} sm={8}>
-            <SummaryStat
-              title="Unique Riders"
-              value={uniqueRiders}
-              subtitle="Distinct flatmates who rode."
-            />
-          </Col>
-        </Row>
+        <ResponsiveGrid>
+          <SummaryStat title="Total Spend"    value={formatCurrency(totalSpend)} subtitle="All rides this month."        icon={<CarOutlined />}    color="var(--primary)" />
+          <SummaryStat title="Total Rides"    value={totalRides}                 subtitle="Number of shared rides."      icon={<AuditOutlined />}  color="#7c3aed" />
+          <SummaryStat title="Unique Riders"  value={uniqueRiders}               subtitle="Distinct flatmates who rode." icon={<TeamOutlined />}   color="#059669" />
+        </ResponsiveGrid>
 
         {/* Rides table */}
         <SectionBlock>

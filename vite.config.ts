@@ -9,38 +9,63 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.svg', 'pwa-192.svg', 'pwa-512.svg'],
+      // Include all icon assets
+      includeAssets: [
+        'pwa-icon.png',
+        'loader.gif',
+      ],
       manifest: {
         name: 'MilBaant – Flatmate Expense Manager',
         short_name: 'MilBaant',
         description: 'Track flatmate expenses, rides, cook ledger, and contributions.',
-        theme_color: '#4096ff',
-        background_color: '#f8fafc',
+        theme_color: '#1c8ee5',
+        background_color: '#1c8ee5',
         display: 'standalone',
+        display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/',
-        start_url: '/',
+        start_url: '/?source=pwa',
+        id: '/',
+        // PNG icons are required for install prompt and home screen
         icons: [
           {
-            src: 'pwa-192.svg',
+            src: '/pwa-icon.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'pwa-512.svg',
+            src: '/pwa-icon.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/pwa-icon.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
+        screenshots: [
+          {
+            src: '/pwa-icon.png',
+            sizes: '512x512',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'MilBaant Dashboard',
+          },
+        ],
+        categories: ['finance', 'utilities'],
+        lang: 'en',
+        dir: 'ltr',
       },
       workbox: {
         // Cache app shell and static assets
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
-        // Don't cache Supabase API calls
         navigateFallback: 'index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Don't cache Supabase API calls or auth endpoints
+        navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/auth\//],
         runtimeCaching: [
           {
             // Cache Google Fonts
@@ -52,11 +77,24 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            // Cache font files
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
+        // Skip waiting so new SW activates immediately
+        skipWaiting: true,
+        clientsClaim: true,
       },
       devOptions: {
-        // Enable PWA in dev mode for testing
-        enabled: false,
+        enabled: true,
+        type: 'module',
       },
     }),
   ],

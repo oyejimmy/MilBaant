@@ -8,7 +8,7 @@ import {
   Typography,
   message,
 } from 'antd'
-import { DeleteOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { AnnouncementComposer } from '@/components/AnnouncementComposer'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
@@ -17,7 +17,6 @@ import { IconButton } from '@/components/IconButton'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '@/hooks/useAnnouncements'
 import { useAuth } from '@/hooks/useAuth'
 import { useResponsive, useButtonSize } from '@/hooks/useResponsive'
-import { exportAnnouncementsToExcel } from '@/lib/export'
 import { formatDateTime } from '@/lib/formatters'
 
 export function AnnouncementsPage() {
@@ -65,30 +64,15 @@ export function AnnouncementsPage() {
         title="Announcements"
         subtitle="A simple flat-wide board for updates, reminders, and operational notices."
         actions={
-          isAdmin && !isMobile ? (
-            <Space wrap>
-              <Button
-                size={buttonSize}
-                icon={<DownloadOutlined />}
-                onClick={() => void exportAnnouncementsToExcel(announcements)}
-              >
-                Download Excel
-              </Button>
-              <Button
-                type="primary"
-                size={buttonSize}
-                icon={<PlusOutlined />}
-                onClick={() => setComposerOpen(true)}
-              >
-                New Announcement
-              </Button>
-            </Space>
-          ) : isAdmin && isMobile ? (
-            <IconButton
-              icon={<DownloadOutlined />}
-              tooltip="Download Excel"
-              onClick={() => void exportAnnouncementsToExcel(announcements)}
-            />
+          isAdmin ? (
+            <Button
+              type="primary"
+              size={buttonSize}
+              icon={<PlusOutlined />}
+              onClick={() => setComposerOpen(true)}
+            >
+              New Announcement
+            </Button>
           ) : null
         }
       />

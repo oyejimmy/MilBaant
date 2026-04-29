@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { Avatar, Col, Input, Row, Select, Table, Tag, Typography } from 'antd'
+import { Avatar, Input, Select, Table, Tag, Typography } from 'antd'
 import {
   AuditOutlined,
   DeleteOutlined,
@@ -13,7 +13,8 @@ import {
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack } from '@/components/Glass'
+import { PageStack, ResponsiveGrid } from '@/components/Glass'
+import { SummaryStat } from '@/components/SummaryStat'
 import { useActivityLogs } from '@/hooks/useActivityLog'
 import type { ActivityLog } from '@/lib/types'
 
@@ -45,35 +46,25 @@ const ENTITY_TAG_COLOR: Record<string, string> = {
 
 /* ─── Styled ──────────────────────────────────────────────────────────────── */
 
-const StatBox = styled.div`
-  background: var(--surface);
-  border-radius: 10px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-`
-
 const SearchInput = styled(Input)`
-  height: 32px !important;
-  border-radius: 8px !important;
-  background: transparent !important;
-  border: 1px solid var(--border-default) !important;
-  box-shadow: none !important;
+  height: 32px  ;
+  border-radius: 8px  ;
+  background: transparent  ;
+  border: 1px solid var(--border-default)  ;
+  box-shadow: none  ;
 
   .ant-input {
-    background: transparent !important;
-    font-size: 13px !important;
+    background: transparent  ;
+    font-size: 13px  ;
   }
 
   &:hover {
-    border-color: var(--text-secondary) !important;
+    border-color: var(--text-secondary)  ;
   }
 
   &:focus-within {
-    border-color: var(--primary) !important;
-    box-shadow: none !important;
+    border-color: var(--primary)  ;
+    box-shadow: none  ;
   }
 `
 
@@ -196,40 +187,35 @@ export function LogsPage() {
       <PageHeader
         title="Activity Logs"
         subtitle="A read-only audit trail of all actions performed in the app. Logs cannot be edited or deleted."
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Community' }, { title: 'Activity Logs' }]}
       />
 
       <QueryState isLoading={logsQuery.isLoading} error={logsQuery.error as Error | null}>
 
         {/* Stats */}
-        <Row gutter={[10, 10]} style={{ marginBottom: 16 }}>
-          <Col xs={8}>
-            <StatBox>
-              <div>
-                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Created</Typography.Text>
-                <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', lineHeight: 1.3 }}>{createCount}</Typography.Text>
-              </div>
-              <PlusCircleOutlined style={{ fontSize: 20, color: 'var(--success)', flexShrink: 0 }} />
-            </StatBox>
-          </Col>
-          <Col xs={8}>
-            <StatBox>
-              <div>
-                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Updated</Typography.Text>
-                <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', lineHeight: 1.3 }}>{updateCount}</Typography.Text>
-              </div>
-              <EditOutlined style={{ fontSize: 20, color: 'var(--primary)', flexShrink: 0 }} />
-            </StatBox>
-          </Col>
-          <Col xs={8}>
-            <StatBox>
-              <div>
-                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Deleted</Typography.Text>
-                <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', lineHeight: 1.3 }}>{deleteCount}</Typography.Text>
-              </div>
-              <DeleteOutlined style={{ fontSize: 20, color: 'var(--error)', flexShrink: 0 }} />
-            </StatBox>
-          </Col>
-        </Row>
+        <ResponsiveGrid style={{ marginBottom: 16 }}>
+          <SummaryStat
+            title="Created"
+            value={createCount}
+            subtitle="Records added"
+            icon={<PlusCircleOutlined />}
+            color="var(--success)"
+          />
+          <SummaryStat
+            title="Updated"
+            value={updateCount}
+            subtitle="Records modified"
+            icon={<EditOutlined />}
+            color="var(--primary)"
+          />
+          <SummaryStat
+            title="Deleted"
+            value={deleteCount}
+            subtitle="Records removed"
+            icon={<DeleteOutlined />}
+            color="var(--error)"
+          />
+        </ResponsiveGrid>
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>

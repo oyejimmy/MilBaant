@@ -5,7 +5,6 @@ import {
   Alert,
   Avatar,
   Button,
-  Col,
   DatePicker,
   Flex,
   Form,
@@ -14,7 +13,6 @@ import {
   InputNumber,
   Modal,
   Popconfirm,
-  Row,
   Space,
   Table,
   Tag,
@@ -23,17 +21,20 @@ import {
 } from 'antd'
 import {
   ArrowRightOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
   DeleteOutlined,
   EyeOutlined,
   PlusOutlined,
+  TeamOutlined,
   UserOutlined,
+  WalletOutlined,
 } from '@ant-design/icons'
 import styled from 'styled-components'
 import { ExpenseFormModal, type ExpenseSubmission } from '@/components/ExpenseFormModal'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel, ResponsiveGrid } from '@/components/Glass'
 import { SummaryStat } from '@/components/SummaryStat'
 import { useAuth } from '@/hooks/useAuth'
 import { useCreateExpense, useDeleteExpense, useExpenses } from '@/hooks/useExpenses'
@@ -246,6 +247,7 @@ export function WeekendExpensesPage() {
       <PageHeader
         title="Weekend Expenses"
         subtitle={`Weekend meal costs for ${formatMonthYear(selectedMonth)}, split among selected participants.`}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Weekend Meals' }]}
         actions={
           <Space wrap>
             <DatePicker picker="month" value={selectedMonth} onChange={(v) => v && setSelectedMonth(v.startOf('month'))} />
@@ -257,11 +259,11 @@ export function WeekendExpensesPage() {
       />
 
       <QueryState isLoading={isLoading} error={error}>
-        <Row gutter={[12, 12]}>
-          <Col xs={24} sm={8}><SummaryStat title="Total Spend" value={formatCurrency(totalAmount)} subtitle="All weekend meals this month." /></Col>
-          <Col xs={24} sm={8}><SummaryStat title="Entries" value={weekendExpenses.length} subtitle="Weekend expense records." /></Col>
-          <Col xs={24} sm={8}><SummaryStat title="Participants" value={uniqueParticipants} subtitle="Distinct flatmates involved." /></Col>
-        </Row>
+        <ResponsiveGrid>
+          <SummaryStat title="Total Spend"   value={formatCurrency(totalAmount)}    subtitle="All weekend meals this month." icon={<WalletOutlined />}  color="var(--primary)" />
+          <SummaryStat title="Entries"       value={weekendExpenses.length}         subtitle="Weekend expense records."      icon={<CalendarOutlined />} color="#7c3aed" />
+          <SummaryStat title="Participants"  value={uniqueParticipants}             subtitle="Distinct flatmates involved."  icon={<TeamOutlined />}    color="#059669" />
+        </ResponsiveGrid>
 
         {/* Expenses */}
         <SectionBlock>
@@ -481,7 +483,7 @@ function SettleModal({ debt, submitting, onClose, onSubmit }: { debt: DebtRow; s
   return (
     <Modal open onCancel={onClose} title="Record Settlement" okText="Confirm Payment" confirmLoading={submitting} onOk={() => void handleOk()} width="min(420px, 95vw)">
       <Space direction="vertical" size={16} style={{ width: '100%', paddingTop: 8 }}>
-        <Alert type="info" showIcon message={<span><strong>{debt.fromName}</strong> pays <strong>{debt.toName}</strong> — <strong>{formatCurrency(debt.netAmount)}</strong></span>} />
+        <Alert type="info" showIcon title={<span><strong>{debt.fromName}</strong> pays <strong>{debt.toName}</strong> — <strong>{formatCurrency(debt.netAmount)}</strong></span>} />
         <Form form={form} layout="vertical" initialValues={{ amount: debt.netAmount }}>
           <Form.Item label="Amount Paid" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
             <InputNumber min={0.01} max={debt.netAmount} precision={2} prefix="PKR" style={{ width: '100%' }} />

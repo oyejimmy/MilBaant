@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
-import { Button, Col, DatePicker, Flex, Form, Grid, Image, Input, InputNumber, Modal, Row, Space, Table, Tag, Typography, Upload, message } from 'antd'
+import { Button, App, Col, DatePicker, Flex, Form, Grid, Image, Input, InputNumber, Modal, Row, Space, Table, Tag, Typography, Upload } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { UploadFile } from 'antd/es/upload/interface'
-import { CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, EyeOutlined, PictureOutlined, UploadOutlined, DollarOutlined, WalletOutlined } from '@ant-design/icons'
+import { CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, EyeOutlined, PictureOutlined, UploadOutlined, DollarOutlined, WalletOutlined, HomeOutlined } from '@ant-design/icons'
 import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageHeader } from '@/components/PageHeader'
+import { SummaryStat } from '@/components/SummaryStat'
 import { QueryState } from '@/components/QueryState'
 import { useAuth } from '@/hooks/useAuth'
 import { useContributionPayments, useDeleteContributionPayment, useCreateContributionPayment } from '@/hooks/useContributions'
@@ -189,17 +191,14 @@ export function ContributionsPage() {
 
   return (
     <PageStack>
+      <PageHeader
+        title="Contribution Payments"
+        subtitle="Track monthly contribution payments from all flatmates."
+        breadcrumbs={[{ title: 'Home', path: '/', icon: <HomeOutlined /> }, { title: 'Management' }, { title: 'Contributions' }]}
+      />
       <QueryState isLoading={paymentsQuery.isLoading || profilesQuery.isLoading} error={paymentsQuery.error as Error | null}>
         <SectionBlock>
           <Flex justify="space-between" align="center" wrap="wrap" gap={16} style={{ marginBottom: 20 }}>
-            <div>
-              <Typography.Title level={2} style={{ margin: 0, color: 'var(--text-strong)' }}>
-                Contribution Payments
-              </Typography.Title>
-              <Typography.Text style={{ color: 'var(--text-muted)' }}>
-                Track monthly contribution payments from all flatmates.
-              </Typography.Text>
-            </div>
 
             <DatePicker
               value={selectedMonth}
@@ -215,43 +214,31 @@ export function ContributionsPage() {
           {/* Summary Cards */}
           <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
             <Col xs={24} sm={8}>
-              <div style={{ padding: '8px 14px', background: 'var(--content-bg)', borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
-                    Paid
-                  </Typography.Text>
-                  <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
-                    {paidCount} / {summary.length}
-                  </Typography.Text>
-                </div>
-                <CheckCircleOutlined style={{ fontSize: 22, color: 'var(--success)', flexShrink: 0 }} />
-              </div>
+              <SummaryStat
+                title="Paid"
+                value={`${paidCount} / ${summary.length}`}
+                subtitle="Members who paid"
+                icon={<CheckCircleOutlined />}
+                color="var(--success)"
+              />
             </Col>
             <Col xs={24} sm={8}>
-              <div style={{ padding: '8px 14px', background: 'var(--content-bg)', borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
-                    Unpaid
-                  </Typography.Text>
-                  <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
-                    {unpaidCount}
-                  </Typography.Text>
-                </div>
-                <CloseCircleOutlined style={{ fontSize: 22, color: 'var(--error)', flexShrink: 0 }} />
-              </div>
+              <SummaryStat
+                title="Unpaid"
+                value={unpaidCount}
+                subtitle="Still pending"
+                icon={<CloseCircleOutlined />}
+                color="var(--error)"
+              />
             </Col>
             <Col xs={24} sm={8}>
-              <div style={{ padding: '8px 14px', background: 'var(--content-bg)', borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>
-                    Total Collected
-                  </Typography.Text>
-                  <Typography.Text strong style={{ fontSize: 18, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
-                    {formatCurrency(totalCollected)}
-                  </Typography.Text>
-                </div>
-                <WalletOutlined style={{ fontSize: 22, color: 'var(--primary)', flexShrink: 0 }} />
-              </div>
+              <SummaryStat
+                title="Total Collected"
+                value={formatCurrency(totalCollected)}
+                subtitle="This month"
+                icon={<WalletOutlined />}
+                color="var(--primary)"
+              />
             </Col>
           </Row>
 
@@ -388,6 +375,7 @@ interface PaymentSubmitModalProps {
 
 function PaymentSubmitModal({ open, userId, userName, month, currentUserId, onClose, onSubmit }: PaymentSubmitModalProps) {
   const [form] = Form.useForm()
+  const { message } = App.useApp()
   const [uploading, setUploading] = useState(false)
   const [fileList, setFileList] = useState<UploadFile[]>([])
 

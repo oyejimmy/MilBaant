@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ColumnsType } from 'antd/es/table'
 import {
   Alert,
+  App,
   Avatar,
   Button,
-  Card,
   Col,
+  Empty,
   Flex,
   Form,
   Grid,
@@ -15,33 +16,39 @@ import {
   Result,
   Row,
   Select,
+  Skeleton,
   Space,
   Switch,
   Table,
   Tag,
+  Tooltip,
   Typography,
-  message,
 } from 'antd'
 import {
+  CheckCircleOutlined,
+  CoffeeOutlined,
+  CrownOutlined,
+  DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
   LockOutlined,
   MailOutlined,
-  PlusOutlined,
   SaveOutlined,
+  SearchOutlined,
+  StopOutlined,
   TeamOutlined,
   UserAddOutlined,
   UserOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
-import styled from 'styled-components'
-import { AnnouncementComposer } from '@/components/AnnouncementComposer'
+import styled, { keyframes } from 'styled-components'
 import { FlatFloorplan } from '@/components/FlatFloorplan'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
+import { PageStack, SectionBlock, ResponsiveGrid } from '@/components/Glass'
+import { SummaryStat } from '@/components/SummaryStat'
 import { ROLE_OPTIONS } from '@/lib/constants'
 import { exportUsersToExcel } from '@/lib/export'
-import { useAnnouncements, useCreateAnnouncement } from '@/hooks/useAnnouncements'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignBed, useBedAssignments, useBeds, useRooms } from '@/hooks/useFlatLayout'
 import {
@@ -54,78 +61,182 @@ import type { Profile, Role } from '@/lib/types'
 
 const { useBreakpoint } = Grid
 
-/* ─── Styled ──────────────────────────────────────────────────────────────── */
+/* ─── Role config ─────────────────────────────────────────────────────────── */
 
-const MemberCard = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 7px;
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  transition: border-color 0.15s ease;
-  &:hover { border-color: var(--primary); }
+const ROLE_META: Record<Role, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
+  admin: { color: '#cf1322', bg: '#fff1f0', icon: <CrownOutlined />,  label: 'Admin' },
+  user:  { color: '#595959', bg: '#f5f5f5', icon: <UserOutlined />,   label: 'User'  },
+  cook:  { color: '#d46b08', bg: '#fff7e6', icon: <CoffeeOutlined />, label: 'Cook'  },
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 `
 
-const AVATAR_COLORS = [
-  '#1c8ee5',
-  '#6a6a6a',
-  '#212121',
-  '#52c41a',
-  '#fa8c16',
-  '#13c2c2',
-  '#eb2f96',
-  '#722ed1',
-]
+const shimmer = keyframes`
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+`
+
+/* ─── Styled components ───────────────────────────────────────────────────── */
+
+const PageWrap = styled.div`
+  animation: ${fadeUp} 0.25s ease;
+`
+
+const ToolbarWrap = styled.div`
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  @media (max-width: 600px) { > * { flex: 1; min-width: 120px; } }
+`
+
+const FilterSelect = styled(Select)`
+  .ant-select-selector {
+    height: 34px  ; border-radius: 8px  ;
+    border: 1px solid var(--card-border)  ;
+    background: transparent  ; box-shadow: none  ;
+  }
+  &.ant-select-focused .ant-select-selector { border-color: var(--primary)  ; box-shadow: none  ; }
+` as typeof Select
+
+const UserCard = styled.div<{ $removed?: boolean }>`
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  transition: box-shadow 0.2s ease;
+  opacity: ${({ $removed }) => ($removed ? 0.55 : 1)};
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+`
+
+const CardTop = styled.div`
+  display: flex; align-items: center; gap: 10px;
+`
+
+const CardMeta = styled.div`
+  flex: 1; min-width: 0;
+`
+
+const CardActions = styled.div`
+  display: flex; flex-direction: column; gap: 8px;
+`
+
+const CardRow = styled.div`
+  display: flex; align-items: center; gap: 8px;
+`
+
+const RoleTag = styled.span<{ $role: Role }>`
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  background: ${({ $role }) => ROLE_META[$role]?.bg ?? '#f5f5f5'};
+  color: ${({ $role }) => ROLE_META[$role]?.color ?? '#595959'};
+  border: 1px solid ${({ $role }) => ROLE_META[$role]?.color ?? '#d9d9d9'}30;
+  white-space: nowrap;
+`
+
+const StatusDot = styled.span<{ $active: boolean }>`
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  color: ${({ $active }) => ($active ? '#389e0d' : '#8c8c8c')};
+  &::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: ${({ $active }) => ($active ? '#52c41a' : '#bfbfbf')}; flex-shrink: 0;
+  }
+`
+
+const SkeletonRow = styled.div`
+  height: 48px; border-radius: 8px;
+  background: linear-gradient(90deg, var(--card-border) 25%, var(--card-bg) 50%, var(--card-border) 75%);
+  background-size: 400px 100%;
+  animation: ${shimmer} 1.4s ease infinite;
+  margin-bottom: 8px;
+`
+
+const DangerBtn = styled(Button)`
+  border-color: transparent  ; background: transparent  ;
+  color: var(--error)  ; box-shadow: none  ;
+  &:hover { background: #fff1f0  ; border-color: #ffa39e  ; color: var(--error)  ; }
+`
+
+const RestoreBtn = styled(Button)`
+  border-color: transparent  ; background: transparent  ;
+  color: #389e0d  ; box-shadow: none  ;
+  &:hover { background: #f6ffed  ; border-color: #b7eb8f  ; }
+`
+
+/* ─── Helpers ─────────────────────────────────────────────────────────────── */
+
+const AVATAR_COLORS = ['#1c8ee5', '#6a6a6a', '#52c41a', '#fa8c16', '#13c2c2', '#eb2f96', '#722ed1', '#cf1322']
 
 function avatarColor(name: string) {
-  let hash = 0
-  for (const ch of name) hash = ch.charCodeAt(0) + ((hash << 5) - hash)
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+  let h = 0
+  for (const ch of name) h = ch.charCodeAt(0) + ((h << 5) - h)
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
 }
 
 function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
+
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export function AdminPage() {
   const { isAdmin, userId, profileLoading } = useAuth()
-  const [composerOpen, setComposerOpen] = useState(false)
-  const [addUserOpen, setAddUserOpen] = useState(false)
-  const [editUser, setEditUser] = useState<Profile | null>(null)
+  const { message } = App.useApp()
+
+  const [search, setSearch]             = useState('')
+  const [roleFilter, setRoleFilter]     = useState<Role | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'removed'>('all')
+  const [editUser, setEditUser]         = useState<Profile | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null)
+  const [addUserOpen, setAddUserOpen]   = useState(false)
   const [memberCountDraft, setMemberCountDraft] = useState<number | null>(null)
-  const screens = useBreakpoint()
+
+  const screens  = useBreakpoint()
   const isMobile = !screens.md
 
-  const profilesQuery = useProfiles()
-  const memberCountQuery = useMemberCountSetting()
-  const updateProfile = useUpdateProfilePermissions()
-  const createUser = useAdminCreateUser()
-  const saveMemberCount = useUpsertMemberCount()
-  const roomsQuery = useRooms()
-  const bedsQuery = useBeds()
-  const assignmentsQuery = useBedAssignments()
-  const assignBed = useAssignBed()
-  const announcementsQuery = useAnnouncements()
-  const createAnnouncement = useCreateAnnouncement()
+  const profilesQuery      = useProfiles()
+  const memberCountQuery   = useMemberCountSetting()
+  const updateProfile      = useUpdateProfilePermissions()
+  const createUser         = useAdminCreateUser()
+  const saveMemberCount    = useUpsertMemberCount()
+  const roomsQuery         = useRooms()
+  const bedsQuery          = useBeds()
+  const assignmentsQuery   = useBedAssignments()
+  const assignBed          = useAssignBed()
 
-  const profiles = profilesQuery.data ?? []
-  const rooms = roomsQuery.data ?? []
-  const beds = bedsQuery.data ?? []
+  const allProfiles = profilesQuery.data ?? []
+  const rooms       = roomsQuery.data ?? []
+  const beds        = bedsQuery.data ?? []
   const assignments = assignmentsQuery.data ?? []
   const memberCount = memberCountQuery.data ?? 6
 
-  /* ── Handlers ── */
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return allProfiles.filter((p) => {
+      const matchSearch = !q || p.full_name.toLowerCase().includes(q)
+      const matchRole   = roleFilter === 'all' || p.role === roleFilter
+      const isRemoved   = p.is_active === false
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active'  && !isRemoved) ||
+        (statusFilter === 'removed' && isRemoved)
+      return matchSearch && matchRole && matchStatus
+    })
+  }, [allProfiles, search, roleFilter, statusFilter])
 
-  async function handleRoleChange(profile: Profile, role: Profile['role']) {
+  const adminCount   = allProfiles.filter((p) => p.role === 'admin').length
+  const cookCount    = allProfiles.filter((p) => p.role === 'cook').length
+  const removedCount = allProfiles.filter((p) => p.is_active === false).length
+
+  async function handleRoleChange(profile: Profile, role: Role) {
     try {
       await updateProfile.mutateAsync({ userId: profile.id, role })
-      message.success(`Role updated for ${profile.full_name}.`)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to update role.')
+      message.success(`Role updated to ${ROLE_META[role].label} for ${profile.full_name}.`)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to update role.')
     }
   }
 
@@ -133,8 +244,8 @@ export function AdminPage() {
     try {
       await updateProfile.mutateAsync({ userId: profile.id, canAddExpenses })
       message.success(`Permission updated for ${profile.full_name}.`)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to update permission.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to update permission.')
     }
   }
 
@@ -143,8 +254,27 @@ export function AdminPage() {
       await updateProfile.mutateAsync({ userId: profile.id, fullName })
       message.success('Name updated.')
       setEditUser(null)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to update name.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to update name.')
+    }
+  }
+
+  async function handleDeleteUser(profile: Profile) {
+    try {
+      await updateProfile.mutateAsync({ userId: profile.id, isActive: false })
+      message.success(`${profile.full_name} has been deactivated.`)
+      setDeleteTarget(null)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to deactivate user.')
+    }
+  }
+
+  async function handleRestoreUser(profile: Profile) {
+    try {
+      await updateProfile.mutateAsync({ userId: profile.id, isActive: true })
+      message.success(`${profile.full_name} has been reactivated.`)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to reactivate user.')
     }
   }
 
@@ -152,306 +282,288 @@ export function AdminPage() {
     try {
       await assignBed.mutateAsync({ bedId, userId: assignedUserId })
       message.success(assignedUserId ? 'Bed assigned.' : 'Bed cleared.')
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to update bed.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to update bed.')
     }
   }
 
   async function handleSaveMemberCount() {
-    const nextValue = memberCountDraft ?? memberCount
-    if (nextValue < 1) { message.error('Must be at least 1.'); return }
+    const next = memberCountDraft ?? memberCount
+    if (next < 1) { message.error('Must be at least 1.'); return }
     try {
-      await saveMemberCount.mutateAsync(nextValue)
+      await saveMemberCount.mutateAsync(next)
       message.success('Member count updated.')
       setMemberCountDraft(null)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to update.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to update.')
     }
   }
-
-  async function handleCreateAnnouncement(values: { title: string; content: string }) {
-    if (!userId) return
-    try {
-      await createAnnouncement.mutateAsync({ ...values, createdBy: userId })
-      message.success('Announcement posted.')
-      setComposerOpen(false)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to post.')
-    }
-  }
-
-  /* ── Table columns ── */
 
   const columns: ColumnsType<Profile> = [
     {
       title: 'Member',
       key: 'member',
-      render: (_: unknown, record: Profile) => (
-        <Flex align="center" gap={10}>
-          <Avatar
-            size={32}
-            style={{ background: avatarColor(record.full_name), color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}
-          >
-            {initials(record.full_name)}
-          </Avatar>
-          <div>
-            <Typography.Text strong style={{ color: 'var(--text-strong)', display: 'block', fontSize: '0.88rem' }}>
-              {record.full_name}
-            </Typography.Text>
-          </div>
-        </Flex>
-      ),
+      render: (_: unknown, p: Profile) => {
+        const isRemoved = p.is_active === false
+        return (
+          <Flex align="center" gap={10}>
+            <Avatar size={34} style={{ background: isRemoved ? '#bfbfbf' : avatarColor(p.full_name), color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+              {initials(p.full_name)}
+            </Avatar>
+            <div>
+              <Typography.Text strong style={{ color: isRemoved ? 'var(--text-muted)' : 'var(--text-strong)', display: 'block', fontSize: '0.88rem', textDecoration: isRemoved ? 'line-through' : 'none' }}>
+                {p.full_name}
+              </Typography.Text>
+              <StatusDot $active={!isRemoved}>{isRemoved ? 'Deactivated' : 'Active'}</StatusDot>
+            </div>
+          </Flex>
+        )
+      },
     },
     {
       title: 'Role',
       key: 'role',
-      width: 150,
-      render: (_: unknown, record: Profile) => (
-        <Select
-          size="small"
-          style={{ width: 130 }}
-          options={ROLE_OPTIONS}
-          value={record.role}
-          onChange={(value) => void handleRoleChange(record, value)}
-        />
-      ),
+      width: 160,
+      render: (_: unknown, p: Profile) => {
+        const isRemoved = p.is_active === false
+        return (
+          <Select
+            size="small"
+            style={{ width: 140 }}
+            value={p.role}
+            disabled={isRemoved}
+            onChange={(val) => void handleRoleChange(p, val)}
+            options={ROLE_OPTIONS}
+            labelRender={(opt) => {
+              const meta = ROLE_META[opt.value as Role]
+              if (!meta) return <span>{opt.label as string}</span>
+              return <RoleTag $role={opt.value as Role}>{meta.icon} {meta.label}</RoleTag>
+            }}
+          />
+        )
+      },
     },
     {
-      title: 'Can Add Expenses',
+      title: 'Expenses',
       key: 'can_add_expenses',
-      width: 150,
-      render: (_: unknown, record: Profile) => (
-        <Switch
-          size="small"
-          checked={record.can_add_expenses}
-          onChange={(checked) => void handlePermissionChange(record, checked)}
-        />
-      ),
+      width: 110,
+      align: 'center' as const,
+      render: (_: unknown, p: Profile) => {
+        const isRemoved = p.is_active === false
+        return (
+          <Tooltip title={p.can_add_expenses ? 'Can add expenses' : 'View only'}>
+            <Switch size="small" checked={p.can_add_expenses} disabled={isRemoved} onChange={(checked) => void handlePermissionChange(p, checked)} />
+          </Tooltip>
+        )
+      },
     },
     {
-      title: '',
-      key: 'edit',
-      width: 50,
-      render: (_: unknown, record: Profile) => (
-        <Button
-          size="small"
-          icon={<EditOutlined />}
-          onClick={() => setEditUser(record)}
-        />
-      ),
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      align: 'right' as const,
+      render: (_: unknown, p: Profile) => {
+        const isRemoved = p.is_active === false
+        const isSelf    = p.id === userId
+        return (
+          <Flex gap={4} justify="flex-end">
+            <Tooltip title="Edit user">
+              <Button size="small" icon={<EditOutlined />} onClick={() => setEditUser(p)} disabled={isRemoved} />
+            </Tooltip>
+            {isRemoved ? (
+              <Tooltip title="Reactivate user">
+                <RestoreBtn size="small" icon={<CheckCircleOutlined />} onClick={() => void handleRestoreUser(p)} />
+              </Tooltip>
+            ) : (
+              <Tooltip title={isSelf ? "Can't deactivate yourself" : 'Deactivate user'}>
+                <DangerBtn size="small" icon={<DeleteOutlined />} disabled={isSelf} onClick={() => setDeleteTarget(p)} />
+              </Tooltip>
+            )}
+          </Flex>
+        )
+      },
     },
   ]
 
-  const isLoading =
-    profilesQuery.isLoading || memberCountQuery.isLoading ||
-    roomsQuery.isLoading || bedsQuery.isLoading ||
-    assignmentsQuery.isLoading || announcementsQuery.isLoading
-
-  const error =
-    (profilesQuery.error as Error | null) ?? (memberCountQuery.error as Error | null) ??
-    (roomsQuery.error as Error | null) ?? (bedsQuery.error as Error | null) ??
-    (assignmentsQuery.error as Error | null) ?? (announcementsQuery.error as Error | null)
-
-  // Wait for profile to load before checking admin status
   if (profileLoading) {
-    return null
-  }
-
-  if (!isAdmin) {
     return (
-      <Result
-        status="403"
-        title="Admin access only"
-        subTitle="This section is restricted to flat admins."
-      />
+      <PageStack>
+        <SectionBlock>{[1,2,3,4,5].map((i) => <SkeletonRow key={i} />)}</SectionBlock>
+      </PageStack>
     )
   }
 
+  if (!isAdmin) {
+    return <Result status="403" title="Admin access only" subTitle="This section is restricted to flat admins." />
+  }
+
+  const isLoading =
+    profilesQuery.isLoading || memberCountQuery.isLoading ||
+    roomsQuery.isLoading || bedsQuery.isLoading || assignmentsQuery.isLoading
+
+  const error =
+    (profilesQuery.error as Error | null) ??
+    (memberCountQuery.error as Error | null) ??
+    (roomsQuery.error as Error | null)
+
   return (
-    <PageStack>
-      <PageHeader
-        title="Admin Panel"
-        subtitle="Manage flatmates, permissions, member count, announcements, and bed assignments."
-        actions={
-          <Space wrap>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={() => void exportUsersToExcel(profiles)}
-            >
-              Export
-            </Button>
-            <Button
-              icon={<PlusOutlined />}
-              onClick={() => setComposerOpen(true)}
-            >
-              Post Announcement
-            </Button>
-            <Button
-              type="primary"
-              icon={<UserAddOutlined />}
-              onClick={() => setAddUserOpen(true)}
-            >
-              Add User
-            </Button>
-          </Space>
-        }
-      />
-
-      <QueryState isLoading={isLoading} error={error}>
-
-        {/* Flat members overview */}
-        <SectionBlock>
-          <Flex align="center" gap={8} style={{ marginBottom: 16 }}>
-            <TeamOutlined style={{ color: 'var(--primary)', fontSize: 16 }} />
-            <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
-              Flat Members ({profiles.length})
-            </Typography.Title>
-          </Flex>
-          <Row gutter={[10, 10]}>
-            {profiles.map((p) => (
-              <Col key={p.id} xs={24} sm={12} lg={8}>
-                <MemberCard>
-                  <Avatar
-                    size={40}
-                    style={{ background: avatarColor(p.full_name), color: '#fff', fontWeight: 700, fontSize: 14, flexShrink: 0 }}
-                  >
-                    {initials(p.full_name)}
-                  </Avatar>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <Typography.Text strong style={{ color: 'var(--text-strong)', display: 'block', fontSize: '0.88rem' }}>
-                      {p.full_name}
-                    </Typography.Text>
-                    <Flex gap={4} wrap style={{ marginTop: 3 }}>
-                      <Tag
-                        color={p.role === 'admin' ? 'gold' : 'default'}
-                        style={{ fontSize: '0.7rem', padding: '0 5px', margin: 0 }}
-                      >
-                        {p.role === 'admin' ? 'Admin' : 'Member'}
-                      </Tag>
-                      {p.can_add_expenses && (
-                        <Tag color="green" style={{ fontSize: '0.7rem', padding: '0 5px', margin: 0 }}>
-                          Can Add Expenses
-                        </Tag>
-                      )}
-                    </Flex>
-                  </div>
-                  <Button
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={() => setEditUser(p)}
-                  />
-                </MemberCard>
-              </Col>
-            ))}
-          </Row>
-        </SectionBlock>
-
-        {/* User management table */}
-        <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
-            Permissions & Roles
-          </Typography.Title>
-          {isMobile ? (
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
-              {profiles.map((p) => (
-                <div key={p.id} style={{ border: '1px solid var(--card-border)', borderRadius: 7, padding: '10px 12px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <Flex align="center" justify="space-between" gap={8}>
-                    <Flex align="center" gap={8}>
-                      <Avatar size={28} style={{ background: avatarColor(p.full_name), color: '#fff', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>{initials(p.full_name)}</Avatar>
-                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>{p.full_name}</Typography.Text>
-                    </Flex>
-                    <Button size="small" icon={<EditOutlined />} onClick={() => setEditUser(p)} />
-                  </Flex>
-                  <Flex gap={8} align="center" wrap>
-                    <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 40 }}>Role:</Typography.Text>
-                    <Select size="small" style={{ flex: 1, minWidth: 110 }} options={ROLE_OPTIONS} value={p.role} onChange={(value) => void handleRoleChange(p, value)} />
-                  </Flex>
-                  <Flex gap={8} align="center">
-                    <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', flex: 1 }}>Can Add Expenses</Typography.Text>
-                    <Switch size="small" checked={p.can_add_expenses} onChange={(checked) => void handlePermissionChange(p, checked)} />
-                  </Flex>
-                </div>
-              ))}
+    <PageWrap>
+      <PageStack>
+        <PageHeader
+          title="Admin Panel"
+          subtitle="Manage flatmates, roles, permissions, and flat settings."
+          breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'System' }, { title: 'Admin Panel' }]}
+          actions={
+            <Space wrap>
+              <Button icon={<DownloadOutlined />} onClick={() => void exportUsersToExcel(allProfiles)}>Export</Button>
+              <Button type="primary" icon={<UserAddOutlined />} onClick={() => setAddUserOpen(true)}>Add User</Button>
             </Space>
-          ) : (
-            <Table
-              rowKey="id"
-              size="small"
-              columns={columns}
-              dataSource={profiles}
-              pagination={false}
-              scroll={{ x: 450 }}
-            />
-          )}
-        </SectionBlock>
+          }
+        />
 
-        {/* Member count */}
-        <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
-            Member Count Setting
-          </Typography.Title>
-          <Space wrap>
-            <InputNumber
-              min={1}
-              value={memberCountDraft ?? memberCount}
-              onChange={(value) => setMemberCountDraft(value)}
-            />
-            <Button
-              icon={<SaveOutlined />}
-              loading={saveMemberCount.isPending}
-              onClick={() => void handleSaveMemberCount()}
-            >
-              Save
-            </Button>
-          </Space>
-          <Alert
-            style={{ marginTop: 12 }}
-            type="info"
-            showIcon
-            message="This number is used to split fixed monthly expenses equally."
-          />
-        </SectionBlock>
+        <QueryState isLoading={isLoading} error={error}>
+          <ResponsiveGrid>
+            <SummaryStat title="Total Users"  value={allProfiles.length} subtitle="All flatmates" icon={<TeamOutlined />}   color="var(--primary)" />
+            <SummaryStat title="Admins"       value={adminCount}         subtitle="Admin role"     icon={<CrownOutlined />}  color="#cf1322" />
+            <SummaryStat title="Cooks"        value={cookCount}          subtitle="Cook role"      icon={<CoffeeOutlined />} color="#d46b08" />
+            <SummaryStat title="Deactivated"  value={removedCount}       subtitle="Inactive"       icon={<StopOutlined />}   color="#8c8c8c" />
+          </ResponsiveGrid>
 
-        {/* Flat layout */}
-        <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
-            Flat Layout & Bed Assignments
-          </Typography.Title>
-          <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: 16 }}>
-            Rooms: Yasir &amp; Haris · Sajid &amp; Raza · Jamil &amp; Ateeb. Click any bed to assign.
-          </Typography.Text>
-          <FlatFloorplan
-            rooms={rooms}
-            beds={beds}
-            assignments={assignments}
-            profiles={profiles}
-            isAdmin
-            saving={assignBed.isPending}
-            onAssign={handleAssign}
-          />
-        </SectionBlock>
+          <SectionBlock>
+            <Flex align="center" justify="space-between" wrap gap={10} style={{ marginBottom: 14 }}>
+              <Flex align="center" gap={6}>
+                <TeamOutlined style={{ color: 'var(--primary)', fontSize: 15 }} />
+                <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>User Management</Typography.Title>
+                <Tag style={{ marginLeft: 4 }}>{filtered.length}</Tag>
+              </Flex>
+              <ToolbarWrap>
+                <Input
+                  prefix={<SearchOutlined style={{ color: 'var(--text-muted)', fontSize: 12 }} />}
+                  placeholder="Search by name…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  allowClear
+                />
+                <FilterSelect
+                  value={roleFilter}
+                  onChange={(v) => setRoleFilter(v as Role | 'all')}
+                  style={{ width: 120, height: 34 }}
+                  options={[{ label: 'All Roles', value: 'all' }, ...ROLE_OPTIONS]}
+                />
+                <FilterSelect
+                  value={statusFilter}
+                  onChange={(v) => setStatusFilter(v as 'all' | 'active' | 'removed')}
+                  style={{ width: 130, height: 34 }}
+                  options={[
+                    { label: 'All Status',  value: 'all' },
+                    { label: 'Active',      value: 'active' },
+                    { label: 'Deactivated', value: 'removed' },
+                  ]}
+                />
+              </ToolbarWrap>
+            </Flex>
 
-        {/* Recent announcements */}
-        <Card>
-          <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>
-            Recent Announcements
-          </Typography.Title>
-          {(announcementsQuery.data ?? []).length === 0 ? (
-            <Typography.Text style={{ color: 'var(--text-muted)' }}>No announcements yet.</Typography.Text>
-          ) : (
-            (announcementsQuery.data ?? []).slice(0, 3).map((a) => (
-              <div key={a.id} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid var(--card-border)' }}>
-                <Typography.Text strong style={{ color: 'var(--text-strong)' }}>{a.title}</Typography.Text>
-                <Typography.Paragraph style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  {a.content}
-                </Typography.Paragraph>
-              </div>
-            ))
-          )}
-        </Card>
-      </QueryState>
+            {!isMobile ? (
+              profilesQuery.isLoading ? (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  {[1,2,3,4,5].map((i) => <SkeletonRow key={i} />)}
+                </Space>
+              ) : filtered.length === 0 ? (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={
+                  <Typography.Text style={{ color: 'var(--text-muted)' }}>No users match your filters.</Typography.Text>
+                } />
+              ) : (
+                <Table<Profile>
+                  rowKey="id"
+                  size="small"
+                  columns={columns}
+                  dataSource={filtered}
+                  pagination={{ pageSize: 10, hideOnSinglePage: true, size: 'small',
+                    showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}` }}
+                  scroll={{ x: 500 }}
+                />
+              )
+            ) : (
+              profilesQuery.isLoading ? (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  {[1,2,3].map((i) => <Skeleton key={i} active avatar paragraph={{ rows: 2 }} />)}
+                </Space>
+              ) : filtered.length === 0 ? (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No users match your filters." />
+              ) : (
+                <Space direction="vertical" size={10} style={{ width: '100%' }}>
+                  {filtered.map((p) => {
+                    const isRemoved = p.is_active === false
+                    const isSelf    = p.id === userId
+                    return (
+                      <UserCard key={p.id} $removed={isRemoved}>
+                        <CardTop>
+                          <Avatar size={40} style={{ background: isRemoved ? '#bfbfbf' : avatarColor(p.full_name), color: '#fff', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                            {initials(p.full_name)}
+                          </Avatar>
+                          <CardMeta>
+                            <Typography.Text strong style={{ color: isRemoved ? 'var(--text-muted)' : 'var(--text-strong)', display: 'block', fontSize: 14, textDecoration: isRemoved ? 'line-through' : 'none' }}>
+                              {p.full_name}
+                            </Typography.Text>
+                            <Flex gap={6} align="center" style={{ marginTop: 3 }}>
+                              <RoleTag $role={p.role}>{ROLE_META[p.role]?.icon} {ROLE_META[p.role]?.label}</RoleTag>
+                              <StatusDot $active={!isRemoved}>{isRemoved ? 'Deactivated' : 'Active'}</StatusDot>
+                            </Flex>
+                          </CardMeta>
+                          <Button size="small" icon={<EditOutlined />} disabled={isRemoved} onClick={() => setEditUser(p)} />
+                        </CardTop>
+                        <CardActions>
+                          <CardRow>
+                            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', width: 60 }}>Role</Typography.Text>
+                            <Select size="small" style={{ flex: 1 }} value={p.role} disabled={isRemoved} onChange={(val) => void handleRoleChange(p, val)} options={ROLE_OPTIONS} />
+                          </CardRow>
+                          <CardRow>
+                            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', flex: 1 }}>Can Add Expenses</Typography.Text>
+                            <Switch size="small" checked={p.can_add_expenses} disabled={isRemoved} onChange={(checked) => void handlePermissionChange(p, checked)} />
+                          </CardRow>
+                          {isRemoved ? (
+                            <RestoreBtn block icon={<CheckCircleOutlined />} onClick={() => void handleRestoreUser(p)}>Reactivate User</RestoreBtn>
+                          ) : (
+                            <DangerBtn block icon={<DeleteOutlined />} disabled={isSelf} onClick={() => setDeleteTarget(p)}>
+                              {isSelf ? "Can't deactivate yourself" : 'Deactivate User'}
+                            </DangerBtn>
+                          )}
+                        </CardActions>
+                      </UserCard>
+                    )
+                  })}
+                </Space>
+              )
+            )}
+          </SectionBlock>
 
-      {/* Add User modal */}
+          <SectionBlock>
+            <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>Member Count Setting</Typography.Title>
+            <Space wrap>
+              <InputNumber min={1} value={memberCountDraft ?? memberCount} onChange={(v) => setMemberCountDraft(v)} />
+              <Button icon={<SaveOutlined />} loading={saveMemberCount.isPending} onClick={() => void handleSaveMemberCount()}>Save</Button>
+            </Space>
+            <Alert style={{ marginTop: 12 }} type="info" showIcon title="This number is used to split fixed monthly expenses equally." />
+          </SectionBlock>
+
+          <SectionBlock>
+            <Typography.Title level={5} style={{ margin: '0 0 12px', color: 'var(--text-strong)' }}>Flat Layout &amp; Bed Assignments</Typography.Title>
+            <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'block', marginBottom: 16 }}>Click any bed to assign a flatmate.</Typography.Text>
+            <FlatFloorplan rooms={rooms} beds={beds} assignments={assignments} profiles={allProfiles} isAdmin saving={assignBed.isPending} onAssign={handleAssign} />
+          </SectionBlock>
+
+        </QueryState>
+      </PageStack>
+
+      {deleteTarget && (
+        <DeleteUserModal
+          profile={deleteTarget}
+          submitting={updateProfile.isPending}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => void handleDeleteUser(deleteTarget)}
+        />
+      )}
+
       {addUserOpen && (
         <AddUserModal
           submitting={createUser.isPending}
@@ -468,7 +580,6 @@ export function AdminPage() {
         />
       )}
 
-      {/* Edit user modal */}
       {editUser && (
         <EditUserModal
           profile={editUser}
@@ -479,113 +590,84 @@ export function AdminPage() {
           onPermissionChange={handlePermissionChange}
         />
       )}
+    </PageWrap>
+  )
+}
 
-      {/* Announcement composer */}
-      <AnnouncementComposer
-        open={composerOpen}
-        confirmLoading={createAnnouncement.isPending}
-        onClose={() => setComposerOpen(false)}
-        onSubmit={handleCreateAnnouncement}
-      />
-    </PageStack>
+/* ─── Delete User Modal ───────────────────────────────────────────────────── */
+
+function DeleteUserModal({ profile, submitting, onClose, onConfirm }: {
+  profile: Profile; submitting: boolean; onClose: () => void; onConfirm: () => void
+}) {
+  return (
+    <Modal
+      open
+      title={<Flex align="center" gap={8}><WarningOutlined style={{ color: '#cf1322' }} /><span>Deactivate User</span></Flex>}
+      okText="Yes, Deactivate"
+      okButtonProps={{ danger: true, loading: submitting }}
+      cancelText="Cancel"
+      onCancel={onClose}
+      onOk={onConfirm}
+      width="min(420px, 95vw)"
+    >
+      <div style={{ padding: '8px 0 4px' }}>
+        <Flex align="center" gap={12} style={{ marginBottom: 16 }}>
+          <Avatar size={44} style={{ background: avatarColor(profile.full_name), color: '#fff', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+            {initials(profile.full_name)}
+          </Avatar>
+          <div>
+            <Typography.Text strong style={{ color: 'var(--text-strong)', display: 'block', fontSize: 15 }}>{profile.full_name}</Typography.Text>
+            <RoleTag $role={profile.role}>{ROLE_META[profile.role]?.icon} {ROLE_META[profile.role]?.label}</RoleTag>
+          </div>
+        </Flex>
+        <Alert
+          type="warning"
+          showIcon
+          title="Are you sure you want to deactivate this user?"
+          description="This user will no longer be able to log in. They will see: 'Your account has been deactivated. Please contact Admin.' You can reactivate them at any time."
+        />
+      </div>
+    </Modal>
   )
 }
 
 /* ─── Add User Modal ──────────────────────────────────────────────────────── */
 
 interface AddUserFormValues {
-  fullName: string
-  email: string
-  password: string
-  role: Role
-  canAddExpenses: boolean
+  fullName: string; email: string; password: string; role: Role; canAddExpenses: boolean
 }
 
-
-
-function AddUserModal({
-  submitting,
-  onClose,
-  onSubmit,
-}: {
-  submitting: boolean
-  onClose: () => void
-  onSubmit: (values: AddUserFormValues) => Promise<void>
+function AddUserModal({ submitting, onClose, onSubmit }: {
+  submitting: boolean; onClose: () => void; onSubmit: (values: AddUserFormValues) => Promise<void>
 }) {
   const [form] = Form.useForm<AddUserFormValues>()
-
   async function handleOk() {
     const values = await form.validateFields()
     await onSubmit(values)
     form.resetFields()
   }
-
   return (
     <Modal
       open
-      title={
-        <Flex align="center" gap={8}>
-          <UserAddOutlined style={{ color: 'var(--primary)' }} />
-          <span>Add New Flatmate</span>
-        </Flex>
-      }
+      title={<Flex align="center" gap={8}><UserAddOutlined style={{ color: 'var(--primary)' }} /><span>Add New Flatmate</span></Flex>}
       okText="Create Account"
       confirmLoading={submitting}
       onCancel={onClose}
       onOk={() => void handleOk()}
       width="min(460px, 95vw)"
     >
-      <Alert
-        type="info"
-        showIcon
-        style={{ marginBottom: 16, marginTop: 8 }}
-        message="Make sure email confirmation is disabled in Supabase Auth settings for instant access."
-      />
-
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ role: 'user', canAddExpenses: false }}
-      >
-        <Form.Item
-          label="Full Name"
-          name="fullName"
-          rules={[{ required: true, message: 'Enter full name.' }]}
-        >
-          <Input
-            prefix={<UserOutlined style={{ color: 'var(--text-muted)' }} />}
-            placeholder="e.g. Yasir Momand"
-          />
+      <Alert type="info" showIcon style={{ marginBottom: 16, marginTop: 8 }}
+        title="Make sure email confirmation is disabled in Supabase Auth settings for instant access." />
+      <Form form={form} layout="vertical" initialValues={{ role: 'user', canAddExpenses: false }}>
+        <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: 'Enter full name.' }]}>
+          <Input prefix={<UserOutlined style={{ color: 'var(--text-muted)' }} />} placeholder="Enter full name" />
         </Form.Item>
-
-        <Form.Item
-          label="Email Address"
-          name="email"
-          rules={[
-            { required: true, message: 'Enter email.' },
-            { type: 'email', message: 'Enter a valid email.' },
-          ]}
-        >
-          <Input
-            prefix={<MailOutlined style={{ color: 'var(--text-muted)' }} />}
-            placeholder="e.g. yasir@milbaant.com"
-          />
+        <Form.Item label="Email Address" name="email" rules={[{ required: true, message: 'Enter email.' }, { type: 'email', message: 'Enter a valid email.' }]}>
+          <Input prefix={<MailOutlined style={{ color: 'var(--text-muted)' }} />} placeholder="Enter email address" />
         </Form.Item>
-
-        <Form.Item
-          label="Password"
-          name="password"
-          rules={[
-            { required: true, message: 'Enter password.' },
-            { min: 6, message: 'Password must be at least 6 characters.' },
-          ]}
-        >
-          <Input.Password
-            prefix={<LockOutlined style={{ color: 'var(--text-muted)' }} />}
-            placeholder="Minimum 6 characters"
-          />
+        <Form.Item label="Password" name="password" rules={[{ required: true, message: 'Enter password.' }, { min: 6, message: 'Password must be at least 6 characters.' }]}>
+          <Input.Password prefix={<LockOutlined style={{ color: 'var(--text-muted)' }} />} placeholder="Minimum 6 characters" />
         </Form.Item>
-
         <Row gutter={12}>
           <Col xs={24} sm={12}>
             <Form.Item label="Role" name="role" rules={[{ required: true }]}>
@@ -605,39 +687,25 @@ function AddUserModal({
 
 /* ─── Edit User Modal ─────────────────────────────────────────────────────── */
 
-function EditUserModal({
-  profile,
-  submitting,
-  onClose,
-  onSave,
-  onRoleChange,
-  onPermissionChange,
-}: {
-  profile: Profile
-  submitting: boolean
-  onClose: () => void
+function EditUserModal({ profile, submitting, onClose, onSave, onRoleChange, onPermissionChange }: {
+  profile: Profile; submitting: boolean; onClose: () => void
   onSave: (profile: Profile, name: string) => Promise<void>
   onRoleChange: (profile: Profile, role: Role) => Promise<void>
   onPermissionChange: (profile: Profile, can: boolean) => Promise<void>
 }) {
   const [form] = Form.useForm<{ fullName: string; role: Role; canAddExpenses: boolean }>()
-
   async function handleOk() {
     const values = await form.validateFields()
     await onSave(profile, values.fullName)
     await onRoleChange({ ...profile, full_name: values.fullName }, values.role)
     await onPermissionChange({ ...profile }, values.canAddExpenses)
   }
-
   return (
     <Modal
       open
       title={
         <Flex align="center" gap={8}>
-          <Avatar
-            size={28}
-            style={{ background: avatarColor(profile.full_name), color: '#fff', fontWeight: 700, fontSize: 11 }}
-          >
+          <Avatar size={28} style={{ background: avatarColor(profile.full_name), color: '#fff', fontWeight: 700, fontSize: 11 }}>
             {initials(profile.full_name)}
           </Avatar>
           <span>Edit {profile.full_name}</span>
@@ -649,24 +717,13 @@ function EditUserModal({
       onOk={() => void handleOk()}
       width="min(400px, 95vw)"
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          fullName: profile.full_name,
-          role: profile.role,
-          canAddExpenses: profile.can_add_expenses,
-        }}
+      <Form form={form} layout="vertical"
+        initialValues={{ fullName: profile.full_name, role: profile.role, canAddExpenses: profile.can_add_expenses }}
         style={{ paddingTop: 8 }}
       >
-        <Form.Item
-          label="Full Name"
-          name="fullName"
-          rules={[{ required: true, message: 'Name is required.' }]}
-        >
+        <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: 'Name is required.' }]}>
           <Input prefix={<UserOutlined style={{ color: 'var(--text-muted)' }} />} />
         </Form.Item>
-
         <Row gutter={12}>
           <Col xs={24} sm={12}>
             <Form.Item label="Role" name="role">

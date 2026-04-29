@@ -37,7 +37,8 @@ import {
 import { ExpenseFormModal, type ExpenseSubmission } from '@/components/ExpenseFormModal'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel } from '@/components/Glass'
+import { SummaryStat } from '@/components/SummaryStat'
+import { PageStack, SectionBlock, MobileCard, MobileRow, MobileLabel, ResponsiveGrid } from '@/components/Glass'
 import { useAuth } from '@/hooks/useAuth'
 import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } from '@/hooks/useExpenses'
 import { useProfiles } from '@/hooks/useProfiles'
@@ -541,6 +542,7 @@ export function ExpensesPage() {
       <PageHeader
         title="Expenses"
         subtitle="Track monthly expenses, record weekend meal splits, and calculate what each flatmate owes."
+        breadcrumbs={[{ title: 'Home', path: '/', icon: undefined }, { title: 'Management' }, { title: 'Expenses' }]}
         actions={
           <Space wrap>
             <DatePicker
@@ -572,38 +574,29 @@ export function ExpensesPage() {
       <QueryState isLoading={isLoading} error={error}>
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-          <div style={{ background: 'var(--surface)', border: 'none', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Total Expenses</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.3px' }}>{formatCurrency(fixedTotal)}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-disabled)' }}>{formatMonthYear(selectedMonth)}</div>
-            </div>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <WalletOutlined style={{ fontSize: 15, color: 'var(--primary)' }} />
-            </div>
-          </div>
-          <div style={{ background: 'var(--surface)', border: 'none', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Per-person Share</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.3px' }}>{formatCurrency(perMemberShare)}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Each member owes</div>
-            </div>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <UserOutlined style={{ fontSize: 15, color: '#7c3aed' }} />
-            </div>
-          </div>
-          <div style={{ background: 'var(--surface)', border: 'none', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>Member Count</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.3px' }}>{memberCount}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Active flatmates</div>
-            </div>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TeamOutlined style={{ fontSize: 15, color: '#059669' }} />
-            </div>
-          </div>
-        </div>
+        <ResponsiveGrid>
+          <SummaryStat
+            title="Total Expenses"
+            value={formatCurrency(fixedTotal)}
+            subtitle={formatMonthYear(selectedMonth)}
+            icon={<WalletOutlined />}
+            color="var(--primary)"
+          />
+          <SummaryStat
+            title="Per-person Share"
+            value={formatCurrency(perMemberShare)}
+            subtitle="Each member owes"
+            icon={<UserOutlined />}
+            color="#7c3aed"
+          />
+          <SummaryStat
+            title="Member Count"
+            value={memberCount}
+            subtitle="Active flatmates"
+            icon={<TeamOutlined />}
+            color="#059669"
+          />
+        </ResponsiveGrid>
 
         <SectionBlock>
             <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 4 }}>

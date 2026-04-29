@@ -7,6 +7,7 @@ export const DATE_FORMAT = 'dddd DD MMMM, YYYY'
 export const ROLE_OPTIONS: Array<{ label: string; value: Role }> = [
   { label: 'Admin', value: 'admin' },
   { label: 'User', value: 'user' },
+  { label: 'Cook', value: 'cook' },
 ]
 
 export const EXPENSE_CATEGORY_OPTIONS: Array<{
@@ -49,7 +50,6 @@ export const NAV_ITEMS: NavItem[] = [
   { key: '/daily-menu', label: 'Daily Menu' },
   { key: '/contributions', label: 'Contributions' },
   { key: '/flat-view', label: 'Flat View' },
-  { key: '/announcements', label: 'Announcements' },
   { key: '/admin', label: 'Admin', adminOnly: true },
   { key: '/logs', label: 'Activity Logs' },
 ]
@@ -58,7 +58,6 @@ export const QUERY_KEYS = {
   profile: ['profile'],
   profiles: ['profiles'],
   expenses: ['expenses'],
-  announcements: ['announcements'],
   settings: ['settings'],
   rooms: ['rooms'],
   beds: ['beds'],
@@ -66,11 +65,13 @@ export const QUERY_KEYS = {
   rides: ['rides'],
   cookAdvances: ['cook-advances'],
   cookPurchases: ['cook-purchases'],
+  cookRequests: ['cook-requests'],
   activityLogs: ['activity-logs'],
   flatFundAllocations: ['flat-fund-allocations'],
   flatFundExpenses: ['flat-fund-expenses'],
   contributionPayments: ['contribution-payments'],
   dailyMenu: ['daily-menu'],
+  announcements: ['announcements'],
 }
 
 export const PURCHASE_CATEGORY_OPTIONS = [

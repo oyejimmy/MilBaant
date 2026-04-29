@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { Alert, Button, Col, Flex, Grid, Input, InputNumber, Row, Space, Table, Tag, Typography, message } from 'antd'
-import { EditOutlined, FundOutlined, HistoryOutlined, SaveOutlined, WalletOutlined, CalendarOutlined, CoffeeOutlined, TeamOutlined, CheckCircleOutlined, DollarOutlined, MoonOutlined, ClockCircleOutlined } from '@ant-design/icons'
-import styled, { keyframes } from 'styled-components'
+import { App, Button, Col, Flex, Grid, Input, InputNumber, Row, Space, Table, Tag, Typography } from 'antd'
+import { EditOutlined, FundOutlined, HistoryOutlined, SaveOutlined, WalletOutlined, CalendarOutlined, CoffeeOutlined, TeamOutlined, CheckCircleOutlined, DollarOutlined, MoonOutlined, ClockCircleOutlined, ArrowRightOutlined, HomeOutlined, UserOutlined } from '@ant-design/icons'
+import styled from 'styled-components'
 import { PageStack, ResponsiveGrid, SectionBlock } from '@/components/Glass'
 import { QueryState } from '@/components/QueryState'
 import { SummaryStat } from '@/components/SummaryStat'
 import { PaymentProofModal } from '@/components/PaymentProofModal'
-import { useAnnouncements } from '@/hooks/useAnnouncements'
+import { PageHeader } from '@/components/PageHeader'
 import { useAuth } from '@/hooks/useAuth'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useFlatFundAllocations, useFlatFundExpenses } from '@/hooks/useFlatFund'
@@ -21,74 +21,109 @@ import {
   calculatePerMemberShare,
   splitExpensesByType,
 } from '@/lib/expense-helpers'
-import { formatCurrency, formatDateTime } from '@/lib/formatters'
+import { formatCurrency } from '@/lib/formatters'
 import type { UserMonthlySummary } from '@/lib/types'
+import { useNavigate } from 'react-router-dom'
 
 const { useBreakpoint } = Grid
 
 /* ─── Animations ──────────────────────────────────────────────────────────── */
-const shimmer = keyframes`
-  0%   { transform: translateX(-100%) skewX(-15deg); }
-  100% { transform: translateX(250%) skewX(-15deg); }
-`
 
-/* ─── Credit Card ─────────────────────────────────────────────────────────── */
-const CardWrap = styled.div`
+/* ─── Premium Payment Card ────────────────────────────────────────────────── */
+const PremiumCard = styled.div`
   position: relative;
   width: 100%;
-  max-width: 420px;
-  /* Standard credit card ratio 85.6mm × 53.98mm = 1.586 */
-  aspect-ratio: 1.586 / 1;
-  border-radius: 14px;
-  background: linear-gradient(140deg, #1e8c4a 0%, #00a651 30%, #009944 55%, #007a38 80%, #005a28 100%);
+  flex: 1;
+  min-height: 200px;
+  background: linear-gradient(135deg, #0a2540 0%, #1a3a5c 35%, #0d4f3c 70%, #0a3d2e 100%);
   overflow: hidden;
-  box-shadow:
-    0 24px 64px rgba(0, 120, 50, 0.5),
-    0 6px 20px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255,255,255,0.18);
-  user-select: none;
-  cursor: default;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(18px, 4%, 28px) clamp(20px, 5%, 32px);
+  cursor: default;
+  user-select: none;
+  border-radius: 14px;
 
-  /* Shimmer sweep on hover */
+  /* Shimmer on hover */
   &::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255,255,255,0.07) 50%,
-      transparent 100%
-    );
-    transform: translateX(-100%) skewX(-15deg);
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
     pointer-events: none;
   }
   &:hover::after {
-    animation: ${shimmer} 0.75s ease forwards;
+    transform: translateX(100%);
   }
 `
 
-/* Green body — takes up ~80% of card height */
-const CardBody = styled.div`
-  flex: 1;
-  position: relative;
-  padding: clamp(10px, 3.5%, 18px) clamp(14px, 4.5%, 22px);
+const EditCardBtn = styled.button`
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(255,255,255,0.22);
+    color: #fff;
+  }
 `
 
-/* White footer strip — ~20% of card height */
-const CardFooter = styled.div`
-  background: #fff;
-  padding: clamp(5px, 1.8%, 9px) clamp(14px, 4.5%, 22px);
+const PremiumCardTop = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+`
+
+const PremiumChip = styled.div`
+  width: clamp(38px, 7vw, 52px);
+  height: clamp(28px, 5vw, 38px);
+  border-radius: 6px;
+  background: linear-gradient(145deg, #f5c518 0%, #e8a800 40%, #ffe066 70%, #d4a017 100%);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+  position: relative;
+  overflow: hidden;
+  margin: clamp(14px, 3%, 22px) 0 clamp(10px, 2%, 16px);
+  z-index: 1;
+`
+
+const PremiumNumber = styled.div`
+  color: #fff;
+  font-size: clamp(16px, 3.5vw, 22px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  font-family: 'Courier New', 'Lucida Console', monospace;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  position: relative;
+  z-index: 1;
+  margin-bottom: clamp(12px, 2.5%, 20px);
+`
+
+const PremiumCardBottom = styled.div`
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  gap: 12px;
 `
 
 /* Polygon decorations mimicking the real card's geometric shapes */
@@ -110,24 +145,7 @@ const CardPoly = styled.div<{
   pointer-events: none;
 `
 
-const AccountNumber = styled.div`
-  color: #fff;
-  font-size: clamp(15px, 3vw, 20px);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  font-family: 'Courier New', 'Lucida Console', monospace;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
-`
-
-const AccountName = styled.div`
-  color: #fff;
-  font-size: clamp(12px, 2.2vw, 15px);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.35);
-  margin-top: 4px;
-`
+/* ─── Polygon decoration (reused in premium card) ─────────────────────────── */
 
 /* ─── Mobile balance card ─────────────────────────────────────────────────── */
 const BalanceRow = styled.div`
@@ -139,17 +157,99 @@ const BalanceRow = styled.div`
   border: 1px solid var(--card-border);
   background: var(--content-bg);
   gap: 8px;
+  max-width: 400px;
+  margin: 0 auto;
+`
+
+const SectionTitle = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+`
+
+const SectionLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-strong);
+  }
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+`
+
+/* ─── Role Welcome Banner ─────────────────────────────────────────────────── */
+const BANNER_GRADIENTS = {
+  cook:  'linear-gradient(135deg, #f97316 0%, #fb923c 40%, #ea580c 100%)',
+  admin: 'transparent',
+  user:  'linear-gradient(135deg, #1677ff 0%, #4096ff 40%, #0958d9 100%)',
+}
+
+const WelcomeBanner = styled.div<{ $variant: 'cook' | 'admin' | 'user' }>`
+  border-radius: 16px;
+  background: ${({ $variant }) => BANNER_GRADIENTS[$variant]};
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+
+  @media (max-width: 767px) {
+    padding: 16px 18px;
+    border-radius: 12px;
+  }
+`
+
+const WelcomeBannerBg = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    top: -80px;
+    right: -50px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    bottom: -50px;
+    left: 20%;
+  }
 `
 
 
 export function DashboardPage() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, isCook, profile } = useAuth()
+  const { message } = App.useApp()
+  const navigate = useNavigate()
   const screens = useBreakpoint()
   const isMobile = !screens.md
   const currentMonth = dayjs().startOf('month')
   const currentMonthStr = currentMonth.format('YYYY-MM')
   const expensesQuery = useExpenses(currentMonth)
-  const announcementsQuery = useAnnouncements()
   const profilesQuery = useProfiles()
   const memberCountQuery = useMemberCountSetting()
   const contributeQuery = useContributeInfo()
@@ -170,7 +270,6 @@ export function DashboardPage() {
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; amount: number } | null>(null)
 
   const expenses = expensesQuery.data ?? []
-  const announcements = announcementsQuery.data ?? []
   const profiles = profilesQuery.data ?? []
   const contributeInfo = contributeQuery.data
   const prevRemainder = prevRemainderQuery.data ?? 0
@@ -264,13 +363,11 @@ export function DashboardPage() {
 
   const isLoading =
     expensesQuery.isLoading ||
-    announcementsQuery.isLoading ||
     profilesQuery.isLoading ||
     memberCountQuery.isLoading
 
   const error =
     (expensesQuery.error as Error | null) ??
-    (announcementsQuery.error as Error | null) ??
     (profilesQuery.error as Error | null) ??
     (memberCountQuery.error as Error | null)
 
@@ -375,7 +472,85 @@ export function DashboardPage() {
 
   return (
     <PageStack>
+      {/* ── Role-aware Welcome Banner ── */}
+      {isCook ? (
+        <WelcomeBanner $variant="cook">
+          <WelcomeBannerBg />
+          <Flex align="center" justify="space-between" wrap gap={12} style={{ position: 'relative', zIndex: 1 }}>
+            <Flex align="center" gap={14}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: 'rgba(255,255,255,0.18)',
+                border: '1.5px solid rgba(255,255,255,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, flexShrink: 0,
+              }}>
+                <CoffeeOutlined />
+              </div>
+              <div>
+                <Typography.Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  Cook Portal
+                </Typography.Text>
+                <Typography.Title level={3} style={{ margin: 0, color: '#fff', fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 800, lineHeight: 1.2 }}>
+                  Cook Dashboard
+                </Typography.Title>
+                <Typography.Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2, display: 'block' }}>
+                  {dayjs().format('dddd, DD MMMM YYYY')}
+                </Typography.Text>
+              </div>
+            </Flex>
+            <Button
+              onClick={() => navigate('/cook-portal/dashboard')}
+              style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, backdropFilter: 'blur(8px)' }}
+              icon={<ArrowRightOutlined />}
+            >
+              Go to Cook Portal
+            </Button>
+          </Flex>
+        </WelcomeBanner>
+      ) : isAdmin ? null : (
+        <WelcomeBanner $variant="user">
+          <WelcomeBannerBg />
+          <Flex align="center" justify="space-between" wrap gap={12} style={{ position: 'relative', zIndex: 1 }}>
+            <Flex align="center" gap={14}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: 'rgba(255,255,255,0.18)',
+                border: '1.5px solid rgba(255,255,255,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, flexShrink: 0,
+              }}>
+                <UserOutlined />
+              </div>
+              <div>
+                <Typography.Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  Resident
+                </Typography.Text>
+                <Typography.Title level={3} style={{ margin: 0, color: '#fff', fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 800, lineHeight: 1.2 }}>
+                  Welcome, {profile?.full_name?.split(' ')[0] ?? 'Flatmate'}
+                </Typography.Title>
+                <Typography.Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2, display: 'block' }}>
+                  {dayjs().format('dddd, DD MMMM YYYY')}
+                </Typography.Text>
+              </div>
+            </Flex>
+          </Flex>
+        </WelcomeBanner>
+      )}
+
+      {/* ── Breadcrumb + Page Header ── */}
+      <PageHeader
+        title="Dashboard"
+        subtitle={`${dayjs().format('MMMM YYYY')} · Flat expense overview`}
+        breadcrumbs={[
+          { title: 'Home', path: '/', icon: <HomeOutlined /> },
+          { title: 'Dashboard' },
+        ]}
+      />
+
       <QueryState isLoading={isLoading} error={error}>
+
+        {/* ── Stat Cards ── */}
         <ResponsiveGrid>
           <SummaryStat
             title="Total Recorded"
@@ -406,7 +581,7 @@ export function DashboardPage() {
             color="#059669"
           />
 
-          {/* Remainder — inline stat card with edit */}
+          {/* Remainder stat card */}
           <div style={{
             background: 'var(--surface)',
             border: `1.5px solid ${prevRemainder > 0 ? 'rgba(217,119,6,0.25)' : 'var(--card-border)'}`,
@@ -467,29 +642,23 @@ export function DashboardPage() {
           </div>
         </ResponsiveGrid>
 
-        {/* Tonight's Dinner & Flat Fund Overview - Side by Side */}
+        {/* ── Row 1: Tonight's Dinner + Contribute ── */}
         <Row gutter={[20, 20]} align="stretch">
           {/* Tonight's Dinner */}
           <Col xs={24} lg={12} style={{ display: 'flex' }}>
             <SectionBlock style={{ flex: 1 }}>
-              <Flex align="center" justify="space-between" style={{ marginBottom: 12 }} wrap gap={8}>
-                <div>
-                  <Typography.Title level={4} style={{ margin: 0, color: 'var(--text-strong)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <MoonOutlined style={{ color: '#722ed1', fontSize: 20 }} />
-                    Tonight's Dinner
-                  </Typography.Title>
-                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                    {dayjs().format('dddd, DD MMMM YYYY')}
-                  </Typography.Text>
-                </div>
-                <Button
-                  type="link"
-                  href="/daily-menu"
-                  style={{ padding: 0 }}
-                >
-                  View Menu →
+              <SectionTitle>
+                <SectionLabel>
+                  <MoonOutlined style={{ color: '#722ed1', fontSize: 18 }} />
+                  <div>
+                    <h4>Tonight's Dinner</h4>
+                    <p>{dayjs().format('dddd, DD MMMM YYYY')}</p>
+                  </div>
+                </SectionLabel>
+                <Button type="link" size="small" icon={<ArrowRightOutlined />} onClick={() => navigate('/daily-menu')} style={{ padding: 0 }}>
+                  View Menu
                 </Button>
-              </Flex>
+              </SectionTitle>
               <div style={{
                 padding: '20px',
                 borderRadius: 12,
@@ -497,42 +666,16 @@ export function DashboardPage() {
                 border: '2px solid rgba(114, 46, 209, 0.15)',
                 position: 'relative',
                 overflow: 'hidden',
-                minHeight: 120,
+                minHeight: 110,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
               }}>
-                <div style={{
-                  position: 'absolute',
-                  top: -20,
-                  right: -20,
-                  width: 100,
-                  height: 100,
-                  borderRadius: '50%',
-                  background: 'rgba(114, 46, 209, 0.05)',
-                  pointerEvents: 'none',
-                }} />
-                <Typography.Text style={{
-                  fontSize: 24,
-                  fontWeight: 700,
-                  color: '#722ed1',
-                  display: 'block',
-                  lineHeight: 1.3,
-                  position: 'relative',
-                  zIndex: 1,
-                  marginBottom: 8,
-                }}>
+                <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(114, 46, 209, 0.05)', pointerEvents: 'none' }} />
+                <Typography.Text style={{ fontSize: 'clamp(18px, 3.5vw, 24px)', fontWeight: 700, color: '#722ed1', display: 'block', lineHeight: 1.3, position: 'relative', zIndex: 1, marginBottom: 8 }}>
                   {todayDinner}
                 </Typography.Text>
-                <Typography.Text style={{
-                  fontSize: 14,
-                  color: 'var(--text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  position: 'relative',
-                  zIndex: 1,
-                }}>
+                <Typography.Text style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 1 }}>
                   <ClockCircleOutlined />
                   Serving at 9:00 PM
                 </Typography.Text>
@@ -540,37 +683,141 @@ export function DashboardPage() {
             </SectionBlock>
           </Col>
 
-          {/* Flat Fund Overview */}
+          {/* Contribute */}
           <Col xs={24} lg={12} style={{ display: 'flex' }}>
-            <SectionBlock style={{ flex: 1 }}>
-              <Flex align="center" gap={8} style={{ marginBottom: 14 }}>
-                <FundOutlined style={{ color: '#909ffa', fontSize: 16 }} />
-                <div>
-                  <Typography.Title level={4} style={{ margin: 0, color: 'var(--text-strong)' }}>
-                    Flat Fund Overview
-                  </Typography.Title>
-                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                    Shared flat money for daily expenses
-                  </Typography.Text>
+            <SectionBlock style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+              {editing ? (
+                <div style={{ padding: '20px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <Typography.Text strong style={{ fontSize: 15, color: 'var(--text-strong)' }}>Edit Payment Details</Typography.Text>
+                    <Space>
+                      <Button size="small" onClick={() => setEditing(false)}>Cancel</Button>
+                      <Button size="small" type="primary" icon={<SaveOutlined />} loading={upsertContribute.isPending} onClick={() => void saveContribute()}>Save</Button>
+                    </Space>
+                  </div>
+                  <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Account Number</div>
+                      <Input value={draftAccount} onChange={(e) => setDraftAccount(e.target.value)} placeholder="e.g. 03001234567" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Account Name</div>
+                      <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="e.g. Yasir Momand" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Payment Method</div>
+                      <Input value={draftMethod} onChange={(e) => setDraftMethod(e.target.value)} placeholder="e.g. Easypaisa" />
+                    </div>
+                  </Space>
                 </div>
-              </Flex>
-              <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+              ) : (
+                <PremiumCard>
+                  {/* Edit button — floating top-right, admin only */}
+                  {isAdmin && (
+                    <EditCardBtn onClick={startEdit} title="Edit payment details">
+                      <EditOutlined />
+                    </EditCardBtn>
+                  )}
+
+                  {/* Card background decorations */}
+                  <CardPoly $w={320} $h={320} $top="-120px" $right="-90px" $rotate={15} $opacity={0.06} />
+                  <CardPoly $w={200} $h={200} $top="-30px" $right="80px" $rotate={40} $opacity={0.04} />
+                  <CardPoly $w={160} $h={160} $bottom="-60px" $left="-40px" $rotate={8} $opacity={0.04} />
+                  <CardPoly $w={100} $h={100} $bottom="20px" $right="40px" $rotate={25} $opacity={0.03} />
+
+                  {/* Card top: network + debit label */}
+                  <PremiumCardTop>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {/* Contactless symbol */}
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.8 }}>
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="rgba(255,255,255,0.15)" />
+                        <path d="M8.5 8.5C9.9 7.1 11.9 6.5 14 7l1-1.7C12.2 4.4 9.4 5.2 7.1 7.5L8.5 8.5z" fill="white" />
+                        <path d="M6.1 10.9C7 8.8 8.8 7.2 11 6.6l-.8-1.8C7.8 5.6 5.6 7.6 4.5 10.2L6.1 10.9z" fill="white" opacity="0.7" />
+                        <path d="M10.9 10.1C11.9 9.4 13.2 9.3 14.3 9.9l.9-1.6C13.5 7.5 11.5 7.5 9.9 8.6L10.9 10.1z" fill="white" opacity="0.9" />
+                        <circle cx="12" cy="13" r="2" fill="white" />
+                      </svg>
+                      <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                        {contributeInfo?.paymentMethod ?? 'Easypaisa'}
+                      </span>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      Debit
+                    </span>
+                  </PremiumCardTop>
+
+                  {/* EMV Chip */}
+                  <PremiumChip>
+                    <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(rgba(0,0,0,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.12) 1px, transparent 1px)`, backgroundSize: '33% 33%' }} />
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '52%', height: '52%', borderRadius: 2, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.15)' }} />
+                  </PremiumChip>
+
+                  {/* Account number */}
+                  <PremiumNumber>
+                    {contributeInfo?.accountNumber
+                      ? contributeInfo.accountNumber.replace(/(\d{4})(?=\d)/g, '$1  ')
+                      : '•••• •••• •••• ••••'}
+                  </PremiumNumber>
+
+                  {/* Card bottom: name + logo */}
+                  <PremiumCardBottom>
+                    <div>
+                      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 3 }}>
+                        Account Holder
+                      </div>
+                      <div style={{ color: '#fff', fontSize: 'clamp(12px, 2.5vw, 15px)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        {contributeInfo?.accountName ?? '— — —'}
+                      </div>
+                    </div>
+
+                    {/* Easypaisa logo */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 10px', backdropFilter: 'blur(8px)' }}>
+                      <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid #00e676', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: '#00e676', fontWeight: 900, fontSize: 10, lineHeight: 1 }}>e</span>
+                      </div>
+                      <span style={{ color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                        easypaisa
+                      </span>
+                    </div>
+                  </PremiumCardBottom>
+                </PremiumCard>
+              )}
+            </SectionBlock>
+          </Col>
+        </Row>
+
+        {/* ── Row 2: Flat Fund Overview ── */}
+        <Row gutter={[20, 20]}>
+          <Col xs={24}>
+            <SectionBlock>
+              <SectionTitle>
+                <SectionLabel>
+                  <FundOutlined style={{ color: '#909ffa', fontSize: 18 }} />
+                  <div>
+                    <h4>Flat Fund Overview</h4>
+                    <p>Shared flat money for daily expenses</p>
+                  </div>
+                </SectionLabel>
+                <Button type="link" size="small" icon={<ArrowRightOutlined />} onClick={() => navigate('/flat-expenses')} style={{ padding: 0 }}>
+                  View Details
+                </Button>
+              </SectionTitle>
+              <Row gutter={[12, 12]} style={{ marginBottom: flatExpenses.slice(0, 3).length > 0 ? 16 : 0 }}>
                 <Col xs={8}>
-                  <div style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--content-bg)', borderRadius: 8, border: '1px solid var(--card-border)' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Allocated</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>{formatCurrency(flatTotalAllocated)}</div>
+                  <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--content-bg)', borderRadius: 10, border: '1px solid var(--card-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Allocated</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary)' }}>{formatCurrency(flatTotalAllocated)}</div>
                   </div>
                 </Col>
                 <Col xs={8}>
-                  <div style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--content-bg)', borderRadius: 8, border: '1px solid var(--card-border)' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Spent</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#ff4d4f' }}>{formatCurrency(flatTotalSpent)}</div>
+                  <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--content-bg)', borderRadius: 10, border: '1px solid var(--card-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Spent</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#ff4d4f' }}>{formatCurrency(flatTotalSpent)}</div>
                   </div>
                 </Col>
                 <Col xs={8}>
-                  <div style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--content-bg)', borderRadius: 8, border: '1px solid var(--card-border)' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Balance</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: flatBalance >= 0 ? '#52c41a' : '#ff4d4f' }}>
+                  <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--content-bg)', borderRadius: 10, border: '1px solid var(--card-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Balance</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: flatBalance >= 0 ? '#52c41a' : '#ff4d4f' }}>
                       {flatBalance >= 0 ? '+' : ''}{formatCurrency(flatBalance)}
                     </div>
                   </div>
@@ -578,15 +825,15 @@ export function DashboardPage() {
               </Row>
               {flatExpenses.slice(0, 3).length > 0 && (
                 <div>
-                  <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Recent expenses:</Typography.Text>
+                  <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 8, fontWeight: 600 }}>Recent expenses</Typography.Text>
                   <Space direction="vertical" size={6} style={{ width: '100%' }}>
                     {flatExpenses.slice(0, 3).map((e) => (
-                      <Flex key={e.id} justify="space-between" align="center" style={{ padding: '6px 10px', background: 'var(--content-bg)', borderRadius: 6, border: '1px solid var(--card-border)' }}>
+                      <Flex key={e.id} justify="space-between" align="center" style={{ padding: '8px 12px', background: 'var(--content-bg)', borderRadius: 8, border: '1px solid var(--card-border)' }}>
                         <div>
-                          <Typography.Text style={{ fontSize: 12, color: 'var(--text-strong)' }}>{e.description}</Typography.Text>
+                          <Typography.Text style={{ fontSize: 13, color: 'var(--text-strong)', fontWeight: 500 }}>{e.description}</Typography.Text>
                           <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>{e.member?.full_name ?? '—'}</Typography.Text>
                         </div>
-                        <Typography.Text strong style={{ fontSize: 12, color: '#ff4d4f' }}>-{formatCurrency(e.amount)}</Typography.Text>
+                        <Typography.Text strong style={{ fontSize: 13, color: '#ff4d4f' }}>-{formatCurrency(e.amount)}</Typography.Text>
                       </Flex>
                     ))}
                   </Space>
@@ -596,298 +843,67 @@ export function DashboardPage() {
           </Col>
         </Row>
 
-        <Row gutter={[20, 20]} align="stretch">
-          <Col xs={24} xl={14} style={{ display: 'flex', flexDirection: 'column' }}>
-            <SectionBlock style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ marginBottom: 16 }}>
-                <Typography.Title level={3} style={{ margin: 0, color: 'var(--text-strong)' }}>
-                  Recent Announcements
-                </Typography.Title>
-                <Typography.Text style={{ color: 'var(--text-muted)' }}>
-                  Important updates from the admin team.
-                </Typography.Text>
-              </div>
-
-              <div style={{ flex: 1 }}>
-                {announcements.length ? (
-                  <AnnouncementTicker announcements={announcements} />
-                ) : (
-                  <Alert
-                    type="info"
-                    showIcon
-                    message="No announcements yet."
-                    description="Admins can post updates from the Announcements page or Admin Panel."
-                  />
-                )}
-              </div>
-            </SectionBlock>
-          </Col>
-
-          <Col xs={24} xl={10} style={{ display: 'flex', flexDirection: 'column' }}>
-            <SectionBlock style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {/* Header */}
-              <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
-                <div>
-                  <Typography.Title level={3} style={{ margin: 0, color: 'var(--text-strong)' }}>
-                    Contribute
-                  </Typography.Title>
-                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                    Send your monthly share to this account.
-                  </Typography.Text>
-                </div>
-                {isAdmin && !editing && (
-                  <Button size="small" icon={<EditOutlined />} onClick={startEdit}>Edit</Button>
-                )}
-                {isAdmin && editing && (
-                  <Space>
-                    <Button size="small" onClick={() => setEditing(false)}>Cancel</Button>
-                    <Button size="small" type="primary" icon={<SaveOutlined />} loading={upsertContribute.isPending} onClick={() => void saveContribute()}>Save</Button>
-                  </Space>
-                )}
-              </Flex>
-
-              {editing ? (
-                /* ── Edit form ── */
-                <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Account Number</div>
-                    <Input value={draftAccount} onChange={(e) => setDraftAccount(e.target.value)} placeholder="e.g. 03001234567" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Account Name</div>
-                    <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="e.g. Yasir Momand" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Payment Method</div>
-                    <Input value={draftMethod} onChange={(e) => setDraftMethod(e.target.value)} placeholder="e.g. Easypaisa" />
-                  </div>
-                </Space>
-              ) : (
-                /* ── Realistic Easypaisa Debit Card ── */
-                <CardWrap>
-                  {/* ── Green body ── */}
-                  <CardBody>
-                    {/* Geometric polygon decorations (mimic real card's faceted shapes) */}
-                    <CardPoly $w={260} $h={260} $top="-100px" $right="-80px" $rotate={20} $opacity={0.07} />
-                    <CardPoly $w={180} $h={180} $top="-40px" $right="60px" $rotate={45} $opacity={0.05} />
-                    <CardPoly $w={140} $h={140} $bottom="-50px" $left="-30px" $rotate={10} $opacity={0.05} />
-                    <CardPoly $w={90} $h={90} $bottom="10px" $right="30px" $rotate={30} $opacity={0.04} />
-
-                    {/* ── Top row: "Debit" label top-right ── */}
-                    <Flex justify="flex-end" align="flex-start">
-                      <div style={{
-                        color: 'rgba(255,255,255,0.75)',
-                        fontSize: 'clamp(8px,1.3vw,11px)',
-                        fontWeight: 600,
-                        letterSpacing: '0.12em',
-                        textTransform: 'uppercase',
-                      }}>
-                        Debit
-                      </div>
-                    </Flex>
-
-                    {/* ── Middle row: Chip + Account Number + Name ── */}
-                    <div>
-                      {/* EMV Chip — left side, like the real card */}
-                      <div style={{
-                        width: 'clamp(34px,6vw,46px)',
-                        height: 'clamp(26px,4.5vw,34px)',
-                        borderRadius: 5,
-                        background: 'linear-gradient(145deg, #f5c518 0%, #e8a800 40%, #ffe066 70%, #d4a017 100%)',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        marginBottom: 'clamp(8px,2%,14px)',
-                      }}>
-                        {/* Chip grid lines */}
-                        <div style={{
-                          position: 'absolute', inset: 0,
-                          backgroundImage: `
-                            linear-gradient(rgba(0,0,0,0.13) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(0,0,0,0.13) 1px, transparent 1px)
-                          `,
-                          backgroundSize: '33% 33%',
-                        }} />
-                        {/* Center contact pad */}
-                        <div style={{
-                          position: 'absolute',
-                          top: '50%', left: '50%',
-                          transform: 'translate(-50%,-50%)',
-                          width: '52%', height: '52%',
-                          borderRadius: 2,
-                          border: '1px solid rgba(0,0,0,0.2)',
-                          background: 'rgba(255,255,255,0.18)',
-                        }} />
-                      </div>
-
-                      {/* Thin separator line (like the real card) */}
-                      <div style={{
-                        height: 1,
-                        background: 'rgba(255,255,255,0.2)',
-                        marginBottom: 'clamp(8px,2%,14px)',
-                      }} />
-
-                      {/* Account number */}
-                      <AccountNumber>
-                        {contributeInfo?.accountNumber
-                          ? contributeInfo.accountNumber.replace(/(\d{4})(?=\d)/g, '$1 ')
-                          : '•••• •••• ••••'}
-                      </AccountNumber>
-
-                      {/* Account holder name */}
-                      <AccountName>
-                        {contributeInfo?.accountName ?? '— — —'}
-                      </AccountName>
-                    </div>
-                  </CardBody>
-
-                  {/* ── White footer strip ── */}
-                  <CardFooter>
-                    {/* easypaisa wordmark */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {/* Green "e" circle */}
-                      <div style={{
-                        width: 'clamp(16px,2.8vw,22px)',
-                        height: 'clamp(16px,2.8vw,22px)',
-                        borderRadius: '50%',
-                        border: '2.5px solid #00a651',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        <span style={{ color: '#00a651', fontWeight: 900, fontSize: 'clamp(9px,1.6vw,13px)', lineHeight: 1 }}>e</span>
-                      </div>
-                      <span style={{
-                        color: '#1a1a1a',
-                        fontWeight: 800,
-                        fontSize: 'clamp(11px,2vw,16px)',
-                        letterSpacing: '-0.01em',
-                        fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      }}>
-                        easypaisa
-                      </span>
-                    </div>
-
-                    {/* UnionPay logo */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
-                      {/* Red stripe */}
-                      <div style={{
-                        width: 'clamp(18px,3.2vw,26px)',
-                        height: 'clamp(26px,4.5vw,36px)',
-                        borderRadius: '4px 0 0 4px',
-                        background: 'linear-gradient(180deg, #e8192c 0%, #c0001a 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <span style={{ color: '#fff', fontSize: 'clamp(6px,1vw,8px)', fontWeight: 900, writingMode: 'vertical-rl', letterSpacing: '0.05em' }}>银</span>
-                      </div>
-                      {/* Blue stripe */}
-                      <div style={{
-                        width: 'clamp(18px,3.2vw,26px)',
-                        height: 'clamp(26px,4.5vw,36px)',
-                        background: 'linear-gradient(180deg, #1a3a8f 0%, #0d2266 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <span style={{ color: '#fff', fontSize: 'clamp(6px,1vw,8px)', fontWeight: 900, writingMode: 'vertical-rl', letterSpacing: '0.05em' }}>联</span>
-                      </div>
-                      {/* Teal stripe */}
-                      <div style={{
-                        width: 'clamp(18px,3.2vw,26px)',
-                        height: 'clamp(26px,4.5vw,36px)',
-                        borderRadius: '0 4px 4px 0',
-                        background: 'linear-gradient(180deg, #009a8e 0%, #007a70 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <span style={{ color: '#fff', fontSize: 'clamp(5px,0.9vw,7px)', fontWeight: 700 }}>UP</span>
-                      </div>
-                    </div>
-                  </CardFooter>
-                </CardWrap>
-              )}
-            </SectionBlock>
-          </Col>
-        </Row>
-
+        {/* ── Monthly Balances Table ── */}
         <SectionBlock>
-          <Space direction="vertical" size={16} style={{ width: '100%' }}>
-            <div>
-              <Typography.Title level={3} style={{ margin: 0, color: 'var(--text-strong)' }}>
-                Monthly Balances Table
-              </Typography.Title>
-              <Typography.Text style={{ color: 'var(--text-muted)' }}>
-                A clear summary of what each flatmate owes this month.
-              </Typography.Text>
-            </div>
+          <SectionTitle>
+            <SectionLabel>
+              <TeamOutlined style={{ color: 'var(--primary)', fontSize: 18 }} />
+              <div>
+                <h4>Monthly Balances</h4>
+                <p>What each flatmate owes this month · {dayjs().format('MMMM YYYY')}</p>
+              </div>
+            </SectionLabel>
+            <Button type="link" size="small" icon={<ArrowRightOutlined />} onClick={() => navigate('/contributions')} style={{ padding: 0 }}>
+              Contributions
+            </Button>
+          </SectionTitle>
 
-            {isMobile ? (
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                {monthlySummary.map((row) => {
-                  const status = paymentStatusMap.get(row.userId)
-                  return (
-                    <BalanceRow key={row.userId}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Flex justify="space-between" align="center" style={{ marginBottom: 4 }}>
-                          <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>
-                            {row.fullName}
-                          </Typography.Text>
-                          {status?.paid ? (
-                            <Tag color="success" style={{ margin: 0 }}>Paid</Tag>
-                          ) : status && status.daysOverdue > 0 ? (
-                            <Tag color="error" style={{ margin: 0 }}>
-                              {status.daysOverdue}d overdue
-                            </Tag>
-                          ) : (
-                            <Tag color="warning" style={{ margin: 0 }}>Pending</Tag>
-                          )}
-                        </Flex>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-                          <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                            Share: {formatCurrency(row.fixedShare)}
-                          </Typography.Text>
-                          <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                            Weekend: {formatCurrency(row.weekendShare)}
-                          </Typography.Text>
-                        </div>
-                        <Flex justify="space-between" align="center" style={{ marginTop: 6 }}>
-                          <Typography.Text strong style={{ color: '#909ffa', fontSize: 14 }}>
-                            {formatCurrency(row.totalOwed)}
-                          </Typography.Text>
-                          {status?.paid ? (
-                            <Typography.Text style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                              Paid on {dayjs(status.date).format('MMM DD')}
-                            </Typography.Text>
-                          ) : (
-                            <Button
-                              size="small"
-                              type="primary"
-                              icon={<DollarOutlined />}
-                              onClick={() => {
-                                setSelectedUser({
-                                  id: row.userId,
-                                  name: row.fullName,
-                                  amount: row.totalOwed,
-                                })
-                                setPaymentModalOpen(true)
-                              }}
-                            >
-                              Pay
-                            </Button>
-                          )}
-                        </Flex>
+          {isMobile ? (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              {monthlySummary.map((row) => {
+                const status = paymentStatusMap.get(row.userId)
+                return (
+                  <BalanceRow key={row.userId}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Flex justify="space-between" align="center" style={{ marginBottom: 4 }}>
+                        <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 13 }}>
+                          {row.fullName}
+                        </Typography.Text>
+                        {status?.paid ? (
+                          <Tag color="success" style={{ margin: 0 }}>Paid</Tag>
+                        ) : status && status.daysOverdue > 0 ? (
+                          <Tag color="error" style={{ margin: 0 }}>{status.daysOverdue}d overdue</Tag>
+                        ) : (
+                          <Tag color="warning" style={{ margin: 0 }}>Pending</Tag>
+                        )}
+                      </Flex>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                        <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Share: {formatCurrency(row.fixedShare)}</Typography.Text>
+                        <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>Weekend: {formatCurrency(row.weekendShare)}</Typography.Text>
                       </div>
-                    </BalanceRow>
-                  )
-                })}
-              </Space>
-            ) : (
-              <Table
-                rowKey="userId"
-                columns={balanceColumns}
-                dataSource={monthlySummary}
-                pagination={false}
-                scroll={{ x: 500 }}
-                size="small"
-              />
-            )}
-          </Space>
+                      <Flex justify="space-between" align="center" style={{ marginTop: 6 }}>
+                        <Typography.Text strong style={{ color: '#909ffa', fontSize: 14 }}>{formatCurrency(row.totalOwed)}</Typography.Text>
+                        {status?.paid ? (
+                          <Typography.Text style={{ fontSize: 10, color: 'var(--text-muted)' }}>Paid on {dayjs(status.date).format('MMM DD')}</Typography.Text>
+                        ) : (
+                          <Button size="small" type="primary" icon={<DollarOutlined />} onClick={() => { setSelectedUser({ id: row.userId, name: row.fullName, amount: row.totalOwed }); setPaymentModalOpen(true) }}>Pay</Button>
+                        )}
+                      </Flex>
+                    </div>
+                  </BalanceRow>
+                )
+              })}
+            </Space>
+          ) : (
+            <Table
+              rowKey="userId"
+              columns={balanceColumns}
+              dataSource={monthlySummary}
+              pagination={false}
+              scroll={{ x: 500 }}
+              size="small"
+            />
+          )}
         </SectionBlock>
       </QueryState>
 
@@ -895,10 +911,7 @@ export function DashboardPage() {
       {selectedUser && (
         <PaymentProofModal
           open={paymentModalOpen}
-          onClose={() => {
-            setPaymentModalOpen(false)
-            setSelectedUser(null)
-          }}
+          onClose={() => { setPaymentModalOpen(false); setSelectedUser(null) }}
           userId={selectedUser.id}
           userName={selectedUser.name}
           amountOwed={selectedUser.amount}
@@ -908,104 +921,3 @@ export function DashboardPage() {
     </PageStack>
   )
 }
-
-/* ─── Announcement Ticker ─────────────────────────────────────────────────── */
-
-import type { Announcement } from '@/lib/types'
-
-const ITEM_HEIGHT = 90 // px per announcement card
-const INTERVAL = 3500  // ms between scrolls
-
-function AnnouncementTicker({ announcements }: { announcements: Announcement[] }) {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [exiting, setExiting] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const list = [...announcements].reverse() // newest last → scroll up to newest
-
-  useEffect(() => {
-    if (list.length <= 1) return
-
-    function tick() {
-      setExiting(true)
-      timerRef.current = setTimeout(() => {
-        setActiveIndex((i) => (i + 1) % list.length)
-        setExiting(false)
-        timerRef.current = setTimeout(tick, INTERVAL)
-      }, 500) // exit animation duration
-    }
-
-    timerRef.current = setTimeout(tick, INTERVAL)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [list.length])
-
-  const item = list[activeIndex]
-  if (!item) return null
-
-  return (
-    <div style={{ overflow: 'hidden', position: 'relative' }}>
-      <style>{`
-        @keyframes slideInUp {
-          from { transform: translateY(40px); opacity: 0; }
-          to   { transform: translateY(0);   opacity: 1; }
-        }
-        @keyframes slideOutUp {
-          from { transform: translateY(0);    opacity: 1; }
-          to   { transform: translateY(-40px); opacity: 0; }
-        }
-        .ticker-enter { animation: slideInUp 0.45s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .ticker-exit  { animation: slideOutUp 0.45s cubic-bezier(0.55,0,0.45,1) forwards; }
-      `}</style>
-
-      <div
-        key={activeIndex}
-        className={exiting ? 'ticker-exit' : 'ticker-enter'}
-        style={{
-          border: '1.5px solid var(--border-light)',
-          borderLeft: '4px solid var(--primary)',
-          borderRadius: 10,
-          padding: '14px 16px',
-          background: 'var(--card-bg)',
-          minHeight: ITEM_HEIGHT,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-          <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: 14 }}>
-            {item.title}
-          </Typography.Text>
-          <Tag color="cyan" style={{ flexShrink: 0 }}>
-            {item.creator?.full_name ?? 'Admin'}
-          </Tag>
-        </div>
-        <Typography.Paragraph style={{ margin: '0 0 8px', color: 'var(--text-base)', fontSize: 13 }}>
-          {item.content}
-        </Typography.Paragraph>
-        <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-          {formatDateTime(item.created_at)}
-        </Typography.Text>
-      </div>
-
-      {/* Dot indicators */}
-      {list.length > 1 && (
-        <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginTop: 10 }}>
-          {list.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => { setExiting(false); setActiveIndex(i) }}
-              style={{
-                width: i === activeIndex ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                background: i === activeIndex ? 'var(--primary)' : 'var(--border-default)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-

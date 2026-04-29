@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/AppLayout'
 import { BrandLoader } from '@/components/BrandLoader'
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute'
+import { CookLayout } from '@/components/CookLayout'
+import { CookRoute } from '@/components/CookRoute'
+import { NotFoundPage } from '@/pages/NotFoundPage'
 
 const LoginPage = lazy(() =>
   import('@/pages/LoginPage').then((module) => ({ default: module.LoginPage })),
@@ -35,11 +38,6 @@ const FlatViewPage = lazy(() =>
     default: module.FlatViewPage,
   })),
 )
-const AnnouncementsPage = lazy(() =>
-  import('@/pages/AnnouncementsPage').then((module) => ({
-    default: module.AnnouncementsPage,
-  })),
-)
 const AdminPage = lazy(() =>
   import('@/pages/AdminPage').then((module) => ({ default: module.AdminPage })),
 )
@@ -49,6 +47,16 @@ const LogsPage = lazy(() =>
 const ContributionsPage = lazy(() =>
   import('@/pages/ContributionsPage').then((module) => ({
     default: module.ContributionsPage,
+  })),
+)
+const CookDashboardPage = lazy(() =>
+  import('@/pages/CookDashboardPage').then((module) => ({
+    default: module.CookDashboardPage,
+  })),
+)
+const CookRequestsPage = lazy(() =>
+  import('@/pages/CookRequestsPage').then((module) => ({
+    default: module.CookRequestsPage,
   })),
 )
 const CookPage = lazy(() =>
@@ -66,11 +74,26 @@ const FlatExpensesPage = lazy(() =>
     default: module.FlatExpensesPage,
   })),
 )
-
+const ProfilePage = lazy(() =>
+  import('@/pages/ProfilePage').then((module) => ({
+    default: module.ProfilePage,
+  })),
+)
+const ForgotPasswordPage = lazy(() =>
+  import('@/pages/ForgotPasswordPage').then((module) => ({
+    default: module.ForgotPasswordPage,
+  })),
+)
+const ResetPasswordPage = lazy(() =>
+  import('@/pages/ResetPasswordPage').then((module) => ({
+    default: module.ResetPasswordPage,
+  })),
+)
 function App() {
   return (
     <Suspense fallback={<BrandLoader />}>
       <Routes>
+        {/* ── Public routes ── */}
         <Route
           path="/login"
           element={
@@ -88,6 +111,19 @@ function App() {
           }
         />
         <Route
+          path="/forgot-password"
+          element={
+            <PublicOnlyRoute>
+              <ForgotPasswordPage />
+            </PublicOnlyRoute>
+          }
+        />
+        {/* /reset-password must NOT be PublicOnlyRoute — the user arrives here
+            with a temporary recovery session, so they'd be redirected away */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        {/* ── Main app (admin / user roles) ── */}
+        <Route
           path="/"
           element={
             <ProtectedRoute>
@@ -96,19 +132,46 @@ function App() {
           }
         >
           <Route index element={<DashboardPage />} />
-          <Route path="expenses" element={<ExpensesPage />} />
+          <Route path="expenses"         element={<ExpensesPage />} />
           <Route path="weekend-expenses" element={<WeekendExpensesPage />} />
-          <Route path="contributions" element={<ContributionsPage />} />
-          <Route path="rides" element={<RidesPage />} />
-          <Route path="cook" element={<CookPage />} />
-          <Route path="daily-menu" element={<CookMenuPage />} />
-          <Route path="flat-expenses" element={<FlatExpensesPage />} />
-          <Route path="flat-view" element={<FlatViewPage />} />
-          <Route path="announcements" element={<AnnouncementsPage />} />
-          <Route path="admin" element={<AdminPage />} />
-          <Route path="logs" element={<LogsPage />} />
+          <Route path="contributions"    element={<ContributionsPage />} />
+          <Route path="rides"            element={<RidesPage />} />
+          <Route path="cook"             element={<CookPage />} />
+          <Route path="daily-menu"       element={<CookMenuPage />} />
+          <Route path="flat-expenses"    element={<FlatExpensesPage />} />
+          <Route path="flat-view"        element={<FlatViewPage />} />
+          <Route path="admin"            element={<AdminPage />} />
+          <Route path="logs"             element={<LogsPage />} />
+          <Route path="profile"          element={<ProfilePage />} />
+          <Route path="cook-requests"    element={<CookRequestsPage />} />
+          {/* Any unknown sub-path inside the main app → 404 */}
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* ── Cook-only portal ── */}
+        <Route
+          path="/cook-portal"
+          element={
+            <CookRoute>
+              <CookLayout />
+            </CookRoute>
+          }
+        >
+          <Route index element={<Navigate to="/cook-portal/dashboard" replace />} />
+          <Route path="dashboard"        element={<CookDashboardPage />} />
+          <Route path="cook"             element={<CookPage />} />
+          <Route path="cook-requests"    element={<CookRequestsPage />} />
+          <Route path="daily-menu"       element={<CookMenuPage />} />
+          <Route path="weekend-expenses" element={<WeekendExpensesPage />} />
+          <Route path="logs"             element={<LogsPage />} />
+          <Route path="flat-view"        element={<FlatViewPage />} />
+          <Route path="profile"          element={<ProfilePage />} />
+          {/* Any unknown sub-path inside the cook portal → 404 */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* ── Truly unknown top-level paths → 404 ── */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   )

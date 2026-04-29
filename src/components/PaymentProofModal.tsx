@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, DatePicker, Flex, Image, InputNumber, message, Modal, Space, Typography, Upload } from 'antd'
+import { App, Button, DatePicker, Flex, Image, InputNumber, Modal, Space, Typography, Upload } from 'antd'
 import { CheckCircleOutlined, InboxOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
@@ -26,6 +26,7 @@ export function PaymentProofModal({
   month,
 }: PaymentProofModalProps) {
   const { userId: currentUserId } = useAuth()
+  const { message } = App.useApp()
   const createPayment = useCreateContributionPayment()
 
   const [amount, setAmount] = useState<number>(amountOwed)

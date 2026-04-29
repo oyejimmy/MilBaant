@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Alert, Button, Form, Input, message } from 'antd'
-import { LockOutlined, MailOutlined } from '@ant-design/icons'
+import { Alert, App, Button, Form, Input } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthShell, FormBody, FormFooter } from '@/components/AuthShell'
+import { AuthShell, FormFooter } from '@/components/AuthShell'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 interface LoginValues {
@@ -12,6 +11,7 @@ interface LoginValues {
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const { message } = App.useApp()
   const [submitting, setSubmitting] = useState(false)
 
   async function handleLogin(values: LoginValues) {
@@ -19,15 +19,14 @@ export function LoginPage() {
       message.error('Supabase is not configured. Add environment variables and restart.')
       return
     }
-
     setSubmitting(true)
     try {
       const { error } = await supabase.auth.signInWithPassword(values)
       if (error) throw new Error(error.message)
       message.success('Welcome back!')
       navigate('/', { replace: true })
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Unable to sign in.')
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to sign in.')
     } finally {
       setSubmitting(false)
     }
@@ -42,9 +41,9 @@ export function LoginPage() {
         <Alert
           type="warning"
           showIcon
-          message="Supabase not configured"
+          title="Supabase not configured"
           description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file."
-          style={{ marginBottom: 20, borderRadius: 10 }}
+          style={{ marginBottom: 20 }}
         />
       )}
 
@@ -53,37 +52,43 @@ export function LoginPage() {
         onFinish={(values) => void handleLogin(values)}
         requiredMark={false}
       >
-        <FormBody>
-          <Form.Item
-            label="Email address"
-            name="email"
-            rules={[
-              { required: true, message: 'Email is required.' },
-              { type: 'email', message: 'Enter a valid email.' },
-            ]}
-          >
-            <Input
-              prefix={<MailOutlined style={{ color: 'var(--text-muted)' }} />}
-              placeholder="yasir@milbaant.com"
-              size="large"
-              autoComplete="email"
-            />
-          </Form.Item>
+        <Form.Item
+          label="Email address"
+          name="email"
+          rules={[
+            { required: true, message: 'Email is required.' },
+            { type: 'email', message: 'Enter a valid email.' },
+          ]}
+        >
+          <Input
+            placeholder="Enter your email"
+            size="large"
+            autoComplete="email"
+          />
+        </Form.Item>
 
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: 'Password is required.' }]}
-            style={{ marginBottom: 24 }}
-          >
-            <Input.Password
-              prefix={<LockOutlined style={{ color: 'var(--text-muted)' }} />}
-              placeholder="Enter your password"
-              size="large"
-              autoComplete="current-password"
-            />
-          </Form.Item>
+        <Form.Item
+          label={
+            <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              Password
+              <Link to="/forgot-password" style={{ fontSize: 13, fontWeight: 500 }}>
+                Forgot password?
+              </Link>
+            </span>
+          }
+          name="password"
+          rules={[{ required: true, message: 'Password is required.' }]}
+          style={{ marginBottom: 24 }}
+        >
+          <Input.Password
+            placeholder="Enter your password"
+            size="large"
+            autoComplete="current-password"
+            styles={{ suffix: { borderInlineStart: 'none', boxShadow: 'none' } }}
+          />
+        </Form.Item>
 
+        <Form.Item style={{ marginBottom: 0 }}>
           <Button
             htmlType="submit"
             type="primary"
@@ -91,11 +96,11 @@ export function LoginPage() {
             size="large"
             loading={submitting}
             disabled={!isSupabaseConfigured}
-            style={{ fontWeight: 600, height: 48 }}
+            style={{ fontWeight: 600, height: 46 }}
           >
             Sign In
           </Button>
-        </FormBody>
+        </Form.Item>
       </Form>
 
       <FormFooter>

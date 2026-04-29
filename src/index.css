@@ -45,21 +45,79 @@ body {
   }
 }
 
-/* ── Primary buttons: always white text & icons ─────────────────────────── */
-.ant-btn-primary,
-.ant-btn-primary:hover,
-.ant-btn-primary:focus,
-.ant-btn-primary:active {
-  color: #ffffff !important;
-}
-
-.ant-btn-primary .anticon,
-.ant-btn-primary .ant-btn-icon,
-.ant-btn-primary span {
-  color: #ffffff !important;
-}
-
 /* ── Auth page: remove Ant Design form label colon ──────────────────────── */
 .auth-shell .ant-form-item-label > label::after {
   display: none;
+}
+
+/* ── Remove inner separator border on prefixed/suffixed inputs ────────────── */
+/* Targets the vertical divider Ant Design draws next to prefix/suffix icons */
+[class*="ant-input-prefix"],
+[class*="ant-input-suffix"] {
+  border-inline-end: none  ;
+  border-inline-start: none  ;
+  border-right: none  ;
+  border-left: none  ;
+}
+
+/* Password eye-toggle icon — no border */
+[class*="ant-input-password"] [class*="ant-input-suffix"],
+[class*="ant-input-affix-wrapper"] [class*="ant-input-suffix"] {
+  border-inline-start: none  ;
+  border-left: none  ;
+}
+
+.ant-input-password-icon,
+[class*="ant-input-suffix"] .anticon {
+  border: none  ;
+  box-shadow: none  ;
+}
+
+/* ── Clean card system — no borders, subtle shadow ───────────────────────── */
+/* Ant Design Card */
+.ant-card {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ant Design Table */
+.ant-table-wrapper .ant-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ant-table-wrapper .ant-table-container {
+  border-radius: 12px;
+  border: none !important;
+}
+
+/* Remove table outer border */
+.ant-table-wrapper .ant-table-container table > thead > tr:first-child > *:first-child,
+.ant-table-wrapper .ant-table-container table > thead > tr:first-child > *:last-child {
+  border-radius: 0;
+}
+
+/* Smooth page transitions */
+.ant-layout-content {
+  transition: none;
+}
+
+/* Mobile: tighter spacing for Ant Design components */
+@media (max-width: 767px) {
+  .ant-table-cell {
+    padding: 8px 10px !important;
+    font-size: 13px;
+  }
+
+  .ant-card-body {
+    padding: 14px !important;
+  }
+
+  .ant-modal-content {
+    border-radius: 16px !important;
+  }
+
+  .ant-form-item {
+    margin-bottom: 14px;
+  }
 }

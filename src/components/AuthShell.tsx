@@ -8,17 +8,16 @@ import { useThemeMode } from '@/context/ThemeModeContext'
 /* ── Animations ─────────────────────────────────────────────────────────── */
 
 const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 `
 
 const float = keyframes`
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33%       { transform: translateY(-12px) rotate(1deg); }
-  66%       { transform: translateY(-6px) rotate(-1deg); }
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
 `
 
-/* ── Layout ─────────────────────────────────────────────────────────────── */
+/* ── Page shell ─────────────────────────────────────────────────────────── */
 
 const Page = styled.main`
   min-height: 100vh;
@@ -33,9 +32,9 @@ const Page = styled.main`
 /* ── Left brand panel ───────────────────────────────────────────────────── */
 
 const BrandPanel = styled.div`
-  width: 420px;
+  width: 400px;
   flex-shrink: 0;
-  background: linear-gradient(145deg, #4096ff 0%, #1677ff 50%, #0958d9 100%);
+  background: linear-gradient(150deg, #4096ff 0%, #1677ff 55%, #0958d9 100%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -44,29 +43,32 @@ const BrandPanel = styled.div`
   overflow: hidden;
 
   @media (max-width: 1023px) {
-    width: 340px;
-    padding: 40px 36px;
+    width: 320px;
+    padding: 40px 32px;
   }
 
   @media (max-width: 767px) {
     width: 100%;
-    padding: 32px 28px 36px;
-    min-height: 220px;
+    padding: 28px 24px 32px;
+    min-height: auto;
   }
 `
 
-const BrandBubble = styled.div<{
-  $size: number; $top?: string; $bottom?: string; $left?: string; $right?: string; $opacity: number
+const Bubble = styled.div<{
+  $size: number
+  $top?: string; $bottom?: string
+  $left?: string; $right?: string
+  $opacity: number
 }>`
   position: absolute;
   width: ${p => p.$size}px;
   height: ${p => p.$size}px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, ${p => p.$opacity});
-  top: ${p => p.$top ?? 'auto'};
+  background: rgba(255,255,255,${p => p.$opacity});
+  top:    ${p => p.$top    ?? 'auto'};
   bottom: ${p => p.$bottom ?? 'auto'};
-  left: ${p => p.$left ?? 'auto'};
-  right: ${p => p.$right ?? 'auto'};
+  left:   ${p => p.$left   ?? 'auto'};
+  right:  ${p => p.$right  ?? 'auto'};
   pointer-events: none;
 `
 
@@ -76,26 +78,25 @@ const BrandTop = styled.div`
 `
 
 const LogoBadge = styled.div`
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   color: #fff;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  margin-bottom: 28px;
-  animation: ${float} 5s ease-in-out infinite;
+  margin-bottom: 24px;
+  animation: ${float} 4s ease-in-out infinite;
 `
 
 const BrandTitle = styled.h1`
-  margin: 0 0 10px;
-  font-size: clamp(28px, 4vw, 36px);
+  margin: 0 0 8px;
+  font-size: clamp(26px, 3.5vw, 34px);
   font-weight: 800;
   color: #fff;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -105,46 +106,48 @@ const BrandTitle = styled.h1`
 
 const BrandSub = styled.p`
   margin: 0;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
   line-height: 1.65;
-  max-width: 300px;
 `
 
-const FeatureList = styled.div`
-  position: relative;
-  z-index: 1;
+const FeatureList = styled.ul`
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 40px;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
 
   @media (max-width: 767px) {
     display: none;
   }
 `
 
-const FeatureItem = styled.div`
+const FeatureItem = styled.li`
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 14px;
+  gap: 10px;
+  color: rgba(255,255,255,0.85);
+  font-size: 13.5px;
   font-weight: 500;
-`
 
-const FeatureDot = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
-  flex-shrink: 0;
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    flex-shrink: 0;
+  }
 `
 
 const BrandFooter = styled.div`
   position: relative;
   z-index: 1;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255,255,255,0.45);
   font-size: 12px;
   margin-top: 40px;
 
@@ -163,34 +166,32 @@ const FormPanel = styled.div`
   justify-content: center;
   padding: 48px 40px;
   position: relative;
-  animation: ${fadeUp} 0.45s ease forwards;
+  /* no background — inherits var(--app-bg) from Page */
+  animation: ${fadeUp} 0.4s ease forwards;
 
   @media (max-width: 767px) {
-    padding: 32px 24px 48px;
+    padding: 28px 20px 48px;
   }
 `
 
-const ThemeToggle = styled.div`
+const ThemeBtn = styled.div`
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 20px;
+  right: 20px;
 `
 
 const FormInner = styled.div`
   width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  max-width: 380px;
 `
 
 const FormHeading = styled.div`
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 `
 
 const FormTitle = styled.h2`
   margin: 0 0 6px;
-  font-size: clamp(22px, 3vw, 28px);
+  font-size: clamp(20px, 2.8vw, 26px);
   font-weight: 800;
   color: var(--text-strong);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -200,35 +201,28 @@ const FormTitle = styled.h2`
 
 const FormSubtitle = styled.p`
   margin: 0;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.6;
 `
 
-/* ── Exports ─────────────────────────────────────────────────────────────── */
-
-export const FormBody = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`
+/* ── Exported helpers used by pages ─────────────────────────────────────── */
 
 export const FormFooter = styled.div`
-  margin-top: 20px;
+  margin-top: 18px;
   text-align: center;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-muted);
 
   a {
     color: var(--primary);
     font-weight: 600;
     text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
+    &:hover { text-decoration: underline; }
   }
 `
+
+/* ── Feature list ────────────────────────────────────────────────────────── */
 
 const FEATURES = [
   'Monthly shared bill splitting',
@@ -237,6 +231,8 @@ const FEATURES = [
   'Flat fund & contribution payments',
   'Bed assignments & announcements',
 ]
+
+/* ── Component ───────────────────────────────────────────────────────────── */
 
 export function AuthShell({
   title,
@@ -253,24 +249,18 @@ export function AuthShell({
     <Page>
       {/* ── Left: Brand ── */}
       <BrandPanel>
-        {/* Decorative bubbles */}
-        <BrandBubble $size={260} $top="-80px" $right="-80px" $opacity={0.08} />
-        <BrandBubble $size={180} $bottom="60px" $left="-60px" $opacity={0.07} />
-        <BrandBubble $size={100} $top="40%" $right="20px" $opacity={0.06} />
+        <Bubble $size={240} $top="-70px"  $right="-70px" $opacity={0.07} />
+        <Bubble $size={160} $bottom="50px" $left="-50px"  $opacity={0.06} />
+        <Bubble $size={90}  $top="42%"    $right="18px"  $opacity={0.05} />
 
         <BrandTop>
           <LogoBadge>M</LogoBadge>
           <BrandTitle>{APP_NAME}</BrandTitle>
           <BrandSub>
-            The all-in-one flat management app for shared expenses, meals, and more.
+            All-in-one flat management — expenses, meals, cook ledger, and more.
           </BrandSub>
           <FeatureList>
-            {FEATURES.map((f) => (
-              <FeatureItem key={f}>
-                <FeatureDot />
-                {f}
-              </FeatureItem>
-            ))}
+            {FEATURES.map(f => <FeatureItem key={f}>{f}</FeatureItem>)}
           </FeatureList>
         </BrandTop>
 
@@ -279,22 +269,22 @@ export function AuthShell({
 
       {/* ── Right: Form ── */}
       <FormPanel>
-        <ThemeToggle>
+        <ThemeBtn>
           <Button
             size="small"
             icon={mode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
             onClick={toggleMode}
-            style={{ borderRadius: 8 }}
           >
             {mode === 'dark' ? 'Light' : 'Dark'}
           </Button>
-        </ThemeToggle>
+        </ThemeBtn>
 
         <FormInner>
           <FormHeading>
             <FormTitle>{title}</FormTitle>
             <FormSubtitle>{subtitle}</FormSubtitle>
           </FormHeading>
+
           {children}
         </FormInner>
       </FormPanel>

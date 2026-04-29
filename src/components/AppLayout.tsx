@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  App,
   Avatar,
   Button,
   Drawer,
   Dropdown,
+  Form,
   Grid,
+  Input,
   Layout,
   Menu,
+  Modal,
   Tooltip,
   Typography,
-  message,
 } from 'antd'
 import type { MenuProps } from 'antd'
 import {
@@ -20,16 +23,17 @@ import {
   DashboardOutlined,
   DollarCircleOutlined,
   FundOutlined,
+  HomeOutlined,
+  InboxOutlined,
+  KeyOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
   MoonOutlined,
-  NotificationOutlined,
   ScheduleOutlined,
   SettingOutlined,
   SunOutlined,
-  TeamOutlined,
   UserOutlined,
   WalletOutlined,
 } from '@ant-design/icons'
@@ -38,6 +42,7 @@ import styled from 'styled-components'
 import { APP_NAME } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/context/ThemeModeContext'
+import { supabase } from '@/lib/supabase'
 
 const { Header, Content, Sider } = Layout
 const { useBreakpoint } = Grid
@@ -67,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
       { key: '/contributions',    label: 'Contributions',  icon: <DollarCircleOutlined /> },
       { key: '/cook',             label: 'Cook Ledger',    icon: <CoffeeOutlined /> },
       { key: '/daily-menu',       label: 'Daily Menu',     icon: <ScheduleOutlined /> },
+      { key: '/cook-requests',    label: 'Cook Requests',  icon: <InboxOutlined /> },
     ],
   },
   {
@@ -79,7 +85,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Community',
     items: [
-      { key: '/announcements',    label: 'Announcements',  icon: <NotificationOutlined /> },
       { key: '/logs',             label: 'Activity Logs',  icon: <AuditOutlined /> },
     ],
   },
@@ -96,19 +101,19 @@ const NAV_GROUPS: NavGroup[] = [
 
 const Shell = styled(Layout)`
   min-height: 100vh;
-  background: var(--content-bg) !important;
+  background: var(--content-bg);
 `
 
 const AppSider = styled(Sider)<{ $collapsed: boolean }>`
-  position: fixed !important;
+  position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   z-index: 200;
-  background: var(--sidebar-bg) !important;
-  border-right: 1px solid var(--sidebar-border) !important;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   overflow: hidden;
-  transition: width 0.2s ease !important;
+  transition: width 0.2s ease;
 
   .ant-layout-sider-children {
     display: flex;
@@ -146,10 +151,10 @@ const LogoMark = styled.div`
 `
 
 const BrandText = styled(Typography.Text)<{ $visible: boolean }>`
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  color: var(--text-strong) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif  ;
+  font-size: 0.95rem  ;
+  font-weight: 700  ;
+  color: var(--text-strong)  ;
   white-space: nowrap;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
   max-width: ${({ $visible }) => ($visible ? '160px' : '0')};
@@ -169,28 +174,28 @@ const NavWrap = styled.div`
 `
 
 const StyledMenu = styled(Menu)`
-  background: transparent !important;
-  border-inline-end: none !important;
+  background: transparent  ;
+  border-inline-end: none  ;
   padding: 0 6px;
 
   .ant-menu-item {
-    border-radius: 7px !important;
-    margin: 1px 0 !important;
-    height: 38px !important;
-    line-height: 38px !important;
-    width: 100% !important;
-    font-size: 0.82rem !important;
+    border-radius: 7px  ;
+    margin: 1px 0  ;
+    height: 38px  ;
+    line-height: 38px  ;
+    width: 100%  ;
+    font-size: 0.82rem  ;
   }
 
   .ant-menu-item-selected {
-    background: ${({ theme: _t }) => 'var(--soft-accent)'} !important;
-    color: var(--primary) !important;
-    font-weight: 600 !important;
-    .anticon { color: var(--primary) !important; }
+    background: ${({ theme: _t }) => 'var(--soft-accent)'}  ;
+    color: var(--primary)  ;
+    font-weight: 600  ;
+    .anticon { color: var(--primary)  ; }
   }
 
   .ant-menu-item:not(.ant-menu-item-selected):hover {
-    background: var(--menu-hover-bg) !important;
+    background: var(--menu-hover-bg)  ;
   }
 `
 
@@ -225,54 +230,52 @@ const ProfileMeta = styled.div<{ $visible: boolean }>`
 `
 
 const CollapseBtn = styled(Button)<{ $collapsed: boolean }>`
-  width: 100% !important;
-  border-radius: 7px !important;
-  border-color: var(--sidebar-border) !important;
-  background: transparent !important;
-  color: var(--text-muted) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')} !important;
+  width: 100%  ;
+  border-radius: 7px  ;
+  border-color: var(--sidebar-border)  ;
+  background: transparent  ;
+  color: var(--text-muted)  ;
+  display: flex  ;
+  align-items: center  ;
+  justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')}  ;
   gap: 6px;
 
   &:hover {
-    background: var(--menu-hover-bg) !important;
-    color: var(--text-strong) !important;
-    border-color: var(--sidebar-border) !important;
+    background: var(--menu-hover-bg)  ;
+    color: var(--text-strong)  ;
+    border-color: var(--sidebar-border)  ;
   }
 `
 
 const MainLayout = styled(Layout)<{ $ml: number }>`
-  background: transparent !important;
+  background: transparent  ;
   margin-left: ${({ $ml }) => $ml}px;
   min-height: 100vh;
   transition: margin-left 0.2s ease;
 `
 
 const TopHeader = styled(Header)<{ $scrolled: boolean }>`
-  position: sticky !important;
+  position: sticky;
   top: 0;
   z-index: 100;
-  height: 52px !important;
-  line-height: 52px !important;
-  padding: 0 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  border-bottom: none !important;
-  transition: background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease !important;
+  height: 52px;
+  line-height: 52px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid ${({ $scrolled }) => ($scrolled ? 'var(--sidebar-border)' : 'transparent')};
+  transition: background 0.2s ease, border-color 0.2s ease, backdrop-filter 0.2s ease;
 
   background: ${({ $scrolled }) =>
-    $scrolled ? 'rgba(var(--navbar-bg-rgb), 0.55)' : 'var(--navbar-bg)'} !important;
-  backdrop-filter: ${({ $scrolled }) => ($scrolled ? 'blur(18px) saturate(180%)' : 'none')};
-  -webkit-backdrop-filter: ${({ $scrolled }) => ($scrolled ? 'blur(18px) saturate(180%)' : 'none')};
-  box-shadow: ${({ $scrolled }) =>
-    $scrolled ? '0 2px 20px rgba(0,0,0,0.07)' : 'none'} !important;
+    $scrolled ? 'rgba(var(--navbar-bg-rgb), 0.8)' : 'var(--navbar-bg)'};
+  backdrop-filter: ${({ $scrolled }) => ($scrolled ? 'blur(16px) saturate(160%)' : 'none')};
+  -webkit-backdrop-filter: ${({ $scrolled }) => ($scrolled ? 'blur(16px) saturate(160%)' : 'none')};
 
   @media (min-width: 768px) {
-    height: 56px !important;
-    line-height: 56px !important;
-    padding: 0 20px !important;
+    height: 56px;
+    line-height: 56px;
+    padding: 0 24px;
   }
 `
 
@@ -294,24 +297,24 @@ const NavRight = styled.div`
 `
 
 const NavBtn = styled(Button)`
-  border-radius: 7px !important;
-  border: none !important;
-  background: transparent !important;
-  color: var(--text-muted) !important;
-  width: 32px !important;
-  height: 32px !important;
-  padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  border-radius: 7px  ;
+  border: none  ;
+  background: transparent  ;
+  color: var(--text-muted)  ;
+  width: 32px  ;
+  height: 32px  ;
+  padding: 0  ;
+  display: flex  ;
+  align-items: center  ;
+  justify-content: center  ;
   flex-shrink: 0;
 
-  @media (min-width: 768px) { width: 34px !important; height: 34px !important; }
+  @media (min-width: 768px) { width: 34px  ; height: 34px  ; }
 
   &:hover {
-    background: var(--menu-hover-bg) !important;
-    color: var(--text-strong) !important;
-    border: none !important;
+    background: var(--menu-hover-bg)  ;
+    color: var(--text-strong)  ;
+    border: none  ;
   }
 `
 
@@ -342,23 +345,23 @@ const BreadcrumbWrap = styled.div`
 `
 
 const MainContent = styled(Content)`
-  padding: 8px;
-  background: transparent !important;
-  padding-bottom: 64px;
+  padding: 12px;
+  background: transparent;
+  padding-bottom: 72px;
 
   @media (min-width: 768px) {
-    padding: 20px;
-    padding-bottom: 20px;
+    padding: 24px;
+    padding-bottom: 24px;
   }
 
   @media (min-width: 1024px) {
-    padding: 24px;
+    padding: 28px 32px;
   }
 `
 
 const ContentWrap = styled.div`
   width: 100%;
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
 `
 
@@ -387,11 +390,13 @@ const BottomNav = styled.nav`
   z-index: 300;
   height: 56px;
   background: var(--navbar-bg);
-  border-top: 1px solid var(--navbar-border);
+  border-top: 1px solid var(--sidebar-border);
   display: flex;
   align-items: stretch;
-  padding: 0 2px;
+  padding: 0 4px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 `
 
 const BottomNavItem = styled.button<{ $active: boolean }>`
@@ -429,11 +434,109 @@ function getActivePath(pathname: string) {
   return pathname === '/' ? '/' : `/${pathname.split('/')[1]}`
 }
 
-function getBreadcrumbs(activePath: string) {
+function getBreadcrumbs(activePath: string, pathname: string) {
   const all = NAV_GROUPS.flatMap((g) => g.items)
   const item = all.find((i) => i.key === activePath)
-  if (!item) return [{ title: 'Dashboard' }]
-  return [{ title: 'MilBaant' }, { title: item.label }]
+
+  // Profile page — not in nav
+  if (pathname.startsWith('/profile')) {
+    return [
+      { title: APP_NAME, path: '/', icon: <HomeOutlined /> },
+      { title: 'My Profile', path: '/profile' },
+    ]
+  }
+
+  if (!item || activePath === '/') {
+    return [{ title: APP_NAME, path: '/', icon: <HomeOutlined /> }, { title: 'Dashboard', path: '/' }]
+  }
+
+  // Find which group this item belongs to
+  const group = NAV_GROUPS.find((g) => g.items.some((i) => i.key === activePath))
+  const crumbs: { title: string; path?: string; icon?: React.ReactNode }[] = [
+    { title: APP_NAME, path: '/', icon: <HomeOutlined /> },
+  ]
+  if (group?.label) crumbs.push({ title: group.label })
+  crumbs.push({ title: item.label, path: activePath })
+  return crumbs
+}
+
+// ── Reset Password Modal ───────────────────────────────────────────────────
+function ResetPasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+  const { message } = App.useApp()
+  const { email } = useAuth()
+
+  async function handleSubmit(values: { newPassword: string }) {
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: values.newPassword })
+      if (error) throw new Error(error.message)
+      message.success('Password updated successfully!')
+      form.resetFields()
+      onClose()
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Failed to update password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <KeyOutlined style={{ color: 'var(--primary)' }} />
+          <span>Reset Password</span>
+        </div>
+      }
+      onCancel={onClose}
+      footer={null}
+      width="min(420px, 95vw)"
+      destroyOnClose
+    >
+      {email && (
+        <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16, fontSize: 13 }}>
+          Updating password for: <strong>{email}</strong>
+        </Typography.Text>
+      )}
+      <Form form={form} layout="vertical" onFinish={(v) => void handleSubmit(v)}>
+        <Form.Item
+          label="New Password"
+          name="newPassword"
+          rules={[
+            { required: true, message: 'Please enter a new password' },
+            { min: 6, message: 'Password must be at least 6 characters' },
+          ]}
+        >
+          <Input.Password placeholder="Enter new password" size="large" />
+        </Form.Item>
+        <Form.Item
+          label="Confirm Password"
+          name="confirmPassword"
+          dependencies={['newPassword']}
+          rules={[
+            { required: true, message: 'Please confirm your password' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('newPassword') === value) return Promise.resolve()
+                return Promise.reject(new Error('Passwords do not match'))
+              },
+            }),
+          ]}
+        >
+          <Input.Password placeholder="Confirm new password" size="large" />
+        </Form.Item>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="primary" htmlType="submit" loading={loading} icon={<KeyOutlined />}>
+            Update Password
+          </Button>
+        </div>
+      </Form>
+    </Modal>
+  )
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -445,8 +548,10 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen]   = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { isAdmin, profile, canManageExpenses, signOut } = useAuth()
+  const [resetPwOpen, setResetPwOpen] = useState(false)
+  const { isAdmin, profile, signOut } = useAuth()
   const { mode, toggleMode } = useThemeMode()
+  const { message } = App.useApp()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -456,7 +561,7 @@ export function AppLayout() {
 
   const siderWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
   const activePath = getActivePath(location.pathname)
-  const breadcrumbs = getBreadcrumbs(activePath)
+  const breadcrumbs = getBreadcrumbs(activePath, location.pathname)
 
   // Build Ant Design menu items with labels for desktop sidebar
   const menuItems = useMemo<MenuProps['items']>(() => {
@@ -486,11 +591,27 @@ export function AppLayout() {
   }, [isAdmin])
 
   const profileMenuItems: MenuProps['items'] = [
-    { key: 'name',   label: profile?.full_name ?? 'Flatmate', icon: <UserOutlined />,         disabled: true },
-    { key: 'role',   label: `Role: ${isAdmin ? 'Admin' : 'User'}`, icon: <TeamOutlined />,    disabled: true },
-    { key: 'access', label: canManageExpenses ? 'Can add expenses' : 'View only', icon: <DollarCircleOutlined />, disabled: true },
+    {
+      key: 'name',
+      label: (
+        <div style={{ padding: '4px 0' }}>
+          <div style={{ fontWeight: 600, color: 'var(--text-strong)', fontSize: 14 }}>
+            {profile?.full_name ?? 'Flatmate'}
+          </div>
+        </div>
+      ),
+      icon: <UserOutlined />,
+      disabled: true,
+    },
     { type: 'divider' },
-    { key: 'logout', label: 'Sign Out', icon: <LogoutOutlined />, danger: true,
+    { key: 'profile', label: 'My Profile', icon: <UserOutlined />, onClick: () => navigate('/profile') },
+    { key: 'reset-password', label: 'Reset Password', icon: <KeyOutlined />, onClick: () => setResetPwOpen(true) },
+    { type: 'divider' },
+    {
+      key: 'logout',
+      label: 'Sign Out',
+      icon: <LogoutOutlined />,
+      danger: true,
       onClick: () => void (async () => {
         try { await signOut(); void message.success('Signed out.'); navigate('/login', { replace: true }) }
         catch (e) { void message.error(e instanceof Error ? e.message : 'Unable to sign out.') }
@@ -563,15 +684,13 @@ export function AppLayout() {
               <ProfileRow $collapsed={collapsed}>
                 <Avatar
                   size={28}
+                  src={profile?.avatar_url}
                   style={{ background: 'var(--primary)', color: 'var(--text-inverse)', flexShrink: 0 }}
                   icon={<UserOutlined />}
                 />
                 <ProfileMeta $visible={!collapsed}>
                   <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
                     {profile?.full_name ?? 'Flatmate'}
-                  </Typography.Text>
-                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                    {isAdmin ? 'Admin' : 'Resident'}
                   </Typography.Text>
                 </ProfileMeta>
               </ProfileRow>
@@ -615,13 +734,10 @@ export function AppLayout() {
             <div style={{ borderTop: '1px solid var(--sidebar-border)', paddingTop: 12, marginTop: 8 }}>
               <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="topRight">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '7px', cursor: 'pointer' }}>
-                  <Avatar size={28} style={{ background: 'var(--primary)', color: 'var(--text-inverse)' }} icon={<UserOutlined />} />
+                  <Avatar size={28} src={profile?.avatar_url} style={{ background: 'var(--primary)', color: 'var(--text-inverse)' }} icon={<UserOutlined />} />
                   <div>
                     <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.8rem', display: 'block' }}>
                       {profile?.full_name ?? 'Flatmate'}
-                    </Typography.Text>
-                    <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                      {isAdmin ? 'Admin' : 'Resident'}
                     </Typography.Text>
                   </div>
                 </div>
@@ -656,14 +772,11 @@ export function AppLayout() {
 
             <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="bottomRight">
               <ProfileBtn type="button" aria-label="Profile menu">
-                <Avatar size={26} style={{ background: 'var(--primary)', color: 'var(--text-inverse)' }} icon={<UserOutlined />} />
+                <Avatar size={26} src={profile?.avatar_url} style={{ background: 'var(--primary)', color: 'var(--text-inverse)' }} icon={<UserOutlined />} />
                 {isDesktop && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
                     <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.78rem' }}>
                       {profile?.full_name ?? 'Flatmate'}
-                    </Typography.Text>
-                    <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>
-                      {isAdmin ? 'Admin' : 'Resident'}
                     </Typography.Text>
                   </div>
                 )}
@@ -700,6 +813,9 @@ export function AppLayout() {
           </BottomNavItem>
         </BottomNav>
       )}
+
+      {/* ── Reset Password Modal ── */}
+      <ResetPasswordModal open={resetPwOpen} onClose={() => setResetPwOpen(false)} />
     </Shell>
   )
 }

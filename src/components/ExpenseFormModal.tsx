@@ -158,7 +158,7 @@ export function ExpenseFormModal({
   return (
     <Modal
       open={open}
-      destroyOnClose
+      destroyOnHidden
       width="min(680px, 95vw)"
       style={{ top: 20 }}
       styles={{ body: { maxHeight: 'calc(100vh - 160px)', overflowY: 'auto' } }}
@@ -172,7 +172,7 @@ export function ExpenseFormModal({
         <Alert
           showIcon
           type={isWeekendMeal ? 'info' : 'success'}
-          message={
+          title={
             isWeekendMeal
               ? 'Weekend meals are split only among selected participants.'
               : 'Monthly expenses are split evenly using the member count setting.'
