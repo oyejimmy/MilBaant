@@ -110,4 +110,20 @@ export default defineConfig({
       'three',
     ],
   },
+  build: {
+    // Raise the warning threshold — large vendor chunks are expected
+    chunkSizeWarningLimit: 1400,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Three.js + React Three Fiber/Drei → isolated chunk (largest dep)
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          // React core
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // xlsx (heavy, rarely changes)
+          'vendor-xlsx': ['xlsx'],
+        },
+      },
+    },
+  },
 })
