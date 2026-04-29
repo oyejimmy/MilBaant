@@ -40,6 +40,7 @@ import {
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { APP_NAME } from '@/lib/constants'
+import { AppFooter } from '@/components/AppFooter'
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/context/ThemeModeContext'
 import { supabase } from '@/lib/supabase'
@@ -139,16 +140,23 @@ const LogoMark = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--blue-300) 100%);
+  background: linear-gradient(135deg, #1465a3 0%, #1c8ee5 50%, #49a5ea 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 14px;
-  color: var(--text-inverse);
-  box-shadow: 0 2px 8px var(--primary-soft);
+  box-shadow: 0 2px 8px rgba(28, 142, 229, 0.35);
   flex-shrink: 0;
 `
+
+// House SVG icon for the logo mark
+function LogoHouseIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M3 12L12 3L21 12" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M5 10V20C5 20.55 5.45 21 6 21H10V15H14V21H18C18.55 21 19 20.55 19 20V10" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
 
 const BrandText = styled(Typography.Text)<{ $visible: boolean }>`
   font-family: 'Plus Jakarta Sans', sans-serif  ;
@@ -251,6 +259,8 @@ const MainLayout = styled(Layout)<{ $ml: number }>`
   background: transparent  ;
   margin-left: ${({ $ml }) => $ml}px;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   transition: margin-left 0.2s ease;
 `
 
@@ -345,9 +355,12 @@ const BreadcrumbWrap = styled.div`
 `
 
 const MainContent = styled(Content)`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 12px;
-  background: transparent;
   padding-bottom: 72px;
+  background: transparent;
 
   @media (min-width: 768px) {
     padding: 24px;
@@ -360,6 +373,7 @@ const MainContent = styled(Content)`
 `
 
 const ContentWrap = styled.div`
+  flex: 1;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -673,7 +687,7 @@ export function AppLayout() {
           trigger={null}
         >
           <SiderTop $collapsed={collapsed}>
-            <LogoMark>M</LogoMark>
+            <LogoMark><LogoHouseIcon /></LogoMark>
             <BrandText $visible={!collapsed}>{APP_NAME}</BrandText>
           </SiderTop>
 
@@ -721,7 +735,7 @@ export function AppLayout() {
         >
           <DrawerNav>
             <DrawerBrand>
-              <LogoMark>M</LogoMark>
+              <LogoMark><LogoHouseIcon /></LogoMark>
               <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.95rem' }}>
                 {APP_NAME}
               </Typography.Text>
@@ -790,6 +804,7 @@ export function AppLayout() {
             <Outlet />
           </ContentWrap>
         </MainContent>
+        <AppFooter />
       </MainLayout>
 
       {/* ── Mobile bottom nav ── */}
