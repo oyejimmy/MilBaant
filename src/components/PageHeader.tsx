@@ -27,7 +27,7 @@ const ActionsBlock = styled.div`
 
     .ant-space { width: 100%; flex-wrap: wrap; }
     .ant-space-item { flex: 1; min-width: 120px; }
-    .ant-btn, .ant-picker { width: 100% !important; }
+    .ant-btn, .ant-picker { width: 100%  ; }
   }
 `
 

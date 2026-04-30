@@ -247,7 +247,7 @@ export function WeekendExpensesPage() {
       <PageHeader
         title="Weekend Expenses"
         subtitle={`Weekend meal costs for ${formatMonthYear(selectedMonth)}, split among selected participants.`}
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Weekend Meals' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Weekend Meals' }]}
         actions={
           <Space wrap>
             <DatePicker picker="month" value={selectedMonth} onChange={(v) => v && setSelectedMonth(v.startOf('month'))} />

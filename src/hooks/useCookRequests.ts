@@ -96,7 +96,7 @@ export function useCookReply() {
         .update({
           status,
           cook_comment: cookComment.trim() || null,
-          updated_at:   new Date().toISOString(),
+          // updated_at is set automatically by the DB trigger — do not send from client
         })
         .eq('id', id)
 

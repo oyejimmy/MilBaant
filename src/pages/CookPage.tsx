@@ -373,7 +373,7 @@ export function CookPage() {
       <PageHeader
         title="Cook Ledger"
         subtitle="Track advance money given to the cook and every item purchased with it. Full transparency for all flatmates."
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Cook Ledger' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Cook Ledger' }]}
         actions={
           <Space wrap>
             <DatePicker

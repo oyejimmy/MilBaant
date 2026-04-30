@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import type { CreateDailyMenuInput, DailyMenu, UpdateDailyMenuInput } from '@/lib/types'
 import { logActivity } from './useActivityLog'
 
+/* ── Raw shape returned by Supabase ─────────────────────────────────────── */
+
 interface RawDailyMenu {
   id: string
   date: string
@@ -31,24 +33,25 @@ function normalizeDailyMenu(menu: RawDailyMenu): DailyMenu {
   }
 }
 
-// Fetch menu for a specific date
-async function fetchMenuByDate(date: string) {
+const SELECT_FIELDS = `
+  id,
+  date,
+  breakfast,
+  lunch,
+  dinner,
+  notes,
+  created_by,
+  created_at,
+  updated_at,
+  creator:profiles!daily_menu_created_by_fkey(id, full_name)
+`
+
+/* ── Queries ─────────────────────────────────────────────────────────────── */
+
+async function fetchMenuByDate(date: string): Promise<DailyMenu | null> {
   const { data, error } = await supabase
     .from('daily_menu')
-    .select(
-      `
-      id,
-      date,
-      breakfast,
-      lunch,
-      dinner,
-      notes,
-      created_by,
-      created_at,
-      updated_at,
-      creator:profiles!daily_menu_created_by_fkey(id, full_name)
-    `,
-    )
+    .select(SELECT_FIELDS)
     .eq('date', date)
     .maybeSingle()
 
@@ -56,50 +59,38 @@ async function fetchMenuByDate(date: string) {
   return data ? normalizeDailyMenu(data as RawDailyMenu) : null
 }
 
-// Fetch menu for a month
-async function fetchMenuByMonth(month: Dayjs) {
+async function fetchMenuByMonth(month: Dayjs): Promise<DailyMenu[]> {
   const startDate = month.startOf('month').format('YYYY-MM-DD')
-  const endDate = month.endOf('month').format('YYYY-MM-DD')
+  const endDate   = month.endOf('month').format('YYYY-MM-DD')
 
   const { data, error } = await supabase
     .from('daily_menu')
-    .select(
-      `
-      id,
-      date,
-      breakfast,
-      lunch,
-      dinner,
-      notes,
-      created_by,
-      created_at,
-      updated_at,
-      creator:profiles!daily_menu_created_by_fkey(id, full_name)
-    `,
-    )
+    .select(SELECT_FIELDS)
     .gte('date', startDate)
     .lte('date', endDate)
     .order('date', { ascending: true })
 
   if (error) throw new Error(error.message)
-  return (data ?? []).map((item) => normalizeDailyMenu(item as RawDailyMenu))
+  return (data ?? []).map(item => normalizeDailyMenu(item as RawDailyMenu))
 }
 
 export function useMenuByDate(date: string) {
   return useQuery({
     queryKey: [...QUERY_KEYS.dailyMenu, date],
-    queryFn: () => fetchMenuByDate(date),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryFn:  () => fetchMenuByDate(date),
+    staleTime: 1000 * 60 * 2, // 2 min — shorter so prefs refresh quickly
   })
 }
 
 export function useMenuByMonth(month: Dayjs) {
   return useQuery({
     queryKey: [...QUERY_KEYS.dailyMenu, month.format('YYYY-MM')],
-    queryFn: () => fetchMenuByMonth(month),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryFn:  () => fetchMenuByMonth(month),
+    staleTime: 1000 * 60 * 5,
   })
 }
+
+/* ── Create ──────────────────────────────────────────────────────────────── */
 
 export function useCreateMenu() {
   return useMutation({
@@ -107,11 +98,11 @@ export function useCreateMenu() {
       const { data, error } = await supabase
         .from('daily_menu')
         .insert({
-          date: payload.date,
+          date:      payload.date,
           breakfast: payload.breakfast?.trim() || null,
-          lunch: payload.lunch?.trim() || null,
-          dinner: payload.dinner?.trim() || null,
-          notes: payload.notes?.trim() || null,
+          lunch:     payload.lunch?.trim()     || null,
+          dinner:    payload.dinner?.trim()    || null,
+          notes:     payload.notes?.trim()     || null,
           created_by: payload.createdBy,
         })
         .select('id')
@@ -120,10 +111,10 @@ export function useCreateMenu() {
       if (error) throw new Error(error.message)
 
       await logActivity({
-        userId: payload.createdBy,
-        action: 'create',
-        entity: 'daily_menu',
-        entityId: data.id,
+        userId:      payload.createdBy,
+        action:      'create',
+        entity:      'daily_menu',
+        entityId:    data.id,
         description: `Added menu for ${payload.date}`,
       })
     },
@@ -132,6 +123,16 @@ export function useCreateMenu() {
     },
   })
 }
+
+/* ── Update ──────────────────────────────────────────────────────────────── */
+/*
+ * Key fixes vs the old version:
+ *  1. `updated_at` is NOT sent from the client — the DB trigger sets it.
+ *     Sending it caused a CORS-looking error because Supabase rejected the
+ *     request when the column value conflicted with the trigger.
+ *  2. Only the fields present in the payload are included in the update
+ *     object, so a notes-only patch never touches dinner/breakfast/lunch.
+ */
 
 export function useUpdateMenu() {
   return useMutation({
@@ -142,24 +143,28 @@ export function useUpdateMenu() {
       payload: UpdateDailyMenuInput
       userId: string
     }) => {
+      // Build a sparse update — only include fields that were explicitly passed
+      const update: Record<string, string | null> = {}
+
+      if ('breakfast' in payload) update.breakfast = payload.breakfast?.trim() || null
+      if ('lunch'     in payload) update.lunch     = payload.lunch?.trim()     || null
+      if ('dinner'    in payload) update.dinner    = payload.dinner?.trim()    || null
+      if ('notes'     in payload) update.notes     = payload.notes?.trim()     || null
+
+      if (Object.keys(update).length === 0) return // nothing to update
+
       const { error } = await supabase
         .from('daily_menu')
-        .update({
-          breakfast: payload.breakfast?.trim() || null,
-          lunch: payload.lunch?.trim() || null,
-          dinner: payload.dinner?.trim() || null,
-          notes: payload.notes?.trim() || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(update)
         .eq('id', payload.id)
 
       if (error) throw new Error(error.message)
 
       await logActivity({
         userId,
-        action: 'update',
-        entity: 'daily_menu',
-        entityId: payload.id,
+        action:      'update',
+        entity:      'daily_menu',
+        entityId:    payload.id,
         description: 'Updated daily menu',
       })
     },
@@ -169,17 +174,23 @@ export function useUpdateMenu() {
   })
 }
 
+/* ── Delete ──────────────────────────────────────────────────────────────── */
+
 export function useDeleteMenu() {
   return useMutation({
     mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase.from('daily_menu').delete().eq('id', id)
+      const { error } = await supabase
+        .from('daily_menu')
+        .delete()
+        .eq('id', id)
+
       if (error) throw new Error(error.message)
 
       await logActivity({
         userId,
-        action: 'delete',
-        entity: 'daily_menu',
-        entityId: id,
+        action:      'delete',
+        entity:      'daily_menu',
+        entityId:    id,
         description: 'Deleted daily menu',
       })
     },

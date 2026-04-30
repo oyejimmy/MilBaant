@@ -288,7 +288,7 @@ export function FlatExpensesPage() {
       <PageHeader
         title="Flat Expenses"
         subtitle="Track shared flat money — allocate funds to members and log what they spend on flat items like bulbs, bread, water bottles, and more."
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Flat Fund' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Flat Fund' }]}
         actions={
           <Space wrap>
             {!!userId && (

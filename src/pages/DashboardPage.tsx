@@ -2,7 +2,7 @@ import { useState } from 'react'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import { App, Button, Col, Flex, Grid, Input, InputNumber, Row, Space, Table, Tag, Typography } from 'antd'
-import { EditOutlined, FundOutlined, HistoryOutlined, SaveOutlined, WalletOutlined, CalendarOutlined, CoffeeOutlined, TeamOutlined, CheckCircleOutlined, DollarOutlined, MoonOutlined, ClockCircleOutlined, ArrowRightOutlined, HomeOutlined, UserOutlined } from '@ant-design/icons'
+import { EditOutlined, FundOutlined, HistoryOutlined, SaveOutlined, WalletOutlined, CalendarOutlined, CoffeeOutlined, TeamOutlined, CheckCircleOutlined, DollarOutlined, MoonOutlined, ClockCircleOutlined, ArrowRightOutlined, HomeOutlined } from '@ant-design/icons'
 import styled from 'styled-components'
 import { PageStack, ResponsiveGrid, SectionBlock } from '@/components/Glass'
 import { QueryState } from '@/components/QueryState'
@@ -189,60 +189,11 @@ const SectionLabel = styled.div`
   }
 `
 
-/* ─── Role Welcome Banner ─────────────────────────────────────────────────── */
-const BANNER_GRADIENTS = {
-  cook:  'linear-gradient(135deg, #f97316 0%, #fb923c 40%, #ea580c 100%)',
-  admin: 'transparent',
-  user:  'linear-gradient(135deg, #1677ff 0%, #4096ff 40%, #0958d9 100%)',
-}
-
-const WelcomeBanner = styled.div<{ $variant: 'cook' | 'admin' | 'user' }>`
-  border-radius: 16px;
-  background: ${({ $variant }) => BANNER_GRADIENTS[$variant]};
-  padding: 20px 24px;
-  position: relative;
-  overflow: hidden;
-  color: #fff;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-
-  @media (max-width: 767px) {
-    padding: 16px 18px;
-    border-radius: 12px;
-  }
-`
-
-const WelcomeBannerBg = styled.div`
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    width: 260px;
-    height: 260px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.07);
-    top: -80px;
-    right: -50px;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-    bottom: -50px;
-    left: 20%;
-  }
-`
+/* ─── Role Welcome Banner — removed (now plain text, no styled component needed) ─── */
 
 
 export function DashboardPage() {
-  const { isAdmin, isCook, profile } = useAuth()
+  const { isAdmin } = useAuth()
   const { message } = App.useApp()
   const navigate = useNavigate()
   const screens = useBreakpoint()
@@ -472,72 +423,6 @@ export function DashboardPage() {
 
   return (
     <PageStack>
-      {/* ── Role-aware Welcome Banner ── */}
-      {isCook ? (
-        <WelcomeBanner $variant="cook">
-          <WelcomeBannerBg />
-          <Flex align="center" justify="space-between" wrap gap={12} style={{ position: 'relative', zIndex: 1 }}>
-            <Flex align="center" gap={14}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 14,
-                background: 'rgba(255,255,255,0.18)',
-                border: '1.5px solid rgba(255,255,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 24, flexShrink: 0,
-              }}>
-                <CoffeeOutlined />
-              </div>
-              <div>
-                <Typography.Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  Cook Portal
-                </Typography.Text>
-                <Typography.Title level={3} style={{ margin: 0, color: '#fff', fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 800, lineHeight: 1.2 }}>
-                  Cook Dashboard
-                </Typography.Title>
-                <Typography.Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2, display: 'block' }}>
-                  {dayjs().format('dddd, DD MMMM YYYY')}
-                </Typography.Text>
-              </div>
-            </Flex>
-            <Button
-              onClick={() => navigate('/cook-portal/dashboard')}
-              style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontWeight: 600, backdropFilter: 'blur(8px)' }}
-              icon={<ArrowRightOutlined />}
-            >
-              Go to Cook Portal
-            </Button>
-          </Flex>
-        </WelcomeBanner>
-      ) : isAdmin ? null : (
-        <WelcomeBanner $variant="user">
-          <WelcomeBannerBg />
-          <Flex align="center" justify="space-between" wrap gap={12} style={{ position: 'relative', zIndex: 1 }}>
-            <Flex align="center" gap={14}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 14,
-                background: 'rgba(255,255,255,0.18)',
-                border: '1.5px solid rgba(255,255,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 24, flexShrink: 0,
-              }}>
-                <UserOutlined />
-              </div>
-              <div>
-                <Typography.Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  Resident
-                </Typography.Text>
-                <Typography.Title level={3} style={{ margin: 0, color: '#fff', fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 800, lineHeight: 1.2 }}>
-                  Welcome, {profile?.full_name?.split(' ')[0] ?? 'Flatmate'}
-                </Typography.Title>
-                <Typography.Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2, display: 'block' }}>
-                  {dayjs().format('dddd, DD MMMM YYYY')}
-                </Typography.Text>
-              </div>
-            </Flex>
-          </Flex>
-        </WelcomeBanner>
-      )}
-
       {/* ── Breadcrumb + Page Header ── */}
       <PageHeader
         title="Dashboard"
@@ -547,6 +432,7 @@ export function DashboardPage() {
           { title: 'Dashboard' },
         ]}
       />
+
 
       <QueryState isLoading={isLoading} error={error}>
 

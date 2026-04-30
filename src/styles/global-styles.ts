@@ -49,59 +49,59 @@ export const GlobalStyles = createGlobalStyle<GlobalStylesProps>`
   /* These control layout/shape, not color — tokens handle color.           */
 
   .ant-card {
-    border: none !important;
-    box-shadow: var(--shadow-sm) !important;
+    border: none  ;
+    box-shadow: var(--shadow-sm)  ;
   }
   .ant-card-head {
-    border-bottom: none !important;
+    border-bottom: none  ;
   }
 
   .ant-modal-content {
-    border: none !important;
-    box-shadow: var(--shadow-xl) !important;
+    border: none  ;
+    box-shadow: var(--shadow-xl)  ;
   }
   .ant-modal-header,
   .ant-modal-footer {
-    border: none !important;
+    border: none  ;
   }
 
   .ant-drawer-header,
   .ant-drawer-footer {
-    border: none !important;
+    border: none  ;
   }
 
   .ant-dropdown-menu {
-    border: none !important;
-    box-shadow: var(--shadow-lg) !important;
+    border: none  ;
+    box-shadow: var(--shadow-lg)  ;
   }
   .ant-dropdown-menu-item {
-    border-radius: 6px !important;
-    margin: 2px 4px !important;
+    border-radius: 6px  ;
+    margin: 2px 4px  ;
   }
 
   .ant-popover-inner {
-    border: none !important;
-    box-shadow: var(--shadow-lg) !important;
+    border: none  ;
+    box-shadow: var(--shadow-lg)  ;
   }
 
   .ant-table {
-    background: transparent !important;
+    background: transparent  ;
   }
   .ant-table-container,
   .ant-table-content {
-    border: none !important;
+    border: none  ;
   }
   .ant-table-thead > tr > th {
-    border-bottom: 1px solid var(--border-light) !important;
+    border-bottom: 1px solid var(--border-light)  ;
   }
 
   .ant-layout {
-    background: transparent !important;
+    background: transparent  ;
   }
 
   /* Width fix — not expressible as a token */
   .ant-menu-item {
-    width: 100% !important;
+    width: 100%  ;
   }
 
   .scrollable {
@@ -115,7 +115,7 @@ export const GlobalStyles = createGlobalStyle<GlobalStylesProps>`
   .auth-shell .ant-input-affix-wrapper,
   .auth-shell .ant-select-selector,
   .auth-shell .ant-picker {
-    border-radius: 8px !important;
+    border-radius: 8px  ;
   }
 
   /* ── Mobile touch targets ─────────────────────────────────────────────── */

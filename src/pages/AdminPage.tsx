@@ -412,7 +412,7 @@ export function AdminPage() {
         <PageHeader
           title="Admin Panel"
           subtitle="Manage flatmates, roles, permissions, and flat settings."
-          breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'System' }, { title: 'Admin Panel' }]}
+          breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Admin Panel' }]}
           actions={
             <Space wrap>
               <Button icon={<DownloadOutlined />} onClick={() => void exportUsersToExcel(allProfiles)}>Export</Button>

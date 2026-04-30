@@ -1,37 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import dayjs from 'dayjs'
 import {
-  Alert,
+  App,
   Avatar,
   Button,
-  Card,
-  Col,
-  Flex,
   Form,
   Input,
   Modal,
-  Row,
   Select,
-  Space,
+  Skeleton,
   Switch,
   Tag,
+  Tooltip,
   Typography,
-  message,
 } from 'antd'
 import {
-  CoffeeOutlined,
+  BulbOutlined,
+  CheckOutlined,
+  DeleteOutlined,
   EditOutlined,
+  HomeOutlined,
+  LockOutlined,
   MoonOutlined,
-  SaveOutlined,
+  SendOutlined,
   SunOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
+  UnlockOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import styled from 'styled-components'
+import { PageStack } from '@/components/Glass'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryState } from '@/components/QueryState'
-import { PageStack, SectionBlock } from '@/components/Glass'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfiles } from '@/hooks/useProfiles'
 import {
@@ -40,579 +39,748 @@ import {
   useUpdateMenu,
 } from '@/hooks/useDailyMenu'
 
-/* ─── Types ───────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   TYPES
+══════════════════════════════════════════════════════════════════════════ */
 
-type EggType = 'fried' | 'boiled' | 'omelette' | 'none'
+type EggPref = 'fried' | 'boiled' | 'omelette' | 'none'
 
-interface BreakfastPreference {
+interface BreakfastPref {
+  paratha: boolean
+  sadaRoti: boolean
+  egg: EggPref
+  tea: boolean
+}
+
+interface Suggestion {
+  id: string
   userId: string
   userName: string
-  paratha: boolean
-  egg: EggType
-  tea: boolean
-  notes?: string
+  text: string
+  createdAt: string
 }
 
-interface WeeklyDinner {
-  day: string
-  meal: string
-  time: string
+interface NotesData {
+  breakfastPrefs?: Record<string, BreakfastPref>   // userId → pref
+  suggestions?: Suggestion[]
 }
 
-/* ─── Styled Components ───────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   FIXED WEEKLY DINNER MENU
+══════════════════════════════════════════════════════════════════════════ */
 
-const TonightCard = styled(Card)`
-  background: linear-gradient(135deg, rgba(114, 46, 209, 0.08) 0%, rgba(114, 46, 209, 0.02) 100%);
-  border: 2px solid rgba(114, 46, 209, 0.2);
-  border-radius: 16px;
-  margin-bottom: 24px;
-
-  .ant-card-body {
-    padding: 16px;
-
-    @media (min-width: 768px) {
-      padding: 24px;
-    }
-  }
-`
-
-const DayCard = styled(Card)<{ $isToday?: boolean }>`
-  border-radius: 12px;
-  border: 2px solid ${props => props.$isToday ? '#722ed1' : 'var(--card-border)'};
-  background: ${props => props.$isToday ? 'rgba(114, 46, 209, 0.05)' : 'var(--card-bg)'};
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-color: #722ed1;
-    box-shadow: 0 4px 12px rgba(114, 46, 209, 0.15);
-  }
-
-  .ant-card-body {
-    padding: 12px;
-
-    @media (min-width: 768px) {
-      padding: 16px;
-    }
-  }
-`
-
-const MealTitle = styled.div`
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-strong);
-  margin-bottom: 6px;
-
-  @media (min-width: 768px) {
-    font-size: 16px;
-    margin-bottom: 8px;
-  }
-`
-
-const MealTime = styled.div`
-  font-size: 12px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`
-
-/* ─── My Breakfast Card ───────────────────────────────────────────────────── */
-
-const MyBreakfastCard = styled(Card)`
-  background: linear-gradient(135deg, rgba(250, 173, 20, 0.08) 0%, rgba(250, 173, 20, 0.02) 100%);
-  border: 2px solid rgba(250, 173, 20, 0.3);
-  border-radius: 16px;
-  margin-bottom: 16px;
-
-  .ant-card-body {
-    padding: 16px;
-  }
-`
-
-const PrefItem = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-light);
-
-  &:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-`
-
-const PrefLabel = styled.div`
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-`
-
-/* ─── Flatmate Card ───────────────────────────────────────────────────────── */
-
-const FlatmateCard = styled(Card)`
-  border-radius: 12px;
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: var(--primary);
-    box-shadow: 0 2px 8px rgba(114, 46, 209, 0.1);
-  }
-
-  .ant-card-body {
-    padding: 12px;
-  }
-`
-
-/* ─── Weekly Dinner Schedule ─────────────────────────────────────────────── */
-
-const WEEKLY_DINNER: WeeklyDinner[] = [
-  { day: 'Monday', meal: 'Chicken Karahi + Roti', time: '9:00 PM' },
-  { day: 'Tuesday', meal: 'Daal Chawal + Salad', time: '9:00 PM' },
-  { day: 'Wednesday', meal: 'Chicken Biryani', time: '9:00 PM' },
-  { day: 'Thursday', meal: 'Aloo Keema + Roti', time: '9:00 PM' },
-  { day: 'Friday', meal: 'Chicken Qorma + Roti', time: '9:00 PM' },
-  { day: 'Saturday', meal: 'Pulao + Raita', time: '9:00 PM' },
-  { day: 'Sunday', meal: 'Nihari + Naan', time: '9:00 PM' },
-]
-
-const FLATMATES = [
-  'Babar Jamil Ur Rahman',
-  'Ateeb Raza',
-  'Ahmad Raza',
-  'Sajid Ali',
-  'Muhammad Haris',
-  'Yasir Ajmal Mehmand',
-]
+const WEEKLY_DINNER: Record<string, string> = {
+  Sunday:    'Nihari + Naan',
+  Monday:    'Chicken Karahi + Roti',
+  Tuesday:   'Daal Chawal + Salad',
+  Wednesday: 'Chicken Biryani',
+  Thursday:  'Aloo Keema + Roti',
+  Friday:    'Chicken Qorma + Roti',
+  Saturday:  'Pulao + Raita',
+}
 
 const EGG_OPTIONS = [
-  { label: 'Fried', value: 'fried' },
-  { label: 'Boiled', value: 'boiled' },
-  { label: 'Omelette', value: 'omelette' },
-  { label: 'None', value: 'none' },
+  { label: '🍳 Fried',    value: 'fried' },
+  { label: '🥚 Boiled',   value: 'boiled' },
+  { label: '🫕 Omelette', value: 'omelette' },
+  { label: '✗ None',      value: 'none' },
 ]
 
-function eggColor(egg: EggType) {
-  const map: Record<EggType, string> = { fried: 'orange', boiled: 'blue', omelette: 'gold', none: 'default' }
-  return map[egg]
+const DEFAULT_PREF: BreakfastPref = { paratha: true, sadaRoti: false, egg: 'fried', tea: false }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════════════════════════ */
+
+function parseNotes(raw: string | null): NotesData {
+  if (!raw) return {}
+  try { return JSON.parse(raw) as NotesData } catch { return {} }
 }
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-/* ─── Main Component ──────────────────────────────────────────────────────── */
+function eggLabel(e: EggPref) {
+  return { fried: 'Fried', boiled: 'Boiled', omelette: 'Omelette', none: 'No egg' }[e]
+}
+
+function eggColor(e: EggPref) {
+  return { fried: 'orange', boiled: 'blue', omelette: 'gold', none: 'default' }[e]
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STYLED COMPONENTS
+══════════════════════════════════════════════════════════════════════════ */
+
+const SectionCard = styled.div`
+  background: var(--card-bg);
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+`
+
+const SectionHead = styled.div`
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  @media (min-width: 768px) { padding: 16px 22px; }
+`
+
+const SectionTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong);
+`
+
+const SectionBody = styled.div`
+  padding: 16px 18px;
+  @media (min-width: 768px) { padding: 18px 22px; }
+`
+
+/* ── Dinner card ── */
+const DinnerDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+`
+
+const DinnerMeal = styled.div`
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+  letter-spacing: -0.3px;
+
+  @media (max-width: 480px) { font-size: 16px; }
+`
+
+const DinnerMeta = styled.div`
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+`
+
+/* ── Breakfast grid ── */
+const BreakfastGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+`
+
+const PersonCard = styled.div<{ $isMe?: boolean }>`
+  border-radius: 10px;
+  border: 1.5px solid ${p => p.$isMe ? 'var(--primary)' : 'var(--border-light)'};
+  background: ${p => p.$isMe ? 'var(--primary-soft)' : 'var(--bg-elevated)'};
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+`
+
+const PersonRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+`
+
+const PersonName = styled.div`
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`
+
+const PrefTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+`
+
+/* ── Suggestions ── */
+const SuggestionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+`
+
+const SuggestionItem = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+`
+
+const SuggestionText = styled.div`
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--text-strong);
+  line-height: 1.45;
+`
+
+const SuggestionMeta = styled.div`
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+`
+
+const AddSuggestionRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+`
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════════════════════════════════════ */
 
 export function CookMenuPage() {
-  const [breakfastPrefs, setBreakfastPrefs] = useState<BreakfastPreference[]>([])
-  const [editModalOpen, setEditModalOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState<BreakfastPreference | null>(null)
-
-  const { userId, profile } = useAuth()
+  const { userId, profile, isAdmin, isCook } = useAuth()
+  const { message } = App.useApp()
   const profilesQuery = useProfiles()
   const profiles = profilesQuery.data ?? []
 
-  const todayStr = dayjs().format('YYYY-MM-DD')
-  const todayMenuQuery = useMenuByDate(todayStr)
-  const todayMenu = todayMenuQuery.data
+  const canEditDinner = isAdmin || isCook
+  const today = dayjs()
+  const todayStr = today.format('YYYY-MM-DD')
+  const todayDay = today.format('dddd')
 
+  const todayQuery = useMenuByDate(todayStr)
   const createMenu = useCreateMenu()
   const updateMenu = useUpdateMenu()
 
-  const todayDayName = dayjs().format('dddd')
-  const tonightDinner = WEEKLY_DINNER.find(d => d.day === todayDayName)
+  const todayMenu = todayQuery.data
+  const notesData = useMemo(() => parseNotes(todayMenu?.notes ?? null), [todayMenu?.notes])
 
-  const currentHour = dayjs().hour()
-  const isEditingAllowed = currentHour < 22
+  const breakfastPrefs: Record<string, BreakfastPref> = notesData.breakfastPrefs ?? {}
+  const suggestions: Suggestion[] = notesData.suggestions ?? []
 
-  // My own preference
-  const myPref = breakfastPrefs.find(p => p.userId === userId)
+  // Fixed dinner for today, overridable by admin/cook
+  const fixedDinner = WEEKLY_DINNER[todayDay] ?? 'Not set'
+  const actualDinner = todayMenu?.dinner ?? fixedDinner
 
-  // Initialize breakfast preferences
-  useEffect(() => {
-    if (profiles.length > 0 && breakfastPrefs.length === 0) {
-      if (todayMenu?.notes) {
-        try {
-          const saved = JSON.parse(todayMenu.notes) as BreakfastPreference[]
-          setBreakfastPrefs(saved)
-          return
-        } catch {
-          // fall through to defaults
-        }
-      }
+  // Dinner override modal
+  const [dinnerModalOpen, setDinnerModalOpen] = useState(false)
+  const [dinnerForm] = Form.useForm()
 
-      const defaults: BreakfastPreference[] = FLATMATES.map((name) => {
-        const p = profiles.find(pr => pr.full_name === name)
-        return {
-          userId: p?.id ?? name,
-          userName: name,
-          paratha: true,
-          egg: 'fried',
-          tea: false,
-          notes: '',
-        }
-      })
-      setBreakfastPrefs(defaults)
-    }
-  }, [profiles, todayMenu, breakfastPrefs.length])
+  // Breakfast edit modal
+  const [bfModalOpen, setBfModalOpen] = useState(false)
+  const [bfTargetId, setBfTargetId] = useState<string | null>(null)
+  const [bfForm] = Form.useForm()
 
-  async function handleSaveBreakfast() {
+  // Suggestion input
+  const [suggestionText, setSuggestionText] = useState('')
+  const [submittingSuggestion, setSubmittingSuggestion] = useState(false)
+
+  const isSaving = createMenu.isPending || updateMenu.isPending
+
+  /* ── Persist helper ──────────────────────────────────────────────────────
+   * Only sends the fields that are in `patch` — never overwrites other
+   * columns. This prevents a notes-only save from clearing dinner, and
+   * a dinner-only save from clearing notes.
+   * ─────────────────────────────────────────────────────────────────────── */
+  async function persistMenu(patch: Partial<{ dinner: string; notes: string }>) {
     if (!userId) return
-    try {
-      const prefsJson = JSON.stringify(breakfastPrefs)
-      if (todayMenu) {
-        await updateMenu.mutateAsync({
-          payload: { id: todayMenu.id, breakfast: 'Breakfast preferences updated', notes: prefsJson },
-          userId,
-        })
-      } else {
-        await createMenu.mutateAsync({
-          date: todayStr,
-          breakfast: 'Breakfast preferences set',
-          notes: prefsJson,
-          createdBy: userId,
-        })
-      }
-      message.success('Breakfast preferences saved!')
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Unable to save preferences.')
+
+    if (todayMenu) {
+      // UPDATE — only the patched fields are sent
+      await updateMenu.mutateAsync({
+        payload: { id: todayMenu.id, ...patch },
+        userId,
+      })
+    } else {
+      // INSERT — create the row; unpatched fields default to null
+      await createMenu.mutateAsync({
+        date: todayStr,
+        dinner: patch.dinner,
+        notes:  patch.notes,
+        createdBy: userId,
+      })
     }
   }
 
-  function handleEditUser(record: BreakfastPreference) {
-    setEditingUser({ ...record })
-    setEditModalOpen(true)
+  /* ── Save dinner override ── */
+  async function handleSaveDinner() {
+    const { dinner } = dinnerForm.getFieldsValue() as { dinner: string }
+    try {
+      await persistMenu({ dinner: dinner?.trim() || fixedDinner })
+      message.success('Dinner updated!')
+      setDinnerModalOpen(false)
+    } catch { message.error('Failed to save.') }
   }
 
-  function handleUpdateUser(values: Partial<BreakfastPreference>) {
-    if (!editingUser) return
-    const updated = breakfastPrefs.map(pref =>
-      pref.userId === editingUser.userId ? { ...pref, ...values } : pref
-    )
-    setBreakfastPrefs(updated)
-    setEditModalOpen(false)
-    setEditingUser(null)
+  /* ── Reset dinner to fixed ── */
+  async function handleResetDinner() {
+    try {
+      // Pass dinner as empty string — the hook converts '' to null, which
+      // means "no override" and the UI falls back to the fixed weekly menu
+      await persistMenu({ dinner: '' })
+      message.success('Dinner reset to fixed menu.')
+    } catch { message.error('Failed to reset.') }
   }
 
-  const isLoading = profilesQuery.isLoading || todayMenuQuery.isLoading
-  const error = (profilesQuery.error as Error | null) ?? (todayMenuQuery.error as Error | null)
+  /* ── Open breakfast edit ── */
+  function openBreakfastEdit(targetUserId: string) {
+    setBfTargetId(targetUserId)
+    const pref = breakfastPrefs[targetUserId] ?? DEFAULT_PREF
+    bfForm.setFieldsValue(pref)
+    setBfModalOpen(true)
+  }
+
+  /* ── Save breakfast pref ── */
+  async function handleSaveBreakfast() {
+    if (!bfTargetId) return
+    const values = bfForm.getFieldsValue() as BreakfastPref
+    const updated: NotesData = {
+      ...notesData,
+      breakfastPrefs: { ...breakfastPrefs, [bfTargetId]: values },
+    }
+    try {
+      await persistMenu({ notes: JSON.stringify(updated) })
+      message.success('Breakfast preference saved!')
+      setBfModalOpen(false)
+      setBfTargetId(null)
+    } catch { message.error('Failed to save.') }
+  }
+
+  /* ── Add suggestion ── */
+  async function handleAddSuggestion() {
+    if (!userId || !suggestionText.trim()) return
+    setSubmittingSuggestion(true)
+    const newSuggestion: Suggestion = {
+      id: Date.now().toString(),
+      userId,
+      userName: profile?.full_name ?? 'Unknown',
+      text: suggestionText.trim(),
+      createdAt: new Date().toISOString(),
+    }
+    const updated: NotesData = {
+      ...notesData,
+      suggestions: [...suggestions, newSuggestion],
+    }
+    try {
+      await persistMenu({ notes: JSON.stringify(updated) })
+      setSuggestionText('')
+      message.success('Suggestion added!')
+    } catch { message.error('Failed to add suggestion.') }
+    finally { setSubmittingSuggestion(false) }
+  }
+
+  /* ── Delete suggestion ── */
+  async function handleDeleteSuggestion(id: string) {
+    const updated: NotesData = {
+      ...notesData,
+      suggestions: suggestions.filter(s => s.id !== id),
+    }
+    try {
+      await persistMenu({ notes: JSON.stringify(updated) })
+    } catch { message.error('Failed to delete.') }
+  }
+
+  /* ── Mark suggestion as done (admin/cook) ── */
+  async function handleApplySuggestion(text: string) {
+    try {
+      await persistMenu({ dinner: text })
+      message.success('Dinner set from suggestion!')
+    } catch { message.error('Failed.') }
+  }
+
+  const isLoading = todayQuery.isLoading || profilesQuery.isLoading
+  const error = (todayQuery.error ?? profilesQuery.error) as Error | null
+
+  const isOverridden = !!todayMenu?.dinner && todayMenu.dinner !== fixedDinner
 
   return (
     <PageStack>
       <PageHeader
         title="Daily Menu"
-        subtitle="Manage breakfast preferences and view the weekly dinner schedule"
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Daily Menu' }]}
-        actions={
-          <Space wrap size="small">
-            {!isEditingAllowed && (
-              <Tag color="red" icon={<ClockCircleOutlined />}>Editing closed (after 10 PM)</Tag>
-            )}
-            {isEditingAllowed && (
-              <Tag color="green" icon={<CheckCircleOutlined />}>Editing open until 10 PM</Tag>
-            )}
-          </Space>
-        }
+        subtitle="Breakfast preferences, tonight's dinner, and meal suggestions."
+        breadcrumbs={[
+          { title: 'Home', path: '/', icon: <HomeOutlined /> },
+          { title: 'Daily Menu' },
+        ]}
       />
 
       <QueryState isLoading={isLoading} error={error}>
-        {/* Tonight's Dinner Highlight */}
-        {tonightDinner && (
-          <TonightCard>
-            <Flex align="center" justify="space-between" wrap gap={12}>
-              <div>
-                <Flex align="center" gap={10} style={{ marginBottom: 6 }}>
-                  <MoonOutlined style={{ fontSize: 24, color: '#722ed1' }} />
-                  <div>
-                    <Typography.Title level={4} style={{ margin: 0, color: '#722ed1', fontSize: 'clamp(16px, 4vw, 20px)' }}>
-                      Tonight's Dinner
-                    </Typography.Title>
-                    <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                      {dayjs().format('dddd, DD MMMM YYYY')}
-                    </Typography.Text>
-                  </div>
-                </Flex>
-                <Typography.Text style={{ fontSize: 'clamp(15px, 3.5vw, 18px)', fontWeight: 600, color: 'var(--text-strong)', display: 'block', marginTop: 6 }}>
-                  {tonightDinner.meal}
-                </Typography.Text>
-                <MealTime style={{ marginTop: 6 }}>
-                  <ClockCircleOutlined />
-                  Serving Time: {tonightDinner.time}
-                </MealTime>
-              </div>
-              <Tag color="purple" style={{ fontSize: 12, padding: '3px 10px' }}>Fixed Menu</Tag>
-            </Flex>
-          </TonightCard>
-        )}
 
-        {/* My Breakfast Preferences (logged-in user) */}
-        {myPref && (
-          <MyBreakfastCard>
-            <Flex align="center" justify="space-between" wrap gap={8} style={{ marginBottom: 12 }}>
-              <Flex align="center" gap={8}>
-                <SunOutlined style={{ color: '#faad14', fontSize: 18 }} />
-                <div>
-                  <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
-                    My Breakfast
-                  </Typography.Title>
-                  <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                    {profile?.full_name ?? 'Your preferences for today'}
-                  </Typography.Text>
-                </div>
-              </Flex>
-              <Button
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => handleEditUser(myPref)}
-                disabled={!isEditingAllowed}
-                type="primary"
-                ghost
+        {/* ══════════════════════════════════════════════════════════════
+            SECTION 1 — DINNER
+        ══════════════════════════════════════════════════════════════ */}
+        <SectionCard>
+          <SectionHead>
+            <SectionTitle>
+              <MoonOutlined style={{ color: '#722ed1', fontSize: 16 }} />
+              Tonight's Dinner
+              <Tag
+                color={isOverridden ? 'purple' : 'default'}
+                style={{ margin: 0, fontSize: 11 }}
               >
-                Edit
-              </Button>
-            </Flex>
-            <Row gutter={[12, 0]}>
-              <Col xs={8}>
-                <PrefItem>
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                    <PrefLabel>Paratha</PrefLabel>
-                    <Tag color={myPref.paratha ? 'green' : 'default'} style={{ marginTop: 4 }}>
-                      {myPref.paratha ? 'Yes' : 'No'}
-                    </Tag>
-                  </div>
-                </PrefItem>
-              </Col>
-              <Col xs={8}>
-                <PrefItem>
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                    <PrefLabel>Egg</PrefLabel>
-                    <Tag color={eggColor(myPref.egg)} style={{ marginTop: 4 }}>
-                      {myPref.egg.charAt(0).toUpperCase() + myPref.egg.slice(1)}
-                    </Tag>
-                  </div>
-                </PrefItem>
-              </Col>
-              <Col xs={8}>
-                <PrefItem>
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                    <PrefLabel>Tea</PrefLabel>
-                    <Tag color={myPref.tea ? 'cyan' : 'default'} style={{ marginTop: 4 }}>
-                      {myPref.tea ? 'Yes' : 'No'}
-                    </Tag>
-                  </div>
-                </PrefItem>
-              </Col>
-            </Row>
-            {myPref.notes && (
-              <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                Note: {myPref.notes}
+                {isOverridden ? 'Custom' : 'Fixed menu'}
+              </Tag>
+            </SectionTitle>
+
+            {canEditDinner && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                {isOverridden && (
+                  <Tooltip title="Reset to fixed weekly menu">
+                    <Button
+                      size="small"
+                      icon={<UnlockOutlined />}
+                      onClick={() => void handleResetDinner()}
+                      loading={isSaving}
+                    >
+                      Reset
+                    </Button>
+                  </Tooltip>
+                )}
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    dinnerForm.setFieldsValue({ dinner: actualDinner })
+                    setDinnerModalOpen(true)
+                  }}
+                >
+                  Change
+                </Button>
+              </div>
+            )}
+          </SectionHead>
+
+          <SectionBody>
+            {todayQuery.isLoading ? (
+              <Skeleton active paragraph={{ rows: 1 }} />
+            ) : (
+              <DinnerDisplay>
+                <div>
+                  <DinnerMeal>{actualDinner}</DinnerMeal>
+                  <DinnerMeta>
+                    {today.format('dddd, DD MMMM YYYY')} · Serving ~9:00 PM
+                    {isOverridden && (
+                      <span style={{ marginLeft: 8, color: '#722ed1' }}>
+                        · Overridden by {canEditDinner ? 'you' : 'admin/cook'}
+                      </span>
+                    )}
+                  </DinnerMeta>
+                </div>
+                {!isOverridden && (
+                  <Tag color="default" style={{ fontSize: 11 }}>
+                    <LockOutlined style={{ marginRight: 4 }} />
+                    Weekly fixed
+                  </Tag>
+                )}
+              </DinnerDisplay>
+            )}
+
+            {/* Weekly schedule preview */}
+            <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {Object.entries(WEEKLY_DINNER).map(([day, meal]) => {
+                const isToday = day === todayDay
+                return (
+                  <Tag
+                    key={day}
+                    color={isToday ? 'purple' : 'default'}
+                    style={{ fontSize: 11, margin: 0 }}
+                  >
+                    <span style={{ fontWeight: 600 }}>{day.slice(0, 3)}</span>
+                    {' · '}{meal}
+                  </Tag>
+                )
+              })}
+            </div>
+          </SectionBody>
+        </SectionCard>
+
+        {/* ══════════════════════════════════════════════════════════════
+            SECTION 2 — BREAKFAST
+        ══════════════════════════════════════════════════════════════ */}
+        <SectionCard>
+          <SectionHead>
+            <SectionTitle>
+              <SunOutlined style={{ color: '#f9a825', fontSize: 16 }} />
+              Breakfast Preferences
+            </SectionTitle>
+            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Each person sets their own · Default: Paratha + Fried egg
+            </Typography.Text>
+          </SectionHead>
+
+          <SectionBody>
+            {todayQuery.isLoading || profilesQuery.isLoading ? (
+              <Skeleton active paragraph={{ rows: 2 }} />
+            ) : (
+              <BreakfastGrid>
+                {profiles.map(p => {
+                  const pref = breakfastPrefs[p.id] ?? DEFAULT_PREF
+                  const isMe = p.id === userId
+                  const canEdit = isMe || canEditDinner
+
+                  return (
+                    <PersonCard key={p.id} $isMe={isMe}>
+                      <PersonRow>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                          <Avatar
+                            size={26}
+                            style={{
+                              background: isMe ? 'var(--primary)' : 'var(--bg-elevated)',
+                              color: isMe ? '#fff' : 'var(--text-muted)',
+                              fontSize: 10,
+                              flexShrink: 0,
+                              border: '1px solid var(--border-light)',
+                            }}
+                            icon={<UserOutlined />}
+                          >
+                            {initials(p.full_name)}
+                          </Avatar>
+                          <PersonName>{isMe ? 'Me' : p.full_name.split(' ')[0]}</PersonName>
+                        </div>
+                        {canEdit && (
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => openBreakfastEdit(p.id)}
+                            style={{ flexShrink: 0, padding: '0 4px', height: 22 }}
+                          />
+                        )}
+                      </PersonRow>
+
+                      <PrefTags>
+                        <Tag
+                          color={pref.paratha ? 'green' : 'default'}
+                          style={{ fontSize: 10, margin: 0, padding: '0 5px' }}
+                        >
+                          🫓 {pref.paratha ? 'Paratha' : 'No paratha'}
+                        </Tag>
+                        {pref.sadaRoti && (
+                          <Tag
+                            color="lime"
+                            style={{ fontSize: 10, margin: 0, padding: '0 5px' }}
+                          >
+                            🍞 Sada Roti
+                          </Tag>
+                        )}
+                        <Tag
+                          color={eggColor(pref.egg)}
+                          style={{ fontSize: 10, margin: 0, padding: '0 5px' }}
+                        >
+                          🥚 {eggLabel(pref.egg)}
+                        </Tag>
+                        {pref.tea && (
+                          <Tag
+                            color="cyan"
+                            style={{ fontSize: 10, margin: 0, padding: '0 5px' }}
+                          >
+                            ☕ Tea
+                          </Tag>
+                        )}
+                      </PrefTags>
+                    </PersonCard>
+                  )
+                })}
+              </BreakfastGrid>
+            )}
+          </SectionBody>
+        </SectionCard>
+
+        {/* ══════════════════════════════════════════════════════════════
+            SECTION 3 — SUGGESTIONS
+        ══════════════════════════════════════════════════════════════ */}
+        <SectionCard>
+          <SectionHead>
+            <SectionTitle>
+              <BulbOutlined style={{ color: '#f9a825', fontSize: 16 }} />
+              Dinner Suggestions
+            </SectionTitle>
+            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Anyone can suggest · Admin/cook can apply
+            </Typography.Text>
+          </SectionHead>
+
+          <SectionBody>
+            {suggestions.length > 0 ? (
+              <SuggestionList>
+                {suggestions.map(s => {
+                  const isOwner = s.userId === userId
+                  const canDelete = isOwner || canEditDinner
+                  return (
+                    <SuggestionItem key={s.id}>
+                      <Avatar
+                        size={28}
+                        style={{
+                          background: 'var(--primary-soft)',
+                          color: 'var(--primary)',
+                          fontSize: 11,
+                          flexShrink: 0,
+                          border: '1px solid var(--border-light)',
+                        }}
+                      >
+                        {initials(s.userName)}
+                      </Avatar>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <SuggestionText>{s.text}</SuggestionText>
+                        <SuggestionMeta>
+                          {s.userName} · {dayjs(s.createdAt).format('h:mm A')}
+                        </SuggestionMeta>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                        {canEditDinner && (
+                          <Tooltip title="Set as tonight's dinner">
+                            <Button
+                              size="small"
+                              type="primary"
+                              ghost
+                              icon={<CheckOutlined />}
+                              onClick={() => void handleApplySuggestion(s.text)}
+                              style={{ padding: '0 6px' }}
+                            />
+                          </Tooltip>
+                        )}
+                        {canDelete && (
+                          <Button
+                            size="small"
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => void handleDeleteSuggestion(s.id)}
+                            style={{ padding: '0 6px' }}
+                          />
+                        )}
+                      </div>
+                    </SuggestionItem>
+                  )
+                })}
+              </SuggestionList>
+            ) : (
+              <Typography.Text
+                style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic', display: 'block', marginBottom: 14 }}
+              >
+                No suggestions yet. Be the first to suggest something!
               </Typography.Text>
             )}
-          </MyBreakfastCard>
-        )}
 
-        {/* All Flatmates Breakfast Preferences */}
-        <SectionBlock>
-          <Flex align="center" justify="space-between" wrap gap={8} style={{ marginBottom: 16 }}>
-            <div>
-              <Typography.Title level={4} style={{ margin: 0, color: 'var(--text-strong)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 'clamp(14px, 3.5vw, 18px)' }}>
-                <SunOutlined style={{ color: '#faad14', fontSize: 18 }} />
-                Breakfast Preferences
-              </Typography.Title>
-              <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                Default: 1 Paratha + 1 Egg per person
-              </Typography.Text>
-            </div>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={() => void handleSaveBreakfast()}
-              loading={createMenu.isPending || updateMenu.isPending}
-              disabled={!isEditingAllowed}
-              size="middle"
-            >
-              Save All
-            </Button>
-          </Flex>
+            {/* Add suggestion input */}
+            <AddSuggestionRow>
+              <Input
+                placeholder="Suggest a meal for tonight…"
+                value={suggestionText}
+                onChange={e => setSuggestionText(e.target.value)}
+                onPressEnter={() => void handleAddSuggestion()}
+                maxLength={120}
+                style={{ flex: 1 }}
+                suffix={
+                  <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    {suggestionText.length}/120
+                  </Typography.Text>
+                }
+              />
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={() => void handleAddSuggestion()}
+                loading={submittingSuggestion}
+                disabled={!suggestionText.trim()}
+              >
+                Send
+              </Button>
+            </AddSuggestionRow>
+          </SectionBody>
+        </SectionCard>
 
-          {!isEditingAllowed && (
-            <Alert
-              type="warning"
-              showIcon
-              message="Editing Closed"
-              description="Breakfast preferences can only be edited before 10:00 PM."
-              style={{ marginBottom: 16 }}
-            />
-          )}
-
-          {/* Mobile-friendly card grid instead of table */}
-          <Row gutter={[12, 12]}>
-            {breakfastPrefs.map((pref) => {
-              const isMe = pref.userId === userId
-              return (
-                <Col xs={24} sm={12} lg={8} key={pref.userId}>
-                  <FlatmateCard style={isMe ? { borderColor: '#faad14', background: 'rgba(250,173,20,0.04)' } : {}}>
-                    <Flex align="center" justify="space-between" style={{ marginBottom: 10 }}>
-                      <Flex align="center" gap={8}>
-                        <Avatar
-                          size={32}
-                          style={{ background: isMe ? '#faad14' : 'var(--primary)', color: '#fff', fontSize: 12, flexShrink: 0 }}
-                          icon={<UserOutlined />}
-                        >
-                          {initials(pref.userName)}
-                        </Avatar>
-                        <div>
-                          <Typography.Text strong style={{ fontSize: 13, color: 'var(--text-strong)', display: 'block', lineHeight: 1.3 }}>
-                            {pref.userName}
-                            {isMe && <Tag color="gold" style={{ marginLeft: 6, fontSize: 10, padding: '0 4px' }}>Me</Tag>}
-                          </Typography.Text>
-                        </div>
-                      </Flex>
-                      <Button
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => handleEditUser(pref)}
-                        disabled={!isEditingAllowed}
-                        type={isMe ? 'primary' : 'default'}
-                        ghost={isMe}
-                      />
-                    </Flex>
-                    <Flex gap={6} wrap>
-                      <Tag color={pref.paratha ? 'green' : 'default'} style={{ fontSize: 11 }}>
-                        🫓 {pref.paratha ? 'Paratha' : 'No Paratha'}
-                      </Tag>
-                      <Tag color={eggColor(pref.egg)} style={{ fontSize: 11 }}>
-                        🥚 {pref.egg.charAt(0).toUpperCase() + pref.egg.slice(1)}
-                      </Tag>
-                      <Tag color={pref.tea ? 'cyan' : 'default'} style={{ fontSize: 11 }}>
-                        ☕ {pref.tea ? 'Tea' : 'No Tea'}
-                      </Tag>
-                    </Flex>
-                    {pref.notes && (
-                      <Typography.Text type="secondary" style={{ fontSize: 11, marginTop: 6, display: 'block' }}>
-                        {pref.notes}
-                      </Typography.Text>
-                    )}
-                  </FlatmateCard>
-                </Col>
-              )
-            })}
-          </Row>
-        </SectionBlock>
-
-        {/* Weekly Dinner Schedule */}
-        <SectionBlock>
-          <Typography.Title level={4} style={{ margin: '0 0 12px', color: 'var(--text-strong)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 'clamp(14px, 3.5vw, 18px)' }}>
-            <CoffeeOutlined style={{ color: '#1890ff', fontSize: 18 }} />
-            Weekly Dinner Schedule
-          </Typography.Title>
-          <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginBottom: 14 }}>
-            Fixed weekly menu · All meals served at 9:00 PM
-          </Typography.Text>
-
-          <Row gutter={[10, 10]}>
-            {WEEKLY_DINNER.map((dinner) => {
-              const isToday = dinner.day === todayDayName
-              return (
-                <Col xs={12} sm={8} md={6} key={dinner.day}>
-                  <DayCard $isToday={isToday}>
-                    <Flex justify="space-between" align="center" style={{ marginBottom: 6 }}>
-                      <Typography.Text strong style={{ color: isToday ? '#722ed1' : 'var(--text-strong)', fontSize: 13 }}>
-                        {dinner.day}
-                      </Typography.Text>
-                      {isToday && <Tag color="purple" style={{ fontSize: 10, padding: '0 4px' }}>Today</Tag>}
-                    </Flex>
-                    <MealTitle>{dinner.meal}</MealTitle>
-                    <MealTime>
-                      <ClockCircleOutlined />
-                      {dinner.time}
-                    </MealTime>
-                  </DayCard>
-                </Col>
-              )
-            })}
-          </Row>
-        </SectionBlock>
       </QueryState>
 
-      {/* Edit Breakfast Modal */}
-      {editModalOpen && editingUser && (
-        <EditBreakfastModal
-          user={editingUser}
-          onClose={() => { setEditModalOpen(false); setEditingUser(null) }}
-          onSave={handleUpdateUser}
-        />
-      )}
-    </PageStack>
-  )
-}
-
-/* ─── Edit Breakfast Modal ────────────────────────────────────────────────── */
-
-function EditBreakfastModal({
-  user,
-  onClose,
-  onSave,
-}: {
-  user: BreakfastPreference
-  onClose: () => void
-  onSave: (values: Partial<BreakfastPreference>) => void
-}) {
-  const [form] = Form.useForm()
-
-  function handleOk() {
-    const values = form.getFieldsValue()
-    onSave(values)
-  }
-
-  return (
-    <Modal
-      open
-      title={
-        <Flex align="center" gap={8}>
-          <SunOutlined style={{ color: '#faad14' }} />
-          <span>Edit Breakfast — {user.userName}</span>
-        </Flex>
-      }
-      okText="Save Changes"
-      onCancel={onClose}
-      onOk={handleOk}
-      width="min(480px, 95vw)"
-      styles={{ body: { paddingTop: 16 } }}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ paratha: user.paratha, egg: user.egg, tea: user.tea, notes: user.notes }}
+      {/* ── Dinner override modal ── */}
+      <Modal
+        open={dinnerModalOpen}
+        title={<span style={{ fontSize: 14, fontWeight: 700 }}>Change Tonight's Dinner</span>}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <Button size="small" onClick={() => setDinnerModalOpen(false)}>Cancel</Button>
+            <Button size="small" type="primary" loading={isSaving} onClick={() => void handleSaveDinner()}>
+              Save
+            </Button>
+          </div>
+        }
+        onCancel={() => setDinnerModalOpen(false)}
+        width="min(400px, 95vw)"
+        style={{ top: 80 }}
+        styles={{ body: { paddingTop: 12 } }}
       >
-        <Row gutter={16}>
-          <Col xs={8}>
-            <Form.Item label="Paratha" name="paratha" valuePropName="checked">
-              <Switch checkedChildren="Yes" unCheckedChildren="No" />
-            </Form.Item>
-          </Col>
-          <Col xs={8}>
-            <Form.Item label="Tea" name="tea" valuePropName="checked">
-              <Switch checkedChildren="Yes" unCheckedChildren="No" />
-            </Form.Item>
-          </Col>
-        </Row>
+        <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 12 }}>
+          Fixed menu for {todayDay}: <strong>{fixedDinner}</strong>
+        </Typography.Text>
+        <Form form={dinnerForm} layout="vertical" requiredMark={false}>
+          <Form.Item name="dinner" label="Override with" style={{ marginBottom: 0 }}>
+            <Input
+              placeholder={fixedDinner}
+              allowClear
+              autoFocus
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
-        <Form.Item label="Egg Type" name="egg">
-          <Select options={EGG_OPTIONS} style={{ width: '100%' }} />
-        </Form.Item>
-
-        <Form.Item label="Notes (Optional)" name="notes">
-          <Input.TextArea
-            rows={2}
-            placeholder="Add a note (optional)"
-            maxLength={100}
-            showCount
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
+      {/* ── Breakfast preference modal ── */}
+      <Modal
+        open={bfModalOpen}
+        title={
+          <span style={{ fontSize: 14, fontWeight: 700 }}>
+            Breakfast — {bfTargetId === userId ? 'My Preference' : (profiles.find(p => p.id === bfTargetId)?.full_name ?? '')}
+          </span>
+        }
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <Button size="small" onClick={() => setBfModalOpen(false)}>Cancel</Button>
+            <Button size="small" type="primary" loading={isSaving} onClick={() => void handleSaveBreakfast()}>
+              Save
+            </Button>
+          </div>
+        }
+        onCancel={() => setBfModalOpen(false)}
+        width="min(360px, 95vw)"
+        style={{ top: 80 }}
+        styles={{ body: { paddingTop: 12 } }}
+      >
+        <Form form={bfForm} layout="vertical" requiredMark={false}>
+          <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+            <Form.Item name="paratha" valuePropName="checked" label="Paratha" style={{ marginBottom: 0 }}>
+              <Switch size="small" checkedChildren="Yes" unCheckedChildren="No" />
+            </Form.Item>
+            <Form.Item name="sadaRoti" valuePropName="checked" label="Sada Roti" style={{ marginBottom: 0 }}>
+              <Switch size="small" checkedChildren="Yes" unCheckedChildren="No" />
+            </Form.Item>
+            <Form.Item name="tea" valuePropName="checked" label="Tea" style={{ marginBottom: 0 }}>
+              <Switch size="small" checkedChildren="Yes" unCheckedChildren="No" />
+            </Form.Item>
+          </div>
+          <Form.Item name="egg" label="Egg" style={{ marginBottom: 0 }}>
+            <Select options={EGG_OPTIONS} style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </PageStack>
   )
 }

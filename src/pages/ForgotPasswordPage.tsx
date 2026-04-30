@@ -1,9 +1,86 @@
 import { useState } from 'react'
-import { Alert, App, Button, Form, Input, Result } from 'antd'
+import { Alert, App, Button, Form, Input } from 'antd'
 import { Link } from 'react-router-dom'
-import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { MailOutlined, ArrowLeftOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import styled from 'styled-components'
 import { AuthShell, FormFooter } from '@/components/AuthShell'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+
+/* ── Skeuomorphic submit button ─────────────────────────────────────────── */
+const SubmitBtn = styled(Button)`
+  && {
+    height: 50px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(160deg, #2d7aff 0%, #1260e8 50%, #0a4fd4 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 -1px 0 rgba(0,0,0,0.2) inset,
+      0 4px 12px rgba(18,96,232,0.4),
+      0 1px 3px rgba(0,0,0,0.15);
+    transition: box-shadow 0.18s ease, transform 0.12s ease;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(160deg, #3d87ff 0%, #1a6ef5 50%, #1260e8 100%) !important;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.3) inset,
+        0 6px 18px rgba(18,96,232,0.5),
+        0 2px 6px rgba(0,0,0,0.15) !important;
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(18,96,232,0.3) !important;
+    }
+  }
+`
+
+/* ── Success card ────────────────────────────────────────────────────────── */
+const SuccessCard = styled.div`
+  text-align: center;
+  padding: 8px 0 16px;
+`
+
+const SuccessIconWrap = styled.div`
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: #1677ff;
+
+  /* Skeuomorphic raised circle */
+  background: linear-gradient(145deg, #e8f4fc 0%, #bae0ff 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 -1px 0 rgba(0,0,0,0.06) inset,
+    0 4px 14px rgba(22,119,255,0.2),
+    0 1px 4px rgba(0,0,0,0.08);
+  border: 1px solid rgba(22,119,255,0.15);
+`
+
+const SuccessTitle = styled.h3`
+  margin: 0 0 8px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-strong);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+`
+
+const SuccessText = styled.p`
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.65;
+`
+
+/* ── Component ───────────────────────────────────────────────────────────── */
 
 export function ForgotPasswordPage() {
   const { message } = App.useApp()
@@ -18,12 +95,8 @@ export function ForgotPasswordPage() {
     }
     setSubmitting(true)
     try {
-      // Always redirect to the production URL so the reset link works regardless
-      // of where the email is opened (local dev, mobile, etc.)
       const redirectTo = 'https://milbaant.vercel.app/reset-password'
-      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo,
-      })
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, { redirectTo })
       if (error) throw new Error(error.message)
       setSentEmail(values.email)
       setSent(true)
@@ -45,19 +118,18 @@ export function ForgotPasswordPage() {
         title="Check your inbox"
         subtitle="A password reset link has been sent to your email."
       >
-        <Result
-          status="success"
-          icon={<MailOutlined style={{ color: 'var(--primary)', fontSize: 48 }} />}
-          title="Reset link sent!"
-          subTitle={
-            <>
-              We sent a password reset link to{' '}
-              <strong>{sentEmail}</strong>. Check your inbox (and spam folder)
-              and click the link to set a new password.
-            </>
-          }
-          style={{ padding: '16px 0' }}
-        />
+        <SuccessCard>
+          <SuccessIconWrap>
+            <CheckCircleOutlined />
+          </SuccessIconWrap>
+          <SuccessTitle>Reset link sent!</SuccessTitle>
+          <SuccessText>
+            We sent a reset link to{' '}
+            <strong style={{ color: 'var(--text-strong)' }}>{sentEmail}</strong>.
+            <br />
+            Check your inbox (and spam folder) and click the link.
+          </SuccessText>
+        </SuccessCard>
         <FormFooter>
           <Link to="/login">
             <ArrowLeftOutlined style={{ marginRight: 6 }} />
@@ -79,7 +151,7 @@ export function ForgotPasswordPage() {
           showIcon
           message="Supabase not configured"
           description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file."
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 22 }}
         />
       )}
 
@@ -95,10 +167,11 @@ export function ForgotPasswordPage() {
             { required: true, message: 'Email is required.' },
             { type: 'email', message: 'Enter a valid email.' },
           ]}
+          style={{ marginBottom: 26 }}
         >
           <Input
-            prefix={<MailOutlined style={{ color: 'var(--text-muted)' }} />}
-            placeholder="Enter your account email"
+            prefix={<MailOutlined style={{ color: 'var(--text-muted)', marginRight: 2 }} />}
+            placeholder="you@example.com"
             size="large"
             autoComplete="email"
             autoFocus
@@ -106,17 +179,15 @@ export function ForgotPasswordPage() {
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>
-          <Button
+          <SubmitBtn
             htmlType="submit"
             type="primary"
             block
-            size="large"
             loading={submitting}
             disabled={!isSupabaseConfigured}
-            style={{ fontWeight: 600, height: 46 }}
           >
             Send Reset Link
-          </Button>
+          </SubmitBtn>
         </Form.Item>
       </Form>
 

@@ -1,15 +1,22 @@
 /**
- * InstallPrompt — shows a native-style install banner when the browser
- * fires the `beforeinstallprompt` event (Chrome/Edge/Android).
+ * InstallPrompt — shows on every page load/refresh if the PWA is not installed
+ * and the user hasn't permanently dismissed it.
  *
- * Also shows iOS-specific instructions since Safari doesn't fire that event.
+ * Chrome/Edge/Android: uses the native `beforeinstallprompt` event.
+ * iOS Safari: shows manual "Add to Home Screen" instructions.
  *
- * Dismissed state is persisted in localStorage so it doesn't re-appear
- * every session.
+ * Dismissed state: snooze 3 days or permanent.
  */
 import { useEffect, useState } from 'react'
-import { Button, Typography } from 'antd'
-import { CloseOutlined, DownloadOutlined, ShareAltOutlined } from '@ant-design/icons'
+import { Button } from 'antd'
+import {
+  CloseOutlined,
+  DownloadOutlined,
+  ShareAltOutlined,
+  MobileOutlined,
+  ThunderboltOutlined,
+  WifiOutlined,
+} from '@ant-design/icons'
 import styled, { keyframes } from 'styled-components'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -22,13 +29,24 @@ interface BeforeInstallPromptEvent extends Event {
 // ── Animations ────────────────────────────────────────────────────────────────
 
 const slideUp = keyframes`
-  from { transform: translateY(100%); opacity: 0; }
+  from { transform: translateY(110%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 `
 
 const slideDown = keyframes`
   from { transform: translateY(0);    opacity: 1; }
-  to   { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(110%); opacity: 0; }
+`
+
+const popIn = keyframes`
+  0%   { transform: scale(0.8);  opacity: 0; }
+  65%  { transform: scale(1.05); }
+  100% { transform: scale(1);    opacity: 1; }
+`
+
+const shimmerBtn = keyframes`
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
 `
 
 // ── Styled ────────────────────────────────────────────────────────────────────
@@ -39,90 +57,213 @@ const Banner = styled.div<{ $hiding: boolean }>`
   left: 0;
   right: 0;
   z-index: 9999;
-  padding: 12px 16px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
   background: var(--card-bg);
   border-top: 1px solid var(--card-border);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
-  animation: ${({ $hiding }) => ($hiding ? slideDown : slideUp)} 0.3s ease forwards;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.14);
+  animation: ${({ $hiding }) => ($hiding ? slideDown : slideUp)} 0.38s cubic-bezier(0.22,1,0.36,1) forwards;
 
   @media (min-width: 600px) {
     bottom: 24px;
     left: 50%;
     right: auto;
     transform: translateX(-50%);
-    width: 380px;
-    border-radius: 16px;
+    width: 400px;
+    border-radius: 20px;
     border: 1px solid var(--card-border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    padding-bottom: 12px;
+    box-shadow:
+      0 12px 40px rgba(0,0,0,0.16),
+      0 1px 0 rgba(255,255,255,0.8) inset;
+    padding: 20px 20px 20px;
   }
 `
 
-const Row = styled.div`
+const Header = styled.div`
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+`
+
+/* Skeuomorphic app icon */
+const AppIconWrap = styled.div`
+  position: relative;
+  flex-shrink: 0;
 `
 
 const AppIcon = styled.div`
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  animation: ${popIn} 0.5s cubic-bezier(0.22,1,0.36,1) 0.15s both;
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  /* Skeuomorphic raised icon */
+  background: linear-gradient(145deg, #2d7aff 0%, #1260e8 50%, #0840b8 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.3) inset,
+    0 -1px 0 rgba(0,0,0,0.25) inset,
+    0 6px 18px rgba(18,96,232,0.45),
+    0 2px 6px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.15);
+
+  @media (max-width: 599px) {
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
+    border-radius: 15px;
   }
+`
+
+const OnlineDot = styled.div`
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #52c41a;
+  border: 2.5px solid var(--card-bg);
+  box-shadow: 0 1px 4px rgba(82,196,26,0.4);
 `
 
 const TextBlock = styled.div`
   flex: 1;
   min-width: 0;
+  padding-right: 28px;
+`
+
+const AppName = styled.div`
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-bottom: 3px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+`
+
+const AppDesc = styled.div`
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+`
+
+const DismissBtn = styled.button`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+
+  &:hover {
+    background: var(--border-default);
+    color: var(--text-primary);
+  }
+`
+
+/* Perk chips */
+const Perks = styled.div`
+  display: flex;
+  gap: 7px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+`
+
+const Perk = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid rgba(64,150,255,0.2);
+  box-shadow: 0 1px 3px rgba(64,150,255,0.1);
+
+  .anticon { font-size: 12px; }
+`
+
+/* Skeuomorphic install button */
+const InstallBtn = styled(Button)`
+  && {
+    height: 48px;
+    font-size: 14.5px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(90deg, #1260e8, #4096ff, #69b1ff, #1260e8);
+    background-size: 200% auto;
+    animation: ${shimmerBtn} 3s linear infinite;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 -1px 0 rgba(0,0,0,0.2) inset,
+      0 4px 14px rgba(18,96,232,0.4);
+    transition: box-shadow 0.18s, transform 0.12s;
+
+    &:hover {
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.3) inset,
+        0 6px 20px rgba(18,96,232,0.5) !important;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px rgba(18,96,232,0.3) !important;
+    }
+  }
 `
 
 const Actions = styled.div`
   display: flex;
   gap: 8px;
-  margin-top: 10px;
+  align-items: center;
 `
 
-const DismissBtn = styled.button`
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted);
-  padding: 4px;
-  border-radius: 6px;
+/* iOS steps */
+const IOSSteps = styled.div`
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease;
-
-  &:hover { background: var(--menu-hover-bg); }
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 `
 
 const IOSStep = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: 10px;
   font-size: 13px;
   color: var(--text-primary);
+  line-height: 1.4;
 `
 
 const StepNum = styled.span`
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--primary);
+  background: linear-gradient(145deg, #2d7aff, #1260e8);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -130,11 +271,27 @@ const StepNum = styled.span`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(18,96,232,0.35);
+`
+
+const DontShowLink = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  padding: 8px 0 0;
+  display: block;
+  width: 100%;
+  text-align: center;
+  transition: color 0.15s;
+
+  &:hover { color: var(--text-secondary); }
 `
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const DISMISSED_KEY = 'milbaant-pwa-dismissed'
+const DISMISSED_KEY       = 'milbaant-pwa-dismissed'
 const DISMISSED_UNTIL_KEY = 'milbaant-pwa-dismissed-until'
 
 function isDismissed(): boolean {
@@ -147,13 +304,18 @@ function dismiss(permanent = false) {
   if (permanent) {
     localStorage.setItem(DISMISSED_KEY, 'true')
   } else {
-    // Snooze for 3 days
-    localStorage.setItem(DISMISSED_UNTIL_KEY, String(Date.now() + 3 * 24 * 60 * 60 * 1000))
+    localStorage.setItem(
+      DISMISSED_UNTIL_KEY,
+      String(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    )
   }
 }
 
 function isIOS(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream
+  return (
+    /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !(window as Window & { MSStream?: unknown }).MSStream
+  )
 }
 
 function isInStandaloneMode(): boolean {
@@ -167,34 +329,32 @@ function isInStandaloneMode(): boolean {
 
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [showIOS, setShowIOS] = useState(false)
-  const [hiding, setHiding] = useState(false)
-  const [visible, setVisible] = useState(false)
+  const [showIOS, setShowIOS]   = useState(false)
+  const [hiding, setHiding]     = useState(false)
+  const [visible, setVisible]   = useState(false)
 
   useEffect(() => {
-    // Don't show if already installed or dismissed
+    // Already installed or permanently dismissed → skip
     if (isInStandaloneMode() || isDismissed()) return
 
     if (isIOS()) {
-      // Show iOS instructions after a short delay
-      const t = setTimeout(() => setShowIOS(true), 2000)
+      // Show iOS instructions on every page load (respects snooze)
+      const t = setTimeout(() => setShowIOS(true), 1800)
       return () => clearTimeout(t)
     }
 
-    // Listen for Chrome/Edge/Android install prompt
+    // Chrome/Edge/Android: capture the native prompt
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
-
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
-  // Show banner when prompt is ready
   useEffect(() => {
     if (deferredPrompt || showIOS) {
-      const t = setTimeout(() => setVisible(true), 500)
+      const t = setTimeout(() => setVisible(true), 700)
       return () => clearTimeout(t)
     }
   }, [deferredPrompt, showIOS])
@@ -203,9 +363,7 @@ export function InstallPrompt() {
     if (!deferredPrompt) return
     void deferredPrompt.prompt()
     void deferredPrompt.userChoice.then((choice) => {
-      if (choice.outcome === 'accepted') {
-        dismiss(true)
-      }
+      if (choice.outcome === 'accepted') dismiss(true)
       setDeferredPrompt(null)
       handleClose(true)
     })
@@ -218,37 +376,38 @@ export function InstallPrompt() {
       setVisible(false)
       setShowIOS(false)
       setHiding(false)
-    }, 300)
+    }, 380)
   }
 
   if (!visible) return null
 
-  // ── iOS instructions ──
+  // ── iOS ───────────────────────────────────────────────────────────────────
   if (showIOS) {
     return (
       <Banner $hiding={hiding} role="dialog" aria-label="Install MilBaant">
         <DismissBtn onClick={() => handleClose()} aria-label="Dismiss">
-          <CloseOutlined style={{ fontSize: 14 }} />
+          <CloseOutlined style={{ fontSize: 12 }} />
         </DismissBtn>
 
-        <Row>
-          <AppIcon>
-            <img src="/apple-touch-icon.png" alt="MilBaant" />
-          </AppIcon>
+        <Header>
+          <AppIconWrap>
+            <AppIcon>M</AppIcon>
+            <OnlineDot />
+          </AppIconWrap>
           <TextBlock>
-            <Typography.Text strong style={{ color: 'var(--text-strong)', display: 'block', fontSize: 14 }}>
-              Install MilBaant
-            </Typography.Text>
-            <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-              Add to your home screen for the best experience
-            </Typography.Text>
+            <AppName>Install MilBaant</AppName>
+            <AppDesc>Add to your home screen for the best experience — works offline too.</AppDesc>
           </TextBlock>
-        </Row>
+        </Header>
 
-        <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--content-bg)', borderRadius: 10 }}>
+        <IOSSteps>
           <IOSStep>
             <StepNum>1</StepNum>
-            <span>Tap the <ShareAltOutlined style={{ color: 'var(--primary)' }} /> <strong>Share</strong> button in Safari</span>
+            <span>
+              Tap the{' '}
+              <ShareAltOutlined style={{ color: 'var(--primary)', fontSize: 14 }} />{' '}
+              <strong>Share</strong> button at the bottom of Safari
+            </span>
           </IOSStep>
           <IOSStep>
             <StepNum>2</StepNum>
@@ -258,10 +417,14 @@ export function InstallPrompt() {
             <StepNum>3</StepNum>
             <span>Tap <strong>"Add"</strong> to install</span>
           </IOSStep>
-        </div>
+        </IOSSteps>
 
         <Actions>
-          <Button size="small" block onClick={() => handleClose(true)} style={{ flex: 1 }}>
+          <Button
+            block
+            onClick={() => handleClose(true)}
+            style={{ height: 44, borderRadius: 12, fontWeight: 600 }}
+          >
             Don't show again
           </Button>
         </Actions>
@@ -269,41 +432,50 @@ export function InstallPrompt() {
     )
   }
 
-  // ── Chrome / Android install prompt ──
+  // ── Chrome / Android ──────────────────────────────────────────────────────
   return (
     <Banner $hiding={hiding} role="dialog" aria-label="Install MilBaant">
       <DismissBtn onClick={() => handleClose()} aria-label="Dismiss">
-        <CloseOutlined style={{ fontSize: 14 }} />
+        <CloseOutlined style={{ fontSize: 12 }} />
       </DismissBtn>
 
-      <Row>
-        <AppIcon>
-          <img src="/pwa-192.png" alt="MilBaant" />
-        </AppIcon>
+      <Header>
+        <AppIconWrap>
+          <AppIcon>M</AppIcon>
+          <OnlineDot />
+        </AppIconWrap>
         <TextBlock>
-          <Typography.Text strong style={{ color: 'var(--text-strong)', display: 'block', fontSize: 14 }}>
-            Install MilBaant
-          </Typography.Text>
-          <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-            Add to home screen for quick access — works offline too
-          </Typography.Text>
+          <AppName>Install MilBaant</AppName>
+          <AppDesc>Get the full app experience — fast, offline-ready, always at hand.</AppDesc>
         </TextBlock>
-      </Row>
+      </Header>
+
+      <Perks>
+        <Perk><MobileOutlined />Home screen</Perk>
+        <Perk><WifiOutlined />Works offline</Perk>
+        <Perk><ThunderboltOutlined />Faster loads</Perk>
+      </Perks>
 
       <Actions>
-        <Button size="small" onClick={() => handleClose()} style={{ flex: 1 }}>
+        <Button
+          onClick={() => handleClose()}
+          style={{ height: 48, borderRadius: 12, fontWeight: 600, flexShrink: 0, padding: '0 16px' }}
+        >
           Not now
         </Button>
-        <Button
+        <InstallBtn
           type="primary"
-          size="small"
           icon={<DownloadOutlined />}
           onClick={handleInstall}
-          style={{ flex: 2 }}
+          block
         >
           Install App
-        </Button>
+        </InstallBtn>
       </Actions>
+
+      <DontShowLink onClick={() => handleClose(true)}>
+        Don't show again
+      </DontShowLink>
     </Banner>
   )
 }

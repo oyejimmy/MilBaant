@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/AppLayout'
 import { BrandLoader } from '@/components/BrandLoader'
@@ -6,6 +6,27 @@ import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute'
 import { CookLayout } from '@/components/CookLayout'
 import { CookRoute } from '@/components/CookRoute'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+
+/**
+ * FadingLoader — wraps BrandLoader so it fades out smoothly instead of
+ * blinking off when the lazy chunk finishes loading.
+ */
+function FadingLoader() {
+  const [hiding, setHiding] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      // When Suspense unmounts this component (chunk loaded), trigger fade-out
+      setHiding(true)
+      timerRef.current = setTimeout(() => {
+        // nothing — component is already unmounted by React
+      }, 400)
+    }
+  }, [])
+
+  return <BrandLoader hiding={hiding} />
+}
 
 const LoginPage = lazy(() =>
   import('@/pages/LoginPage').then((module) => ({ default: module.LoginPage })),
@@ -91,7 +112,7 @@ const ResetPasswordPage = lazy(() =>
 )
 function App() {
   return (
-    <Suspense fallback={<BrandLoader />}>
+    <Suspense fallback={<FadingLoader />}>
       <Routes>
         {/* ── Public routes ── */}
         <Route

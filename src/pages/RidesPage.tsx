@@ -350,7 +350,7 @@ export function RidesPage() {
       <PageHeader
         title="Rides"
         subtitle={`Shared taxi rides for ${formatMonthYear(selectedMonth)} — Yango, InDriver, and more. One person pays, everyone splits.`}
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Rides' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Rides' }]}
         actions={
           <Space wrap>
             <DatePicker

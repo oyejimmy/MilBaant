@@ -1,8 +1,41 @@
 import { useState } from 'react'
 import { Alert, App, Button, Form, Input } from 'antd'
+import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons'
 import { Link, useNavigate } from 'react-router-dom'
+import styled from 'styled-components'
 import { AuthShell, FormFooter } from '@/components/AuthShell'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+
+const SubmitBtn = styled(Button)`
+  && {
+    height: 50px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(160deg, #2d7aff 0%, #1260e8 50%, #0a4fd4 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 -1px 0 rgba(0,0,0,0.2) inset,
+      0 4px 12px rgba(18,96,232,0.4),
+      0 1px 3px rgba(0,0,0,0.15);
+    transition: box-shadow 0.18s ease, transform 0.12s ease;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(160deg, #3d87ff 0%, #1a6ef5 50%, #1260e8 100%) !important;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.3) inset,
+        0 6px 18px rgba(18,96,232,0.5),
+        0 2px 6px rgba(0,0,0,0.15) !important;
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(18,96,232,0.3) !important;
+    }
+  }
+`
 
 interface RegisterValues {
   full_name: string
@@ -52,9 +85,9 @@ export function RegisterPage() {
         <Alert
           type="warning"
           showIcon
-          title="Supabase not configured"
+          message="Supabase not configured"
           description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file."
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 22 }}
         />
       )}
 
@@ -69,7 +102,8 @@ export function RegisterPage() {
           rules={[{ required: true, message: 'Full name is required.' }]}
         >
           <Input
-            placeholder="Enter your full name"
+            prefix={<UserOutlined style={{ color: 'var(--text-muted)', marginRight: 2 }} />}
+            placeholder="Your full name"
             size="large"
             autoComplete="name"
           />
@@ -84,7 +118,8 @@ export function RegisterPage() {
           ]}
         >
           <Input
-            placeholder="Enter your email"
+            prefix={<MailOutlined style={{ color: 'var(--text-muted)', marginRight: 2 }} />}
+            placeholder="you@example.com"
             size="large"
             autoComplete="email"
           />
@@ -97,33 +132,32 @@ export function RegisterPage() {
             { required: true, message: 'Password is required.' },
             { min: 6, message: 'Use at least 6 characters.' },
           ]}
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: 26 }}
         >
           <Input.Password
+            prefix={<LockOutlined style={{ color: 'var(--text-muted)', marginRight: 2 }} />}
             placeholder="At least 6 characters"
             size="large"
             autoComplete="new-password"
-            styles={{ suffix: { borderInlineStart: 'none', boxShadow: 'none' } }}
           />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>
-          <Button
+          <SubmitBtn
             htmlType="submit"
             type="primary"
             block
-            size="large"
             loading={submitting}
             disabled={!isSupabaseConfigured}
-            style={{ fontWeight: 600, height: 46 }}
           >
             Create Account
-          </Button>
+          </SubmitBtn>
         </Form.Item>
       </Form>
 
       <FormFooter>
-        Already have an account? <Link to="/login">Sign in</Link>
+        Already have an account?{' '}
+        <Link to="/login">Sign in</Link>
       </FormFooter>
     </AuthShell>
   )

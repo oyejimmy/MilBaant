@@ -1,8 +1,47 @@
 import { useState } from 'react'
 import { Alert, App, Button, Form, Input } from 'antd'
+import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { Link, useNavigate } from 'react-router-dom'
+import styled from 'styled-components'
 import { AuthShell, FormFooter } from '@/components/AuthShell'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+
+/* Skeuomorphic primary button */
+const SubmitBtn = styled(Button)`
+  && {
+    height: 50px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    letter-spacing: 0.2px;
+
+    background: linear-gradient(160deg, #2d7aff 0%, #1260e8 50%, #0a4fd4 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 -1px 0 rgba(0,0,0,0.2) inset,
+      0 4px 12px rgba(18,96,232,0.4),
+      0 1px 3px rgba(0,0,0,0.15);
+    transition: box-shadow 0.18s ease, transform 0.12s ease;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(160deg, #3d87ff 0%, #1a6ef5 50%, #1260e8 100%) !important;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.3) inset,
+        0 -1px 0 rgba(0,0,0,0.2) inset,
+        0 6px 18px rgba(18,96,232,0.5),
+        0 2px 6px rgba(0,0,0,0.15) !important;
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.15) inset,
+        0 2px 6px rgba(18,96,232,0.3) !important;
+    }
+  }
+`
 
 interface LoginValues {
   email: string
@@ -41,9 +80,9 @@ export function LoginPage() {
         <Alert
           type="warning"
           showIcon
-          title="Supabase not configured"
+          message="Supabase not configured"
           description="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file."
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 22 }}
         />
       )}
 
@@ -61,7 +100,8 @@ export function LoginPage() {
           ]}
         >
           <Input
-            placeholder="Enter your email"
+            prefix={<MailOutlined style={{ color: 'var(--text-muted)', marginRight: 2 }} />}
+            placeholder="you@example.com"
             size="large"
             autoComplete="email"
           />
@@ -71,40 +111,39 @@ export function LoginPage() {
           label={
             <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
               Password
-              <Link to="/forgot-password" style={{ fontSize: 13, fontWeight: 500 }}>
+              <Link to="/forgot-password" style={{ fontSize: 12.5, fontWeight: 600 }}>
                 Forgot password?
               </Link>
             </span>
           }
           name="password"
           rules={[{ required: true, message: 'Password is required.' }]}
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: 26 }}
         >
           <Input.Password
+            prefix={<LockOutlined style={{ color: 'var(--text-muted)', marginRight: 2 }} />}
             placeholder="Enter your password"
             size="large"
             autoComplete="current-password"
-            styles={{ suffix: { borderInlineStart: 'none', boxShadow: 'none' } }}
           />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>
-          <Button
+          <SubmitBtn
             htmlType="submit"
             type="primary"
             block
-            size="large"
             loading={submitting}
             disabled={!isSupabaseConfigured}
-            style={{ fontWeight: 600, height: 46 }}
           >
             Sign In
-          </Button>
+          </SubmitBtn>
         </Form.Item>
       </Form>
 
       <FormFooter>
-        Don't have an account? <Link to="/register">Create one</Link>
+        Don't have an account?{' '}
+        <Link to="/register">Create one</Link>
       </FormFooter>
     </AuthShell>
   )

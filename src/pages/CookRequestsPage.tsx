@@ -311,7 +311,7 @@ export function CookRequestsPage() {
         <PageHeader
           title="Cook Requests"
           subtitle={pageSubtitle}
-          breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Management' }, { title: 'Cook Requests' }]}
+          breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Cook Requests' }]}
           actions={
             <Space wrap>
               <Select

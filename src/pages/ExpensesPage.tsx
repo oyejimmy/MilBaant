@@ -542,7 +542,7 @@ export function ExpensesPage() {
       <PageHeader
         title="Expenses"
         subtitle="Track monthly expenses, record weekend meal splits, and calculate what each flatmate owes."
-        breadcrumbs={[{ title: 'Home', path: '/', icon: undefined }, { title: 'Management' }, { title: 'Expenses' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Expenses' }]}
         actions={
           <Space wrap>
             <DatePicker

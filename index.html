@@ -31,6 +31,23 @@
     <meta name="keywords" content="flatmate, expense tracker, shared expenses, roommate, flat management" />
 
     <title>MilBaant - Flatmate Expense Manager</title>
+
+    <!--
+      Blocking theme-init script — runs synchronously before first paint.
+      Reads the stored theme from localStorage and immediately applies
+      data-theme + background-color to <html> so the loader overlay
+      matches the app background with zero flash.
+    -->
+    <script>
+      (function () {
+        var stored = localStorage.getItem('milbaant-theme-mode')
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        var isDark = stored === 'dark' || (!stored && prefersDark)
+        document.documentElement.dataset.theme = isDark ? 'dark' : 'light'
+        document.documentElement.style.background = isDark ? '#121212' : '#f8fafc'
+        document.body && (document.body.style.background = isDark ? '#121212' : '#f8fafc')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -187,7 +187,7 @@ export function LogsPage() {
       <PageHeader
         title="Activity Logs"
         subtitle="A read-only audit trail of all actions performed in the app. Logs cannot be edited or deleted."
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Community' }, { title: 'Activity Logs' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Activity Logs' }]}
       />
 
       <QueryState isLoading={logsQuery.isLoading} error={logsQuery.error as Error | null}>

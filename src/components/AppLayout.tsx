@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import dayjs from 'dayjs'
 import {
   App,
   Avatar,
@@ -276,6 +277,8 @@ const TopHeader = styled(Header)<{ $scrolled: boolean }>`
   justify-content: space-between;
   border-bottom: 1px solid ${({ $scrolled }) => ($scrolled ? 'var(--sidebar-border)' : 'transparent')};
   transition: background 0.2s ease, border-color 0.2s ease, backdrop-filter 0.2s ease;
+  /* needed so NavCenter absolute positioning is relative to the header */
+  position: sticky;
 
   background: ${({ $scrolled }) =>
     $scrolled ? 'rgba(var(--navbar-bg-rgb), 0.8)' : 'var(--navbar-bg)'};
@@ -295,6 +298,22 @@ const NavLeft = styled.div`
   gap: 8px;
   min-width: 0;
   flex: 1;
+`
+
+const NavCenter = styled.div`
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  white-space: nowrap;
+
+  @media (max-width: 767px) {
+    display: none;
+  }
 `
 
 const NavRight = styled.div`
@@ -563,7 +582,7 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen]   = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [resetPwOpen, setResetPwOpen] = useState(false)
-  const { isAdmin, profile, signOut } = useAuth()
+  const { isAdmin, isCook, profile, signOut } = useAuth()
   const { mode, toggleMode } = useThemeMode()
   const { message } = App.useApp()
 
@@ -774,6 +793,39 @@ export function AppLayout() {
               </Typography.Text>
             </BreadcrumbWrap>
           </NavLeft>
+
+          {/* ── Centered welcome text (desktop only) ── */}
+          <NavCenter>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.7px',
+              lineHeight: 1,
+              background: isCook
+                ? 'linear-gradient(90deg, #f97316, #fb923c)'
+                : isAdmin
+                  ? 'linear-gradient(90deg, #7c3aed, #a855f7)'
+                  : 'linear-gradient(90deg, #1677ff, #06b6d4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              {isCook ? 'Cook Portal' : isAdmin ? 'Admin' : 'Resident'}
+            </span>
+            <span style={{
+              fontSize: 13,
+              fontWeight: 600,
+              lineHeight: 1.3,
+              marginTop: 2,
+              background: 'linear-gradient(90deg, #1677ff 0%, #7c3aed 50%, #06b6d4 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              Welcome, {profile?.full_name?.split(' ')[0] ?? 'Flatmate'} · {dayjs().format('dddd, DD MMMM YYYY')}
+            </span>
+          </NavCenter>
 
           <NavRight>
             <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>

@@ -11,7 +11,7 @@ export function FlatViewPage() {
       <PageHeader
         title="3D Flat View"
         subtitle="Interactive 3D apartment — click any bed to assign a flatmate (admin only). Orbit, zoom, and pan to explore."
-        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'System' }, { title: 'Flat View' }]}
+        breadcrumbs={[{ title: 'Home', path: '/' }, { title: 'Flat View' }]}
       />
       <Suspense
         fallback={

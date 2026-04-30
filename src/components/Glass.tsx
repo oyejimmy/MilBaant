@@ -89,7 +89,7 @@ export const ActionsRow = styled.div`
 
     .ant-space { width: 100%; }
     .ant-space-item { width: 100%; }
-    .ant-btn, .ant-picker { width: 100% !important; }
+    .ant-btn, .ant-picker { width: 100%  ; }
   }
 `
 

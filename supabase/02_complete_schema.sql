@@ -318,11 +318,12 @@ CREATE POLICY "profiles_admin_update" ON public.profiles
   USING (public.is_admin())
   WITH CHECK (public.is_admin());
 
--- Any user can update their own profile (name, phone, bio, avatar_url).
+-- Any user (including admins) can update their own profile (name, phone, bio, avatar_url).
+-- Note: NOT is_admin() was removed — admins updating their own row must also match this policy.
 DROP POLICY IF EXISTS "profiles_self_update" ON public.profiles;
 CREATE POLICY "profiles_self_update" ON public.profiles
   FOR UPDATE TO authenticated
-  USING (auth.uid() = id AND NOT public.is_admin())
+  USING     (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
 
 -- rooms
@@ -474,9 +475,39 @@ DROP POLICY IF EXISTS "daily_menu_insert_authenticated" ON public.daily_menu;
 CREATE POLICY "daily_menu_insert_authenticated" ON public.daily_menu
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
 
-DROP POLICY IF EXISTS "daily_menu_update_authenticated" ON public.daily_menu;
-CREATE POLICY "daily_menu_update_authenticated" ON public.daily_menu
-  FOR UPDATE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
+-- Drop all update policy variants (old name + migration names) before recreating
+DROP POLICY IF EXISTS "daily_menu_update_authenticated"    ON public.daily_menu;
+DROP POLICY IF EXISTS "daily_menu_update_creator_or_admin" ON public.daily_menu;
+DROP POLICY IF EXISTS "daily_menu_update_cook"             ON public.daily_menu;
+DROP POLICY IF EXISTS "daily_menu_update_notes_any_user"   ON public.daily_menu;
+
+-- Policy 1: creator or admin can update any column
+CREATE POLICY "daily_menu_update_creator_or_admin" ON public.daily_menu
+  FOR UPDATE TO authenticated
+  USING     (auth.uid() = created_by OR public.is_admin())
+  WITH CHECK (auth.uid() = created_by OR public.is_admin());
+
+-- Policy 2: cook role can update any column
+CREATE POLICY "daily_menu_update_cook" ON public.daily_menu
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'cook'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'cook'
+    )
+  );
+
+-- Policy 3: any authenticated user can update (notes / breakfast preferences)
+CREATE POLICY "daily_menu_update_notes_any_user" ON public.daily_menu
+  FOR UPDATE TO authenticated
+  USING     (true)
+  WITH CHECK (true);
 
 DROP POLICY IF EXISTS "daily_menu_delete_authenticated" ON public.daily_menu;
 CREATE POLICY "daily_menu_delete_authenticated" ON public.daily_menu
@@ -494,41 +525,41 @@ CREATE POLICY "activity_logs_insert" ON public.activity_logs
 -- flat_fund_allocations
 DROP POLICY IF EXISTS "flat_fund_alloc_select" ON public.flat_fund_allocations;
 CREATE POLICY "flat_fund_alloc_select" ON public.flat_fund_allocations
-  FOR SELECT USING (true);
+  FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "flat_fund_alloc_insert" ON public.flat_fund_allocations;
 CREATE POLICY "flat_fund_alloc_insert" ON public.flat_fund_allocations
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "flat_fund_alloc_delete" ON public.flat_fund_allocations;
 CREATE POLICY "flat_fund_alloc_delete" ON public.flat_fund_allocations
-  FOR DELETE USING (auth.uid() = allocated_by);
+  FOR DELETE TO authenticated USING (auth.uid() = allocated_by OR public.is_admin());
 
 -- flat_fund_expenses
 DROP POLICY IF EXISTS "flat_fund_exp_select" ON public.flat_fund_expenses;
 CREATE POLICY "flat_fund_exp_select" ON public.flat_fund_expenses
-  FOR SELECT USING (true);
+  FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "flat_fund_exp_insert" ON public.flat_fund_expenses;
 CREATE POLICY "flat_fund_exp_insert" ON public.flat_fund_expenses
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "flat_fund_exp_delete" ON public.flat_fund_expenses;
 CREATE POLICY "flat_fund_exp_delete" ON public.flat_fund_expenses
-  FOR DELETE USING (auth.uid() = created_by);
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 -- contribution_payments
 DROP POLICY IF EXISTS "contrib_payments_select" ON public.contribution_payments;
 CREATE POLICY "contrib_payments_select" ON public.contribution_payments
-  FOR SELECT USING (true);
+  FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "contrib_payments_insert" ON public.contribution_payments;
 CREATE POLICY "contrib_payments_insert" ON public.contribution_payments
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "contrib_payments_delete" ON public.contribution_payments;
 CREATE POLICY "contrib_payments_delete" ON public.contribution_payments
-  FOR DELETE USING (auth.uid() = created_by);
+  FOR DELETE TO authenticated USING (auth.uid() = created_by OR public.is_admin());
 
 -- ── Cook Requests ────────────────────────────────────────────────────────────
 
