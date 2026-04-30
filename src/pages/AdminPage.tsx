@@ -156,13 +156,13 @@ const SkeletonRow = styled.div`
 const DangerBtn = styled(Button)`
   border-color: transparent  ; background: transparent  ;
   color: var(--error)  ; box-shadow: none  ;
-  &:hover { background: #fff1f0  ; border-color: #ffa39e  ; color: var(--error)  ; }
+  &:hover { background: var(--error-light)  ; border-color: var(--error)  ; color: var(--error)  ; }
 `
 
 const RestoreBtn = styled(Button)`
   border-color: transparent  ; background: transparent  ;
-  color: #389e0d  ; box-shadow: none  ;
-  &:hover { background: #f6ffed  ; border-color: #b7eb8f  ; }
+  color: var(--success)  ; box-shadow: none  ;
+  &:hover { background: var(--success-light)  ; border-color: var(--success)  ; }
 `
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */

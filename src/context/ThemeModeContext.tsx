@@ -41,7 +41,16 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, mode)
+
+    // Set data-theme on <html> — this switches all CSS variables
     document.documentElement.dataset.theme = mode
+
+    // Remove any inline background styles set by the blocking init script
+    // so CSS variables (var(--app-bg)) take over cleanly
+    document.documentElement.style.removeProperty('background')
+    document.documentElement.style.removeProperty('background-color')
+    document.body.style.removeProperty('background')
+    document.body.style.removeProperty('background-color')
   }, [mode])
 
   const value = useMemo<ThemeModeContextValue>(

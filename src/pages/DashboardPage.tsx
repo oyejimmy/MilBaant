@@ -467,7 +467,7 @@ export function DashboardPage() {
 
           {/* Remainder stat card */}
           <div style={{
-            background: 'var(--surface)',
+            background: 'var(--card-bg)',
             border: `1.5px solid ${prevRemainder > 0 ? 'rgba(217,119,6,0.25)' : 'var(--card-border)'}`,
             borderRadius: 14,
             padding: '12px 14px',
@@ -475,6 +475,7 @@ export function DashboardPage() {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 8,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 2 }}>Prev. Remainder</div>
@@ -496,7 +497,7 @@ export function DashboardPage() {
                   </Flex>
                 </div>
               ) : (
-                <div style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: 700, color: prevRemainder > 0 ? '#d97706' : '#9ca3af', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+                <div style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: 700, color: prevRemainder > 0 ? '#d97706' : 'var(--text-disabled)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
                   {formatCurrency(prevRemainder)}
                 </div>
               )}
@@ -516,9 +517,9 @@ export function DashboardPage() {
               )}
               <div style={{
                 width: 28, height: 28, borderRadius: 8,
-                background: prevRemainder > 0 ? 'rgba(217,119,6,0.1)' : '#f3f4f618',
+                background: prevRemainder > 0 ? 'rgba(217,119,6,0.1)' : 'var(--bg-elevated)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, color: prevRemainder > 0 ? '#d97706' : '#9ca3af',
+                fontSize: 14, color: prevRemainder > 0 ? '#d97706' : 'var(--text-disabled)',
               }}>
                 <HistoryOutlined />
               </div>

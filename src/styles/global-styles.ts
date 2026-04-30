@@ -26,6 +26,11 @@ export const GlobalStyles = createGlobalStyle<GlobalStylesProps>`
     min-height: 100%;
   }
 
+  html {
+    background: var(--app-bg);
+    transition: background 0.2s ease;
+  }
+
   body {
     margin: 0;
     overflow-x: hidden;
@@ -35,6 +40,11 @@ export const GlobalStyles = createGlobalStyle<GlobalStylesProps>`
     background: var(--app-bg);
     color: var(--text-primary);
     transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  #root {
+    background: var(--app-bg);
+    transition: background 0.2s ease;
   }
 
   a {

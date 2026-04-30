@@ -7,8 +7,13 @@ body,
   min-height: 100%;
 }
 
+html {
+  background: var(--app-bg);
+}
+
 body {
   margin: 0;
+  background: var(--app-bg);
   /* Prevent horizontal scroll on mobile */
   overflow-x: hidden;
 }
