@@ -836,6 +836,109 @@ export function ExpensesPage() {
             )}
           </div>
         </SectionBlock>
+
+        {/* ── Bill Distribution ── */}
+        {isAdmin && (
+          <SectionBlock>
+            <Flex align="center" gap={8} style={{ marginBottom: 16 }}>
+              <TeamOutlined style={{ color: 'var(--primary)', fontSize: 15 }} />
+              <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
+                Bill Distribution
+              </Typography.Title>
+            </Flex>
+
+            {/* Active members preview */}
+            <div style={{
+              background: 'var(--content-bg)',
+              border: '1px solid var(--card-border)',
+              borderRadius: 10,
+              padding: '12px 14px',
+              marginBottom: 16,
+            }}>
+              <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: 10 }}>
+                Active Flatmates ({profiles.filter(p => p.is_active !== false).length})
+              </Typography.Text>
+              <Flex wrap gap={6}>
+                {profiles
+                  .filter(p => p.is_active !== false)
+                  .map(p => (
+                    <Flex key={p.id} align="center" gap={5} style={{
+                      padding: '4px 10px 4px 4px',
+                      borderRadius: 20,
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--card-border)',
+                    }}>
+                      <Avatar size={20} style={{ background: '#909ffa', color: '#fff', fontSize: 9, fontWeight: 700, flexShrink: 0 }} icon={<UserOutlined />} />
+                      <Typography.Text style={{ fontSize: 12, color: 'var(--text-strong)', fontWeight: 500 }}>
+                        {p.full_name.split(' ')[0]}
+                      </Typography.Text>
+                    </Flex>
+                  ))
+                }
+              </Flex>
+            </div>
+
+            {/* Member count editor */}
+            <Flex align="flex-start" gap={12} wrap>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <Typography.Text style={{ fontSize: 13, color: 'var(--text-strong)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                  Members sharing the bill
+                </Typography.Text>
+                <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 10 }}>
+                  Fixed monthly expenses are split equally among this many flatmates.
+                </Typography.Text>
+                <Flex align="center" gap={8} wrap>
+                  <InputNumber
+                    min={1}
+                    max={50}
+                    value={draftMemberCount ?? memberCount}
+                    onChange={(v) => setDraftMemberCount(v)}
+                    style={{ width: 100 }}
+                    size="large"
+                  />
+                  <Button
+                    type="primary"
+                    icon={<SaveOutlined />}
+                    loading={saveMemberCount.isPending}
+                    onClick={() => void handleSaveMemberCount()}
+                    size="large"
+                  >
+                    Save
+                  </Button>
+                  {profiles.filter(p => p.is_active !== false).length !== memberCount && (
+                    <Button
+                      size="large"
+                      onClick={() => setDraftMemberCount(profiles.filter(p => p.is_active !== false).length)}
+                    >
+                      Use active count ({profiles.filter(p => p.is_active !== false).length})
+                    </Button>
+                  )}
+                </Flex>
+              </div>
+
+              {/* Live preview */}
+              <div style={{
+                background: 'var(--primary-soft)',
+                border: '1px solid var(--primary)',
+                borderRadius: 10,
+                padding: '12px 16px',
+                minWidth: 160,
+                flexShrink: 0,
+              }}>
+                <Typography.Text style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: 4 }}>
+                  Current setting
+                </Typography.Text>
+                <Typography.Text style={{ fontSize: 28, fontWeight: 800, color: 'var(--primary)', display: 'block', lineHeight: 1.1 }}>
+                  {draftMemberCount ?? memberCount}
+                </Typography.Text>
+                <Typography.Text style={{ fontSize: 12, color: 'var(--primary)', opacity: 0.8 }}>
+                  flatmates splitting bills
+                </Typography.Text>
+              </div>
+            </Flex>
+          </SectionBlock>
+        )}
+
       </QueryState>
 
       <ExpenseFormModal
