@@ -110,6 +110,11 @@ const ResetPasswordPage = lazy(() =>
     default: module.ResetPasswordPage,
   })),
 )
+const PendingApprovalPage = lazy(() =>
+  import('@/pages/PendingApprovalPage').then((module) => ({
+    default: module.PendingApprovalPage,
+  })),
+)
 function App() {
   return (
     <Suspense fallback={<FadingLoader />}>
@@ -142,6 +147,7 @@ function App() {
         {/* /reset-password must NOT be PublicOnlyRoute — the user arrives here
             with a temporary recovery session, so they'd be redirected away */}
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/pending" element={<PendingApprovalPage />} />
 
         {/* ── Main app (admin / user roles) ── */}
         <Route

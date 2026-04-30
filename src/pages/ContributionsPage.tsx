@@ -43,9 +43,14 @@ const StatsStrip = styled.div`
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 
-  @media (max-width: 480px) {
+  @media (max-width: 400px) {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+
+    /* Make the third tile span full width on very small screens */
+    > *:nth-child(3) {
+      grid-column: 1 / -1;
+    }
   }
 `
 
@@ -134,6 +139,11 @@ const Toolbar = styled.div`
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 20px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `
 
 const FilterChips = styled.div`

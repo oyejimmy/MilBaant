@@ -115,6 +115,7 @@ export function ForgotPasswordPage() {
   if (sent) {
     return (
       <AuthShell
+        variant="forgot"
         title="Check your inbox"
         subtitle="A password reset link has been sent to your email."
       >
@@ -142,6 +143,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell
+      variant="forgot"
       title="Forgot password?"
       subtitle="Enter your email and we'll send you a link to reset your password."
     >

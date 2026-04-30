@@ -225,14 +225,14 @@ export function LogsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             allowClear
-            style={{ flex: 1, minWidth: 180, maxWidth: 340 }}
+            style={{ flex: '1 1 180px', minWidth: 160, maxWidth: 340 }}
           />
           <Select
             placeholder="Action"
             allowClear
             value={actionFilter}
             onChange={(v) => setActionFilter(v ?? null)}
-            style={{ width: 120, height: 32 }}
+            style={{ flex: '1 1 110px', minWidth: 110, height: 32 }}
             options={[
               { label: 'Created', value: 'create' },
               { label: 'Updated', value: 'update' },
@@ -244,7 +244,7 @@ export function LogsPage() {
             allowClear
             value={entityFilter}
             onChange={(v) => setEntityFilter(v ?? null)}
-            style={{ width: 150, height: 32 }}
+            style={{ flex: '1 1 130px', minWidth: 130, height: 32 }}
             options={Object.entries(ENTITY_LABELS).map(([v, l]) => ({ label: l, value: v }))}
           />
           <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>

@@ -119,19 +119,17 @@ export const GlobalStyles = createGlobalStyle<GlobalStylesProps>`
   }
 
   /* ── Mobile touch targets ─────────────────────────────────────────────── */
+  /* Only apply min-height to non-small, non-icon buttons to avoid breaking table actions */
 
   @media (max-width: 767px) {
-    button,
-    a,
-    [role="button"],
-    .ant-btn {
-      min-height: 44px;
+    .ant-btn:not(.ant-btn-sm):not(.ant-btn-icon-only) {
+      min-height: 40px;
     }
   }
 
   @media (min-width: 768px) {
     .ant-btn {
-      min-height: 32px;
+      min-height: unset;
     }
   }
 `

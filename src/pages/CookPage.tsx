@@ -423,7 +423,7 @@ export function CookPage() {
             </Typography.Text>
           </div>
 
-          <div style={{ minWidth: 160 }}>
+          <div style={{ minWidth: 140, flex: '1 1 140px', maxWidth: 220 }}>
             <Flex justify="space-between" style={{ marginBottom: 6 }}>
               <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                 Used {usedPercent.toFixed(0)}%

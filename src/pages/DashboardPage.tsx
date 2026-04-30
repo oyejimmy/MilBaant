@@ -151,14 +151,12 @@ const CardPoly = styled.div<{
 const BalanceRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 7px;
+  padding: 12px 14px;
+  border-radius: 10px;
   border: 1px solid var(--card-border);
-  background: var(--content-bg);
+  background: var(--card-bg);
   gap: 8px;
-  max-width: 400px;
-  margin: 0 auto;
+  width: 100%;
 `
 
 const SectionTitle = styled.div`

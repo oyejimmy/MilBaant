@@ -83,13 +83,7 @@ export const ActionsRow = styled.div`
 
   @media (max-width: 767px) {
     flex-direction: column;
-    gap: 12px;
-
-    > * { width: 100%; }
-
-    .ant-space { width: 100%; }
-    .ant-space-item { width: 100%; }
-    .ant-btn, .ant-picker { width: 100%  ; }
+    gap: 10px;
   }
 `
 
@@ -98,6 +92,7 @@ export const MobileCard = styled.div`
   border-radius: 10px;
   padding: 12px 14px;
   background: var(--card-bg);
+  border: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
   gap: 8px;

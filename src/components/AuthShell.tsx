@@ -5,138 +5,203 @@ import styled, { keyframes, css } from 'styled-components'
 import { APP_NAME } from '@/lib/constants'
 import { useThemeMode } from '@/context/ThemeModeContext'
 
-/* ── Keyframes ───────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   VARIANTS — each auth screen gets its own accent + quote
+═══════════════════════════════════════════════════════════════════════════ */
+
+export type AuthVariant = 'login' | 'register' | 'forgot' | 'reset' | 'pending'
+
+interface VariantConfig {
+  accent: string          // orb + badge glow color
+  badgeGradient: string   // left-panel icon badge gradient
+  quote: string           // funny one-liner
+  quoteAuthor: string     // attribution
+  tagline: string         // card logo tagline
+}
+
+const VARIANTS: Record<AuthVariant, VariantConfig> = {
+  login: {
+    accent: '#1c8ee5',
+    badgeGradient: 'linear-gradient(145deg, #1465a3 0%, #1c8ee5 55%, #2fa8f5 100%)',
+    quote: '"Splitting bills fairly since forever.\nStill cheaper than living alone."',
+    quoteAuthor: '— your wallet, finally breathing 💸',
+    tagline: 'Flat management',
+  },
+  register: {
+    accent: '#22c55e',
+    badgeGradient: 'linear-gradient(145deg, #15803d 0%, #22c55e 55%, #4ade80 100%)',
+    quote: '"Join the chaos.\nAt least it\'s organized chaos."',
+    quoteAuthor: '— New flatmate, day one',
+    tagline: 'Welcome aboard',
+  },
+  forgot: {
+    accent: '#f59e0b',
+    badgeGradient: 'linear-gradient(145deg, #b45309 0%, #f59e0b 55%, #fcd34d 100%)',
+    quote: '"Forgot your password?\nAt least you didn\'t forget to pay rent."',
+    quoteAuthor: '— The admin, judging silently',
+    tagline: 'Account recovery',
+  },
+  reset: {
+    accent: '#8b5cf6',
+    badgeGradient: 'linear-gradient(145deg, #6d28d9 0%, #8b5cf6 55%, #c4b5fd 100%)',
+    quote: '"New password.\nSame broke flatmates.\nFresh start though."',
+    quoteAuthor: '— Optimism, loading…',
+    tagline: 'Security update',
+  },
+  pending: {
+    accent: '#f97316',
+    badgeGradient: 'linear-gradient(145deg, #c2410c 0%, #f97316 55%, #fdba74 100%)',
+    quote: '"Good things come to those who wait.\nBills, unfortunately, do not."',
+    quoteAuthor: '— The flat fund, impatiently',
+    tagline: 'Pending access',
+  },
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════════════════════════════════════ */
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+`
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to   { opacity: 1; }
+`
 
 const slideInLeft = keyframes`
   from { opacity: 0; transform: translateX(-40px); }
   to   { opacity: 1; transform: translateX(0); }
 `
 
-const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(22px); }
-  to   { opacity: 1; transform: translateY(0); }
+const slideInRight = keyframes`
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
 `
 
 const floatBadge = keyframes`
   0%, 100% { transform: translateY(0px) rotate(-1deg); }
-  50%       { transform: translateY(-9px) rotate(1deg); }
+  50%       { transform: translateY(-8px) rotate(1deg); }
 `
 
-const shimmerText = keyframes`
+const driftA = keyframes`
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(18px, -14px) scale(1.06); }
+  66%       { transform: translate(-10px, 10px) scale(0.96); }
+`
+
+const driftB = keyframes`
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%       { transform: translate(-16px, 12px) scale(1.04); }
+  70%       { transform: translate(12px, -8px) scale(0.97); }
+`
+
+const driftC = keyframes`
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(10px, 14px); }
+`
+
+const shimmer = keyframes`
   0%   { background-position: -200% center; }
   100% { background-position:  200% center; }
 `
 
-const blobPulse = keyframes`
-  0%, 100% { transform: scale(1);    opacity: 0.7; }
-  50%       { transform: scale(1.12); opacity: 1; }
+const quoteSlide = keyframes`
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 `
 
-/* ── Stagger helper ─────────────────────────────────────────────────────── */
+const heartbeat = keyframes`
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.35); }
+`
+
 const stagger = (delay: number) => css`
   opacity: 0;
   animation: ${fadeUp} 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms forwards;
 `
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    PAGE SHELL
-══════════════════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════════════════════ */
 
 const Page = styled.main`
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   background: var(--app-bg);
+  animation: ${fadeIn} 0.3s ease forwards;
 
-  @media (max-width: 767px) {
-    flex-direction: column;
-  }
+  @media (max-width: 767px) { flex-direction: column; }
 `
 
-/* ══════════════════════════════════════════════════════════════════════════
-   LEFT BRAND PANEL  — skeuomorphic deep-blue card
-══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEFT BRAND PANEL
+═══════════════════════════════════════════════════════════════════════════ */
 
 const BrandPanel = styled.div`
-  width: 420px;
+  width: 400px;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 52px 48px;
+  padding: 48px 44px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-light);
+  animation: ${slideInLeft} 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 
-  /* Skeuomorphic layered background */
-  background:
-    linear-gradient(160deg, #1e4fd8 0%, #1260e8 30%, #0a4fd4 60%, #0840b8 100%);
-
-  /* Subtle inner bevel — top-left light, bottom-right shadow */
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.18),
-    inset 0 -1px 0 rgba(0,0,0,0.25),
-    inset 1px 0 0 rgba(255,255,255,0.10),
-    inset -1px 0 0 rgba(0,0,0,0.15);
-
-  animation: ${slideInLeft} 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-
-  /* Dot-grid texture */
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(rgba(255,255,255,0.11) 1px, transparent 1px);
+    background-image: radial-gradient(var(--border-light) 1.2px, transparent 1.2px);
     background-size: 24px 24px;
     pointer-events: none;
+    z-index: 0;
   }
 
-  /* Diagonal gloss streak */
-  &::after {
-    content: '';
-    position: absolute;
-    top: -60px;
-    left: -80px;
-    width: 340px;
-    height: 340px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, transparent 60%);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
-  @media (max-width: 1023px) {
-    width: 340px;
-    padding: 44px 36px;
-  }
-
+  @media (max-width: 1023px) { width: 340px; padding: 40px 32px; }
   @media (max-width: 767px) {
     width: 100%;
-    padding: 28px 20px 22px;
-    min-height: auto;
+    padding: 24px 20px 20px;
     animation: none;
     opacity: 1;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
   }
 `
 
-/* Blurred blobs */
-const Blob = styled.div<{
+const Orb = styled.div<{
   $size: number
   $top?: string; $bottom?: string
   $left?: string; $right?: string
   $opacity: number
-  $delay?: number
+  $color: string
+  $drift: 'a' | 'b' | 'c'
+  $duration: number
 }>`
   position: absolute;
   width: ${p => p.$size}px;
   height: ${p => p.$size}px;
   border-radius: 50%;
-  background: rgba(255,255,255,${p => p.$opacity});
-  filter: blur(${p => Math.round(p.$size * 0.4)}px);
+  background: ${p => p.$color};
+  opacity: ${p => p.$opacity};
+  filter: blur(${p => Math.round(p.$size * 0.48)}px);
   top:    ${p => p.$top    ?? 'auto'};
   bottom: ${p => p.$bottom ?? 'auto'};
   left:   ${p => p.$left   ?? 'auto'};
   right:  ${p => p.$right  ?? 'auto'};
   pointer-events: none;
-  animation: ${blobPulse} ${p => 4 + (p.$delay ?? 0) * 0.6}s ease-in-out ${p => (p.$delay ?? 0) * 0.4}s infinite;
+  z-index: 0;
+  animation: ${p =>
+    p.$drift === 'a' ? css`${driftA} ${p.$duration}s ease-in-out infinite` :
+    p.$drift === 'b' ? css`${driftB} ${p.$duration}s ease-in-out infinite` :
+                       css`${driftC} ${p.$duration}s ease-in-out infinite`
+  };
 `
 
 const BrandTop = styled.div`
@@ -144,301 +209,252 @@ const BrandTop = styled.div`
   z-index: 1;
 `
 
-/* Skeuomorphic logo badge — raised button feel */
-const LogoBadge = styled.div`
-  width: 62px;
-  height: 62px;
-  border-radius: 18px;
-  margin-bottom: 26px;
+const IconBadge = styled.div<{ $gradient: string }>`
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  margin-bottom: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
-  font-weight: 800;
-  color: #fff;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -1px;
+  background: ${p => p.$gradient};
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.38);
   animation: ${floatBadge} 5s ease-in-out infinite;
 
-  /* Skeuomorphic raised look */
-  background: linear-gradient(145deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.08) 100%);
-  border: 1.5px solid rgba(255,255,255,0.35);
-  box-shadow:
-    0 8px 24px rgba(0,0,0,0.25),
-    0 2px 4px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.4),
-    inset 0 -1px 0 rgba(0,0,0,0.2);
-  backdrop-filter: blur(8px);
-
   @media (max-width: 767px) {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
-    border-radius: 14px;
-    margin-bottom: 14px;
+    width: 48px; height: 48px; border-radius: 14px; margin-bottom: 12px; animation: none;
   }
+`
+
+const BrandName = styled.div`
+  font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 10px;
+  opacity: 0; animation: ${fadeUp} 0.5s ease 200ms forwards;
 `
 
 const BrandTitle = styled.h1`
-  margin: 0 0 8px;
-  font-size: clamp(26px, 3.2vw, 34px);
-  font-weight: 800;
-  color: #fff;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  line-height: 1.12;
-  letter-spacing: -0.6px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  margin: 0 0 10px;
+  font-size: clamp(24px, 3vw, 32px); font-weight: 800;
+  color: var(--text-strong); font-family: 'Plus Jakarta Sans', sans-serif;
+  line-height: 1.12; letter-spacing: -0.5px;
+  opacity: 0; animation: ${fadeUp} 0.5s ease 300ms forwards;
 
-  @media (max-width: 767px) {
-    font-size: 20px;
-    margin-bottom: 4px;
-  }
+  @media (max-width: 767px) { font-size: 20px; margin-bottom: 4px; }
 `
 
 const BrandSub = styled.p`
-  margin: 0;
-  font-size: 14px;
-  color: rgba(255,255,255,0.72);
-  line-height: 1.65;
-  max-width: 280px;
+  margin: 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.7; max-width: 270px;
+  opacity: 0; animation: ${fadeUp} 0.5s ease 380ms forwards;
 
-  @media (max-width: 767px) {
-    font-size: 12.5px;
-    max-width: 100%;
-  }
+  @media (max-width: 767px) { font-size: 12px; max-width: 100%; }
 `
 
-const AccentLine = styled.div`
-  width: 36px;
-  height: 3px;
-  border-radius: 2px;
-  margin: 22px 0;
-  background: rgba(255,255,255,0.35);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+const Divider = styled.div`
+  width: 32px; height: 2px; border-radius: 2px;
+  background: var(--border-default); margin: 24px 0;
+  opacity: 0; animation: ${fadeIn} 0.4s ease 440ms forwards;
 
   @media (max-width: 767px) { display: none; }
 `
 
-/* Desktop feature list */
+/* Funny quote block */
+const QuoteBlock = styled.div`
+  margin-top: 4px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  opacity: 0;
+  animation: ${quoteSlide} 0.55s cubic-bezier(0.22, 1, 0.36, 1) 520ms forwards;
+
+  @media (max-width: 767px) { display: none; }
+`
+
+const QuoteText = styled.p`
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-strong);
+  line-height: 1.6;
+  white-space: pre-line;
+  font-style: italic;
+`
+
+const QuoteAuthor = styled.span`
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+`
+
+/* Feature list */
 const FeatureList = styled.ul`
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  position: relative;
-  z-index: 1;
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; z-index: 1;
 
   @media (max-width: 767px) { display: none; }
 `
 
 const FeatureItem = styled.li<{ $delay: number }>`
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  color: rgba(255,255,255,0.85);
-  font-size: 13.5px;
-  font-weight: 500;
-  line-height: 1.4;
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-secondary); font-size: 13px; font-weight: 500;
   opacity: 0;
-  animation: ${fadeUp} 0.45s cubic-bezier(0.22, 1, 0.36, 1) ${p => p.$delay}ms forwards;
+  animation: ${fadeUp} 0.4s cubic-bezier(0.22, 1, 0.36, 1) ${p => p.$delay}ms forwards;
+  transition: color 0.2s;
+  &:hover { color: var(--text-strong); }
 `
 
-/* Skeuomorphic icon tile */
 const FeatureIcon = styled.span`
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-  background: linear-gradient(145deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 100%);
-  border: 1px solid rgba(255,255,255,0.22);
-  box-shadow:
-    0 2px 6px rgba(0,0,0,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.3);
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+  background: var(--bg-elevated); border: 1px solid var(--border-light);
+  transition: transform 0.2s ease;
+  ${FeatureItem}:hover & { transform: scale(1.12); }
 `
 
-/* Mobile: horizontal chip row */
+/* Mobile chips */
 const MobileChips = styled.div`
   display: none;
-
   @media (max-width: 767px) {
-    display: flex;
-    gap: 7px;
-    margin-top: 12px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
+    display: flex; gap: 6px; margin-top: 10px;
+    overflow-x: auto; padding-bottom: 2px;
+    scrollbar-width: none; &::-webkit-scrollbar { display: none; }
   }
 `
 
 const MobileChip = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.13);
-  border: 1px solid rgba(255,255,255,0.2);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(0,0,0,0.15);
-  color: rgba(255,255,255,0.9);
-  font-size: 11.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border-radius: 20px;
+  background: var(--bg-elevated); border: 1px solid var(--border-light);
+  color: var(--text-secondary); font-size: 11px; font-weight: 500;
+  white-space: nowrap; flex-shrink: 0;
 `
 
 const BrandFooter = styled.div`
-  position: relative;
-  z-index: 1;
-  color: rgba(255,255,255,0.32);
-  font-size: 11.5px;
-  margin-top: 40px;
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: 3px;
+  opacity: 0; animation: ${fadeIn} 0.5s ease 900ms forwards;
 
   @media (max-width: 767px) { display: none; }
 `
 
-/* ══════════════════════════════════════════════════════════════════════════
-   RIGHT FORM PANEL  — skeuomorphic paper card
-══════════════════════════════════════════════════════════════════════════ */
+const FooterCopy = styled.span`font-size: 11px; color: var(--text-muted);`
+
+const FooterLove = styled.span`
+  font-size: 11px; color: var(--text-muted);
+  .heart { color: #e53935; display: inline-block; animation: ${heartbeat} 1.4s ease-in-out infinite; }
+`
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RIGHT FORM PANEL
+═══════════════════════════════════════════════════════════════════════════ */
 
 const FormPanel = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 48px;
-  position: relative;
-  overflow-y: auto;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 52px 48px; position: relative; overflow-y: auto;
   background: var(--app-bg);
+  animation: ${slideInRight} 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 
-  @media (max-width: 1023px) { padding: 48px 32px; }
-  @media (max-width: 767px)  { padding: 28px 18px 52px; justify-content: flex-start; }
+  @media (max-width: 1023px) { padding: 44px 28px; }
+  @media (max-width: 767px) { padding: 24px 16px 48px; justify-content: flex-start; animation: none; }
 `
 
 const ThemeBtn = styled.div`
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  z-index: 10;
+  position: absolute; top: 16px; right: 16px; z-index: 10;
+  opacity: 0; animation: ${fadeIn} 0.4s ease 500ms forwards;
 `
 
-/* Skeuomorphic form card — raised paper look */
 const FormCard = styled.div`
-  width: 100%;
-  max-width: 400px;
-  background: var(--card-bg);
-  border-radius: 20px;
-  padding: 36px 32px 32px;
-
-  /* Skeuomorphic raised card */
+  width: 100%; max-width: 420px;
+  background: var(--card-bg); border-radius: 20px;
+  padding: 36px 32px 30px; border: 1px solid var(--border-light);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 -1px 0 rgba(0,0,0,0.06) inset,
-    0 4px 6px rgba(0,0,0,0.04),
-    0 10px 20px rgba(0,0,0,0.07),
-    0 20px 40px rgba(0,0,0,0.05);
-  border: 1px solid var(--border-light);
+    0 1px 0 rgba(255,255,255,0.85) inset,
+    0 -1px 0 rgba(0,0,0,0.05) inset,
+    0 4px 8px rgba(0,0,0,0.04),
+    0 12px 24px rgba(0,0,0,0.07),
+    0 24px 48px rgba(0,0,0,0.04);
+  ${stagger(80)}
 
-  ${stagger(60)}
-
-  @media (max-width: 767px) {
-    padding: 28px 20px 24px;
-    border-radius: 16px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,0.9) inset,
-      0 4px 12px rgba(0,0,0,0.08);
-  }
+  @media (max-width: 767px) { padding: 24px 18px 22px; border-radius: 16px; }
 `
 
-const FormHeading = styled.div`
-  margin-bottom: 28px;
+const CardLogo = styled.div`
+  display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px;
 `
 
-/* Shimmer eyebrow label */
-const FormEyebrow = styled.span`
-  display: inline-block;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #1260e8, #4096ff, #69b1ff, #1260e8);
+const CardLogoBadge = styled.div<{ $gradient: string; $glow: string }>`
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: ${p => p.$gradient};
+  box-shadow: 0 4px 18px ${p => p.$glow};
+  transition: box-shadow 0.3s ease;
+`
+
+const CardLogoText = styled.div`
+  display: flex; flex-direction: column; align-items: center; line-height: 1.25;
+`
+
+const CardLogoName = styled.span`
+  font-size: 15px; font-weight: 800; color: var(--text-strong);
+  font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.2px;
+`
+
+const CardLogoTagline = styled.span`font-size: 11px; color: var(--text-muted); font-weight: 500;`
+
+const FormHeading = styled.div`margin-bottom: 26px; text-align: center;`
+
+const FormEyebrow = styled.span<{ $colors: string }>`
+  display: inline-block; font-size: 10px; font-weight: 700;
+  letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 8px;
+  background: ${p => p.$colors};
   background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: ${shimmerText} 3.5s linear infinite;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: ${shimmer} 4s linear infinite;
 `
 
 const FormTitle = styled.h2`
-  margin: 0 0 7px;
-  font-size: clamp(21px, 2.8vw, 27px);
-  font-weight: 800;
-  color: var(--text-strong);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.5px;
-  line-height: 1.18;
+  margin: 0 0 6px;
+  font-size: clamp(20px, 2.6vw, 26px); font-weight: 800;
+  color: var(--text-strong); font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.4px; line-height: 1.2;
 `
 
-const FormSubtitle = styled.p`
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--text-muted);
-  line-height: 1.65;
-`
+const FormSubtitle = styled.p`margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.65;`
 
-const FormBody = styled.div`
-  ${stagger(180)}
-
-  /* Skeuomorphic input overrides — inset well */
-  .ant-input,
-  .ant-input-affix-wrapper,
-  .ant-input-password {
-    background: var(--bg-elevated) !important;
-    box-shadow:
-      inset 0 2px 4px rgba(0,0,0,0.07),
-      inset 0 1px 2px rgba(0,0,0,0.05) !important;
-    border-color: var(--border-default) !important;
-    border-radius: 10px !important;
-    transition: box-shadow 0.2s, border-color 0.2s;
-
-    &:focus, &:focus-within {
-      border-color: var(--primary) !important;
-      box-shadow:
-        inset 0 2px 4px rgba(0,0,0,0.05),
-        0 0 0 3px rgba(64,150,255,0.15) !important;
-    }
-  }
-`
-
-/* ── Exported helpers ────────────────────────────────────────────────────── */
+const FormBody = styled.div`${stagger(200)}`
 
 export const FormFooter = styled.div`
-  margin-top: 20px;
-  text-align: center;
-  font-size: 13.5px;
-  color: var(--text-muted);
-  ${stagger(280)}
-
-  a {
-    color: var(--primary);
-    font-weight: 600;
-    text-decoration: none;
-    &:hover { text-decoration: underline; }
-  }
+  margin-top: 18px; text-align: center; font-size: 13px; color: var(--text-muted);
+  ${stagger(320)}
+  a { color: #1c8ee5; font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
 `
+
+/* ── House SVG ───────────────────────────────────────────────────────────── */
+
+function HouseIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} aria-hidden="true">
+      <polygon points="256,100 390,230 122,230" fill="rgba(255,255,255,0.95)" />
+      <polygon points="256,100 390,230 370,230 256,128 142,230 122,230" fill="rgba(255,255,255,0.15)" />
+      <rect x="152" y="228" width="208" height="168" rx="10" fill="rgba(255,255,255,0.92)" />
+      <rect x="220" y="310" width="72" height="86" rx="36" fill="rgba(20,101,163,0.55)" />
+      <circle cx="284" cy="356" r="6" fill="rgba(255,255,255,0.75)" />
+      <rect x="168" y="258" width="52" height="44" rx="8" fill="rgba(20,101,163,0.38)" />
+      <line x1="194" y1="258" x2="194" y2="302" stroke="rgba(255,255,255,0.5)" strokeWidth="3" />
+      <line x1="168" y1="280" x2="220" y2="280" stroke="rgba(255,255,255,0.5)" strokeWidth="3" />
+      <rect x="292" y="258" width="52" height="44" rx="8" fill="rgba(20,101,163,0.38)" />
+      <line x1="318" y1="258" x2="318" y2="302" stroke="rgba(255,255,255,0.5)" strokeWidth="3" />
+      <line x1="292" y1="280" x2="344" y2="280" stroke="rgba(255,255,255,0.5)" strokeWidth="3" />
+    </svg>
+  )
+}
 
 /* ── Feature data ────────────────────────────────────────────────────────── */
 
-const FEATURES_FULL = [
+const FEATURES = [
   { icon: '💸', label: 'Monthly shared bill splitting' },
   { icon: '🍽️', label: 'Weekend meal expense tracking' },
   { icon: '👨‍🍳', label: 'Cook ledger & advance management' },
@@ -446,7 +462,7 @@ const FEATURES_FULL = [
   { icon: '🛏️', label: 'Bed assignments & announcements' },
 ]
 
-const FEATURES_SHORT = [
+const CHIPS = [
   { icon: '💸', label: 'Bills' },
   { icon: '🍽️', label: 'Meals' },
   { icon: '👨‍🍳', label: 'Cook' },
@@ -454,59 +470,88 @@ const FEATURES_SHORT = [
   { icon: '🛏️', label: 'Beds' },
 ]
 
-/* ── Component ───────────────────────────────────────────────────────────── */
+/* Eyebrow shimmer gradients per variant */
+const EYEBROW_GRADIENTS: Record<AuthVariant, string> = {
+  login:    'linear-gradient(90deg, #0f3fa6, #1c8ee5, #49a5ea, #1260e8)',
+  register: 'linear-gradient(90deg, #15803d, #22c55e, #4ade80, #16a34a)',
+  forgot:   'linear-gradient(90deg, #b45309, #f59e0b, #fcd34d, #d97706)',
+  reset:    'linear-gradient(90deg, #6d28d9, #8b5cf6, #c4b5fd, #7c3aed)',
+  pending:  'linear-gradient(90deg, #c2410c, #f97316, #fdba74, #ea580c)',
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT
+═══════════════════════════════════════════════════════════════════════════ */
 
 export function AuthShell({
   title,
   subtitle,
+  eyebrow,
+  variant = 'login',
   children,
 }: {
   title: string
   subtitle: string
+  eyebrow?: string
+  variant?: AuthVariant
   children: ReactNode
 }) {
   const { mode, toggleMode } = useThemeMode()
+  const v = VARIANTS[variant]
 
   return (
     <Page>
-      {/* ── Left: Brand ── */}
+      {/* ── Left brand panel ── */}
       <BrandPanel>
-        <Blob $size={340} $top="-120px" $right="-100px" $opacity={0.07} $delay={0} />
-        <Blob $size={220} $bottom="40px" $left="-90px"  $opacity={0.06} $delay={1} />
-        <Blob $size={110} $top="46%"    $right="20px"   $opacity={0.05} $delay={2} />
+        <Orb $size={300} $top="-80px"  $right="-60px"  $opacity={0.07} $color={v.accent} $drift="a" $duration={12} />
+        <Orb $size={180} $bottom="60px" $left="-70px"  $opacity={0.05} $color={v.accent} $drift="b" $duration={15} />
+        <Orb $size={90}  $top="42%"    $right="10px"   $opacity={0.04} $color={v.accent} $drift="c" $duration={10} />
 
         <BrandTop>
-          <LogoBadge>M</LogoBadge>
-          <BrandTitle>{APP_NAME}</BrandTitle>
-          <BrandSub>All-in-one flat management — expenses, meals, cook ledger, and more.</BrandSub>
+          <IconBadge $gradient={v.badgeGradient}>
+            <HouseIcon size={36} />
+          </IconBadge>
 
-          {/* Mobile chips */}
+          <BrandName>{APP_NAME}</BrandName>
+          <BrandTitle>Your flat,<br />managed together.</BrandTitle>
+          <BrandSub>Expenses, meals, cook ledger, contributions — all in one place.</BrandSub>
+
           <MobileChips>
-            {FEATURES_SHORT.map(f => (
-              <MobileChip key={f.label}>
-                <span style={{ fontSize: 14 }}>{f.icon}</span>
-                {f.label}
+            {CHIPS.map(c => (
+              <MobileChip key={c.label}>
+                <span style={{ fontSize: 13 }}>{c.icon}</span>
+                {c.label}
               </MobileChip>
             ))}
           </MobileChips>
 
-          <AccentLine />
+          <Divider />
 
-          {/* Desktop list */}
-          <FeatureList>
-            {FEATURES_FULL.map((f, i) => (
-              <FeatureItem key={f.label} $delay={320 + i * 65}>
-                <FeatureIcon>{f.icon}</FeatureIcon>
-                {f.label}
-              </FeatureItem>
-            ))}
-          </FeatureList>
+          {/* Funny quote — unique per screen */}
+          <QuoteBlock>
+            <QuoteText>{v.quote}</QuoteText>
+            <QuoteAuthor>{v.quoteAuthor}</QuoteAuthor>
+          </QuoteBlock>
+
+          <div style={{ marginTop: 20 }}>
+            <FeatureList>
+              {FEATURES.map((f, i) => (
+                <FeatureItem key={f.label} $delay={600 + i * 65}>
+                  <FeatureIcon>{f.icon}</FeatureIcon>
+                  {f.label}
+                </FeatureItem>
+              ))}
+            </FeatureList>
+          </div>
         </BrandTop>
 
-        <BrandFooter>© {new Date().getFullYear()} {APP_NAME} · All rights reserved</BrandFooter>
+        <BrandFooter>
+          <FooterCopy>© {new Date().getFullYear()} {APP_NAME}</FooterCopy>
+          <FooterLove>Made with <span className="heart">❤️</span> by Jimmy</FooterLove>
+        </BrandFooter>
       </BrandPanel>
 
-      {/* ── Right: Form ── */}
+      {/* ── Right form panel ── */}
       <FormPanel>
         <ThemeBtn>
           <Button
@@ -519,8 +564,20 @@ export function AuthShell({
         </ThemeBtn>
 
         <FormCard>
+          <CardLogo>
+            <CardLogoBadge $gradient={v.badgeGradient} $glow={`${v.accent}55`}>
+              <HouseIcon size={30} />
+            </CardLogoBadge>
+            <CardLogoText>
+              <CardLogoName>{APP_NAME}</CardLogoName>
+              <CardLogoTagline>{v.tagline}</CardLogoTagline>
+            </CardLogoText>
+          </CardLogo>
+
           <FormHeading>
-            <FormEyebrow>{APP_NAME}</FormEyebrow>
+            <FormEyebrow $colors={EYEBROW_GRADIENTS[variant]}>
+              {eyebrow ?? APP_NAME}
+            </FormEyebrow>
             <FormTitle>{title}</FormTitle>
             <FormSubtitle>{subtitle}</FormSubtitle>
           </FormHeading>

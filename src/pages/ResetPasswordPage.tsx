@@ -139,7 +139,7 @@ export function ResetPasswordPage() {
   /* ── Verifying ── */
   if (pageState === 'verifying') {
     return (
-      <AuthShell title="Verifying link…" subtitle="Please wait while we verify your reset link.">
+      <AuthShell variant="reset" title="Verifying link…" subtitle="Please wait while we verify your reset link.">
         <StatusCard>
           <StatusIconWrap $variant="loading">
             <Spin size="large" />
@@ -154,7 +154,7 @@ export function ResetPasswordPage() {
   /* ── Invalid ── */
   if (pageState === 'invalid') {
     return (
-      <AuthShell title="Link expired" subtitle="This password reset link is no longer valid.">
+      <AuthShell variant="reset" title="Link expired" subtitle="This password reset link is no longer valid.">
         <StatusCard>
           <StatusIconWrap $variant="error">
             <CloseCircleOutlined />
@@ -178,7 +178,7 @@ export function ResetPasswordPage() {
   /* ── Done ── */
   if (pageState === 'done') {
     return (
-      <AuthShell title="Password updated" subtitle="Your password has been changed successfully.">
+      <AuthShell variant="reset" title="Password updated" subtitle="Your password has been changed successfully.">
         <StatusCard>
           <StatusIconWrap $variant="success">
             <CheckCircleOutlined />
@@ -202,6 +202,7 @@ export function ResetPasswordPage() {
   /* ── Ready — form ── */
   return (
     <AuthShell
+      variant="reset"
       title="Set new password"
       subtitle="Choose a strong password for your account."
     >

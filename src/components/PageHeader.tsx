@@ -21,14 +21,6 @@ const ActionsBlock = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-
-  @media (max-width: 767px) {
-    width: 100%;
-
-    .ant-space { width: 100%; flex-wrap: wrap; }
-    .ant-space-item { flex: 1; min-width: 120px; }
-    .ant-btn, .ant-picker { width: 100%  ; }
-  }
 `
 
 const BreadcrumbWrap = styled.div`

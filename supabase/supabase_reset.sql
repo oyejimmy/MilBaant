@@ -46,9 +46,8 @@ DROP POLICY IF EXISTS "avatars_owner_update"  ON storage.objects;
 DROP POLICY IF EXISTS "avatars_owner_delete"  ON storage.objects;
 
 -- ── Drop Storage Objects and Buckets ─────────────────────────────────────────
-
-DELETE FROM storage.objects
-WHERE bucket_id IN ('bill-images', 'payment-screenshots', 'avatars');
+-- NOTE: Storage files must be cleared via Supabase Dashboard → Storage
+-- before running this script. Direct SQL deletion is blocked by Supabase.
 
 DELETE FROM storage.buckets
 WHERE id IN ('bill-images', 'payment-screenshots', 'avatars');
