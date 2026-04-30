@@ -133,8 +133,6 @@ const Page = styled.main`
   display: flex;
   background: var(--app-bg);
   animation: ${fadeIn} 0.3s ease forwards;
-
-  @media (max-width: 767px) { flex-direction: column; }
 `
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -166,12 +164,7 @@ const BrandPanel = styled.div`
 
   @media (max-width: 1023px) { width: 340px; padding: 40px 32px; }
   @media (max-width: 767px) {
-    width: 100%;
-    padding: 24px 20px 20px;
-    animation: none;
-    opacity: 1;
-    border-right: none;
-    border-bottom: 1px solid var(--border-light);
+    display: none;
   }
 `
 
@@ -358,7 +351,7 @@ const FormPanel = styled.div`
   animation: ${slideInRight} 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 
   @media (max-width: 1023px) { padding: 44px 28px; }
-  @media (max-width: 767px) { padding: 24px 16px 48px; justify-content: flex-start; animation: none; }
+  @media (max-width: 767px) { padding: 24px 16px 40px; justify-content: center; animation: none; }
 `
 
 const ThemeBtn = styled.div`
