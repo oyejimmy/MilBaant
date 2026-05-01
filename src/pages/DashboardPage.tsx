@@ -227,7 +227,7 @@ export function DashboardPage() {
   const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses)
   const fixedTotal = calculateFixedTotal(fixedExpenses)
   const weekendTotal = calculateFixedTotal(weekendExpenses)
-  const totalRecorded = fixedTotal + weekendTotal
+  const totalRecorded = fixedTotal + prevRemainder
   const perMemberShare = calculatePerMemberShare(fixedTotal, memberCountQuery.data)
   const monthlySummary = buildMonthlyUserSummary(profiles, perMemberShare, weekendExpenses)
     .sort((l, r) => r.totalOwed - l.totalOwed)
@@ -439,14 +439,16 @@ export function DashboardPage() {
           <SummaryStat
             title="Total Recorded"
             value={formatCurrency(totalRecorded)}
-            subtitle="All expenses this month."
+            subtitle={prevRemainder > 0
+              ? `${formatCurrency(fixedTotal)} shared + ${formatCurrency(prevRemainder)} remainder`
+              : `All shared expenses this month.`}
             icon={<WalletOutlined />}
             color="var(--primary)"
           />
           <SummaryStat
             title="Shared Total"
             value={formatCurrency(fixedTotal)}
-            subtitle="Split equally among members."
+            subtitle={`${dayjs().format('MMMM YYYY')} · Split equally among members.`}
             icon={<CalendarOutlined />}
             color="#7c3aed"
           />
