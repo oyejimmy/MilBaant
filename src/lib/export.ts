@@ -1,7 +1,7 @@
-import { CATEGORY_LABELS } from '@/lib/constants'
+import { CATEGORY_LABELS, FLAT_FUND_CATEGORY_LABELS } from '@/lib/constants'
 import { calculateWeekendExpenseShare } from '@/lib/expense-helpers'
 import { formatDate } from '@/lib/formatters'
-import type { Expense, Profile } from '@/lib/types'
+import type { Expense, FlatFundAllocation, FlatFundExpense, Profile } from '@/lib/types'
 
 async function loadWorkbookTools() {
   const { utils, writeFileXLSX } = await import('xlsx')
@@ -49,4 +49,36 @@ export async function exportUsersToExcel(profiles: Profile[]) {
   const worksheet = utils.json_to_sheet(rows)
   utils.book_append_sheet(workbook, worksheet, 'Users')
   writeFileXLSX(workbook, 'flat-users.xlsx')
+}
+
+/* ─── Flat Fund exports ───────────────────────────────────────────────────── */
+
+export async function exportFlatExpensesToExcel(
+  expenses: FlatFundExpense[],
+  allocations: FlatFundAllocation[],
+) {
+  const { utils, writeFileXLSX } = await loadWorkbookTools()
+
+  const expenseRows = expenses.map((e, i) => ({
+    'S.N': i + 1,
+    Date: formatDate(e.date),
+    Member: e.member?.full_name ?? '—',
+    Description: e.description ?? '',
+    Category: FLAT_FUND_CATEGORY_LABELS[e.category] ?? e.category,
+    'Amount (PKR)': e.amount,
+  }))
+
+  const allocationRows = allocations.map((a, i) => ({
+    'S.N': i + 1,
+    Date: formatDate(a.date),
+    Member: a.member?.full_name ?? '—',
+    'Allocated By': a.allocator?.full_name ?? '—',
+    'Amount (PKR)': a.amount,
+    Note: a.note ?? '',
+  }))
+
+  const workbook = utils.book_new()
+  utils.book_append_sheet(workbook, utils.json_to_sheet(expenseRows), 'Flat Expenses')
+  utils.book_append_sheet(workbook, utils.json_to_sheet(allocationRows), 'Fund Allocations')
+  writeFileXLSX(workbook, `flat-fund-${new Date().toISOString().slice(0, 10)}.xlsx`)
 }

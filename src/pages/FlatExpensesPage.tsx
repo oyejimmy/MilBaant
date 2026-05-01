@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
+import html2canvas from 'html2canvas'
 import {
   Alert,
   Avatar,
@@ -26,7 +27,9 @@ import type { ColumnsType } from 'antd/es/table'
 import {
   DeleteOutlined,
   DollarCircleOutlined,
+  FileExcelOutlined,
   MinusCircleOutlined,
+  PictureOutlined,
   PlusCircleOutlined,
   UserOutlined,
   WalletOutlined,
@@ -53,6 +56,7 @@ import {
   FLAT_FUND_CATEGORY_LABELS,
   FLAT_FUND_CATEGORY_OPTIONS,
 } from '@/lib/constants'
+import { exportFlatExpensesToExcel } from '@/lib/export'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import type {
   CreateFlatFundAllocationInput,
@@ -174,6 +178,8 @@ function buildMemberSummaries(
 export function FlatExpensesPage() {
   const [allocateOpen, setAllocateOpen] = useState(false)
   const [expenseOpen, setExpenseOpen] = useState(false)
+  const [capturing, setCapturing] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
 
   const { userId, isAdmin } = useAuth()
   const screens = useBreakpoint()
@@ -240,9 +246,40 @@ export function FlatExpensesPage() {
     }
   }
 
+  async function handleDownloadXlsx() {
+    try {
+      await exportFlatExpensesToExcel(expenses, allocations)
+      message.success('Excel file downloaded.')
+    } catch {
+      message.error('Failed to export Excel.')
+    }
+  }
+
+  async function handleDownloadImage() {
+    if (!printRef.current) return
+    setCapturing(true)
+    try {
+      const canvas = await html2canvas(printRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      })
+      const link = document.createElement('a')
+      link.href = canvas.toDataURL('image/png')
+      link.download = `flat-expenses-${dayjs().format('YYYY-MM-DD')}.png`
+      link.click()
+      message.success('Image downloaded.')
+    } catch {
+      message.error('Failed to capture image.')
+    } finally {
+      setCapturing(false)
+    }
+  }
+
   /* ── Table columns ── */
 
   const allocationColumns: ColumnsType<FlatFundAllocation> = [
+    { title: 'S.N', key: 'sn', width: 52, render: (_: unknown, __: FlatFundAllocation, index: number) => <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>{index + 1}</Typography.Text> },
     { title: 'Date', dataIndex: 'date', key: 'date', width: 110, render: (v: string) => formatDate(v), sorter: (a, b) => a.date.localeCompare(b.date) },
     { title: 'Member', key: 'member', render: (_: unknown, r: FlatFundAllocation) => <Tag color="blue">{r.member?.full_name ?? '—'}</Tag> },
     { title: 'Amount', dataIndex: 'amount', key: 'amount', render: (v: number) => <Typography.Text strong style={{ color: '#52c41a' }}>+{formatCurrency(v)}</Typography.Text>, sorter: (a, b) => a.amount - b.amount },
@@ -262,6 +299,7 @@ export function FlatExpensesPage() {
   ]
 
   const expenseColumns: ColumnsType<FlatFundExpense> = [
+    { title: 'S.N', key: 'sn', width: 52, render: (_: unknown, __: FlatFundExpense, index: number) => <Typography.Text style={{ color: 'var(--text-muted)', fontSize: 12 }}>{index + 1}</Typography.Text> },
     { title: 'Date', dataIndex: 'date', key: 'date', width: 110, render: (v: string) => formatDate(v), sorter: (a, b) => a.date.localeCompare(b.date) },
     { title: 'Member', key: 'member', render: (_: unknown, r: FlatFundExpense) => <Tag color="blue">{r.member?.full_name ?? '—'}</Tag> },
     { title: 'Description', dataIndex: 'description', key: 'description', ellipsis: true },
@@ -372,12 +410,34 @@ export function FlatExpensesPage() {
           )}
         </SectionBlock>
 
+        {/* Expenses log + Allocations — wrapped for image export */}
+        <div ref={printRef} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
         {/* Expenses log */}
         <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 10px', color: 'var(--text-strong)' }}>
-            <MinusCircleOutlined style={{ marginRight: 8, color: '#ff4d4f' }} />
-            Flat Expenses Log
-          </Typography.Title>
+          <Flex align="center" justify="space-between" wrap gap={8} style={{ marginBottom: 10 }}>
+            <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>
+              <MinusCircleOutlined style={{ marginRight: 8, color: '#ff4d4f' }} />
+              Flat Expenses Log
+            </Typography.Title>
+            <Space size={6}>
+              <Button
+                size="small"
+                icon={<PictureOutlined />}
+                loading={capturing}
+                onClick={() => void handleDownloadImage()}
+              >
+                Save as Image
+              </Button>
+              <Button
+                size="small"
+                icon={<FileExcelOutlined />}
+                onClick={() => void handleDownloadXlsx()}
+              >
+                Excel
+              </Button>
+            </Space>
+          </Flex>
           {isMobile ? (
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
               {expenses.length === 0 && <Typography.Text type="secondary">No expenses logged yet.</Typography.Text>}
@@ -411,7 +471,7 @@ export function FlatExpensesPage() {
               size="small"
               columns={expenseColumns}
               dataSource={expenses}
-              pagination={{ pageSize: 15, hideOnSinglePage: true, size: 'small' }}
+              pagination={{ pageSize: 15, hideOnSinglePage: true, size: 'small', showTotal: (total, range) => `${range[0]}–${range[1]} of ${total} expenses` }}
               scroll={{ x: 550 }}
               locale={{ emptyText: 'No expenses logged yet.' }}
             />
@@ -454,12 +514,14 @@ export function FlatExpensesPage() {
               size="small"
               columns={allocationColumns}
               dataSource={allocations}
-              pagination={{ pageSize: 15, hideOnSinglePage: true, size: 'small' }}
+              pagination={{ pageSize: 15, hideOnSinglePage: true, size: 'small', showTotal: (total, range) => `${range[0]}–${range[1]} of ${total} allocations` }}
               scroll={{ x: 500 }}
               locale={{ emptyText: 'No allocations recorded yet.' }}
             />
           )}
         </SectionBlock>
+
+        </div>{/* end printRef */}
       </QueryState>
 
       {/* Modals */}
