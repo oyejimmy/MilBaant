@@ -158,8 +158,8 @@ export function RidesPage() {
   const createRide = useCreateRide()
   const deleteRide = useDeleteRide()
 
-  const profiles = profilesQuery.data ?? []
-  const rides = ridesQuery.data ?? []
+  const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data])
+  const rides = useMemo(() => ridesQuery.data ?? [], [ridesQuery.data])
 
   const totalSpend = rides.reduce((s, r) => s + r.amount, 0)
   const totalRides = rides.length

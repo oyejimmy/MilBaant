@@ -193,9 +193,9 @@ export function FlatExpensesPage() {
   const deleteAllocation = useDeleteFlatFundAllocation()
   const deleteExpense = useDeleteFlatFundExpense()
 
-  const profiles = profilesQuery.data ?? []
-  const allocations = allocationsQuery.data ?? []
-  const expenses = expensesQuery.data ?? []
+  const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data])
+  const allocations = useMemo(() => allocationsQuery.data ?? [], [allocationsQuery.data])
+  const expenses = useMemo(() => expensesQuery.data ?? [], [expensesQuery.data])
 
   const summaries = useMemo(
     () => buildMemberSummaries(allocations, expenses, profiles),

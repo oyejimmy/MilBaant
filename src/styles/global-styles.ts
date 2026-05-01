@@ -18,7 +18,6 @@ interface GlobalStylesProps {
  *  3. Auth shell scoped rules
  *  4. Mobile touch targets
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const GlobalStyles = createGlobalStyle<GlobalStylesProps>`
   /* ── Base layout ──────────────────────────────────────────────────────── */
 

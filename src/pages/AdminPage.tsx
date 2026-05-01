@@ -207,10 +207,10 @@ export function AdminPage() {
   const assignmentsQuery   = useBedAssignments()
   const assignBed          = useAssignBed()
 
-  const allProfiles = profilesQuery.data ?? []
-  const rooms       = roomsQuery.data ?? []
-  const beds        = bedsQuery.data ?? []
-  const assignments = assignmentsQuery.data ?? []
+  const allProfiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data])
+  const rooms       = useMemo(() => roomsQuery.data ?? [], [roomsQuery.data])
+  const beds        = useMemo(() => bedsQuery.data ?? [], [bedsQuery.data])
+  const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data])
   const memberCount = memberCountQuery.data ?? 6
 
   const filtered = useMemo(() => {

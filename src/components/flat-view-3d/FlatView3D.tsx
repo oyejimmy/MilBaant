@@ -203,9 +203,9 @@ export default function FlatView3D() {
   const [selectedBed, setSelectedBed] = useState<BedConfig | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  const profiles = profilesQuery.data ?? []
-  const beds = bedsQuery.data ?? []
-  const assignments = assignmentsQuery.data ?? []
+  const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data])
+  const beds = useMemo(() => bedsQuery.data ?? [], [bedsQuery.data])
+  const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data])
 
   // Build bedKey → DB bed id map by matching label + room name
   // BED_CONFIGS keys: r1a/r1b → Room 1 Bed A/B, r2a/r2b → Room 2, r3a/r3b → Room 3
