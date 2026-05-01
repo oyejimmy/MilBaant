@@ -231,7 +231,7 @@ export function WeekendExpensesPage() {
       key: 'del',
       width: 44,
       render: (_: unknown, r: DebtSettlement) =>
-        !!userId ? (
+        userId ? (
           <Popconfirm title="Remove?" onConfirm={() => void handleDeleteSettlement(r.id)}>
             <Button size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>

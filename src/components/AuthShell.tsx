@@ -4,6 +4,7 @@ import { MoonOutlined, SunOutlined } from '@ant-design/icons'
 import styled, { keyframes, css } from 'styled-components'
 import { APP_NAME } from '@/lib/constants'
 import { useThemeMode } from '@/context/ThemeModeContext'
+import { shimmer, stagger, fadeUp } from './AuthShared'
 
 /* ═══════════════════════════════════════════════════════════════════════════
    VARIANTS — each auth screen gets its own accent + quote
@@ -61,11 +62,6 @@ const VARIANTS: Record<AuthVariant, VariantConfig> = {
    KEYFRAMES
 ═══════════════════════════════════════════════════════════════════════════ */
 
-const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-`
-
 const fadeIn = keyframes`
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -103,10 +99,7 @@ const driftC = keyframes`
   50%       { transform: translate(10px, 14px); }
 `
 
-const shimmer = keyframes`
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-`
+
 
 const quoteSlide = keyframes`
   from { opacity: 0; transform: translateY(12px); }
@@ -118,10 +111,7 @@ const heartbeat = keyframes`
   50%       { transform: scale(1.35); }
 `
 
-const stagger = (delay: number) => css`
-  opacity: 0;
-  animation: ${fadeUp} 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms forwards;
-`
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PAGE SHELL
@@ -418,12 +408,6 @@ const FormTitle = styled.h2`
 const FormSubtitle = styled.p`margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.65;`
 
 const FormBody = styled.div`${stagger(200)}`
-
-export const FormFooter = styled.div`
-  margin-top: 18px; text-align: center; font-size: 13px; color: var(--text-muted);
-  ${stagger(320)}
-  a { color: #1c8ee5; font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
-`
 
 /* ── House SVG ───────────────────────────────────────────────────────────── */
 

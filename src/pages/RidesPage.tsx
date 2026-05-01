@@ -540,7 +540,7 @@ export function RidesPage() {
         <RideDetailModal
           ride={viewRide}
           onClose={() => setViewRide(null)}
-          onDelete={!!userId ? handleDelete : undefined}
+          onDelete={userId ? handleDelete : undefined}
           deleting={deleteRide.isPending}
         />
       )}

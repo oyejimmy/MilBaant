@@ -197,8 +197,8 @@ const StyledMenu = styled(Menu)`
   }
 
   .ant-menu-item-selected {
-    background: ${({ theme: _t }) => 'var(--soft-accent)'}  ;
-    color: var(--primary)  ;
+    background: var(--soft-accent);
+    color: var(--primary);
     font-weight: 600  ;
     .anticon { color: var(--primary)  ; }
   }

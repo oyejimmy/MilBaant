@@ -187,12 +187,3 @@ export function ExpenseCard({
     </CardContainer>
   )
 }
-
-/**
- * ExpenseCardList - Container for multiple ExpenseCards
- */
-export const ExpenseCardList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`

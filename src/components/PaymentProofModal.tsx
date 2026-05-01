@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { App, Button, DatePicker, Flex, Image, InputNumber, Modal, Space, Typography, Upload } from 'antd'
 import { CheckCircleOutlined, InboxOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd'
@@ -36,7 +36,14 @@ export function PaymentProofModal({
   const [previewImage, setPreviewImage] = useState<string>('')
   const [previewOpen, setPreviewOpen] = useState(false)
 
-  const handleUpload = async () => {
+  const handleClose = useCallback(() => {
+    setAmount(amountOwed)
+    setPaidDate(dayjs())
+    setFileList([])
+    onClose()
+  }, [amountOwed, onClose])
+
+  const handleUpload = useCallback(async () => {
     if (!currentUserId) {
       message.error('You must be logged in')
       return
@@ -93,14 +100,7 @@ export function PaymentProofModal({
     } finally {
       setUploading(false)
     }
-  }
-
-  const handleClose = () => {
-    setAmount(amountOwed)
-    setPaidDate(dayjs())
-    setFileList([])
-    onClose()
-  }
+  }, [currentUserId, amount, fileList, userId, month, paidDate, createPayment, message, handleClose])
 
   const handlePreview = async (file: UploadFile) => {
     if (!file.url && !file.preview) {

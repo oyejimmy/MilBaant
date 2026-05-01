@@ -203,7 +203,9 @@ export default function FlatViewKonva() {
 
   useEffect(() => {
     const fit = Math.min(stageW / CONTENT_W, stageH / CONTENT_H, 1)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setScale(Math.max(0.45, fit))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStagePos({ x: 0, y: 0 })
   }, [stageW, stageH])
 

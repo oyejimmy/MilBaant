@@ -12,7 +12,7 @@
  *   │   Kitchen    │  │     │                    Z3 (bot)
  *   └──────────────┘
  */
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox, Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -669,10 +669,10 @@ function Rug({ position, size, color }: { position: [number,number,number]; size
 
 function DustMotes() {
   const ref = useRef<THREE.Points>(null)
-  const positionsRef = useRef<Float32Array | null>(null)
   const speedsRef = useRef<Float32Array | null>(null)
 
-  const positions = useMemo(() => {
+  // Initialize particles in an effect to avoid Math.random during render
+  useEffect(() => {
     const n = 60
     const pos = new Float32Array(n * 3)
     const spd = new Float32Array(n)
@@ -682,25 +682,26 @@ function DustMotes() {
       pos[i * 3 + 2] = (Math.random() - 0.5) * 20
       spd[i] = 0.002 + Math.random() * 0.004
     }
-    positionsRef.current = pos
     speedsRef.current = spd
-    return pos
+    if (ref.current) {
+      ref.current.geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    }
   }, [])
 
   useFrame((_, dt) => {
     if (!ref.current || !speedsRef.current) return
     const a = ref.current.geometry.attributes.position as THREE.BufferAttribute
+    if (!a) return
     const spd = speedsRef.current
     for (let i = 0; i < 60; i++) {
       a.array[i * 3 + 1] = ((a.array[i * 3 + 1] as number) + spd[i] * dt * 60) % 3.0
     }
     a.needsUpdate = true
   })
+
   return (
     <points ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
+      <bufferGeometry />
       <pointsMaterial size={0.02} color="#fffde7" transparent opacity={0.42} sizeAttenuation />
     </points>
   )

@@ -3,7 +3,8 @@ import { Alert, App, Button, Form, Input } from 'antd'
 import { UserOutlined, MailOutlined, LockOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import styled, { keyframes } from 'styled-components'
-import { AuthShell, FormFooter } from '@/components/AuthShell'
+import { AuthShell } from '@/components/AuthShell'
+import { FormFooter } from '@/components/AuthShared'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 /* ── Submit button ───────────────────────────────────────────────────────── */

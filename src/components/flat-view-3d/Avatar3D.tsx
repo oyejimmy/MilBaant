@@ -9,7 +9,7 @@
  * The avatar floats slightly above the floor when dragged (y = 0.6)
  * and snaps back to bed height when released.
  */
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -35,7 +35,11 @@ export function Avatar3D({
 }: Avatar3DProps) {
   const groupRef  = useRef<THREE.Group>(null)
   const ringRef   = useRef<THREE.Mesh>(null)
-  const bobRef    = useRef(Math.random() * Math.PI * 2)
+  const bobRef    = useRef(0)
+
+  useEffect(() => {
+    bobRef.current = Math.random() * Math.PI * 2
+  }, [])
 
   const [hovered,  setHovered]  = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -44,6 +48,9 @@ export function Avatar3D({
   const posRef = useRef(new THREE.Vector3(...bedPosition).setY(0.3))
 
   const { gl, controls } = useThree()
+  const controlsRef = useRef(controls)
+  useEffect(() => { controlsRef.current = controls }, [controls])
+
   const palette   = AVATAR_PALETTE[colorIndex % AVATAR_PALETTE.length]
   const firstName = name.split(' ')[0]
 
@@ -51,17 +58,19 @@ export function Avatar3D({
   const onPointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
     ;(gl.domElement as HTMLCanvasElement).setPointerCapture(e.pointerId)
-    if (controls) (controls as unknown as { enabled: boolean }).enabled = false
+    const ctrl = controlsRef.current as unknown as { enabled: boolean }
+    if (ctrl) ctrl.enabled = false
     setDragging(true)
     document.body.style.cursor = 'grabbing'
-  }, [gl, controls])
+  }, [gl])
 
   const onPointerUp = useCallback((e: ThreeEvent<PointerEvent>) => {
     ;(gl.domElement as HTMLCanvasElement).releasePointerCapture(e.pointerId)
-    if (controls) (controls as unknown as { enabled: boolean }).enabled = true
+    const ctrl = controlsRef.current as unknown as { enabled: boolean }
+    if (ctrl) ctrl.enabled = true
     setDragging(false)
     document.body.style.cursor = hovered ? 'grab' : 'default'
-  }, [gl, controls, hovered])
+  }, [gl, hovered])
 
   const onPointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!dragging) return

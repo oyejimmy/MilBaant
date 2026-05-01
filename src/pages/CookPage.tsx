@@ -349,7 +349,7 @@ export function CookPage() {
       key: 'del',
       width: 50,
       render: (_: unknown, r: CookPurchase) =>
-        !!userId ? (
+          userId ? (
           <Popconfirm title="Remove this purchase?" onConfirm={() => void handleDeletePurchase(r.id)}>
             <Button size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>

@@ -124,12 +124,3 @@ export function ResponsiveCard({ fields, actions, onClick, className }: Responsi
     </MobileCardContainer>
   )
 }
-
-/**
- * ResponsiveCardList - Container for multiple ResponsiveCards
- */
-export const ResponsiveCardList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`

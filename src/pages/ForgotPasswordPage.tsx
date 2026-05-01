@@ -3,7 +3,8 @@ import { Alert, App, Button, Form, Input } from 'antd'
 import { Link } from 'react-router-dom'
 import { MailOutlined, ArrowLeftOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import styled from 'styled-components'
-import { AuthShell, FormFooter } from '@/components/AuthShell'
+import { AuthShell } from '@/components/AuthShell'
+import { FormFooter } from '@/components/AuthShared'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 /* ── Skeuomorphic submit button ─────────────────────────────────────────── */

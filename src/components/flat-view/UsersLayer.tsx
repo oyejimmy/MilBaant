@@ -88,8 +88,7 @@ function Avatar({ assignment, x, y, isAdmin, onDragEnd }: AvatarProps) {
       )}
 
       {/* Admin crown badge */}
-      {assignment.profile && 'role' in assignment.profile &&
-        (assignment.profile as any).role === 'admin' && (
+      {assignment.profile?.role === 'admin' && (
         <Text
           x={AVATAR_R - 8}
           y={-AVATAR_R - 14}

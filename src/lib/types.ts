@@ -43,7 +43,7 @@ export interface BedAssignment {
   id: number
   user_id: string
   bed_id: number
-  profile?: Pick<Profile, 'id' | 'full_name'> | null
+  profile?: Pick<Profile, 'id' | 'full_name' | 'role'> | null
   bed?: Bed | null
 }
 
