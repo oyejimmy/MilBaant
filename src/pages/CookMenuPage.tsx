@@ -301,31 +301,31 @@ export function CookMenuPage() {
    * columns. This prevents a notes-only save from clearing dinner, and
    * a dinner-only save from clearing notes.
    * ─────────────────────────────────────────────────────────────────────── */
-  async function persistMenu(patch: Partial<{ dinner: string; notes: string }>) {
+  async function persistMenu(patch: Partial<{ dinner: string; dinnerDescription: string; notes: string }>) {
     if (!userId) return
 
     if (todayMenu) {
-      // UPDATE — only the patched fields are sent
       await updateMenu.mutateAsync({
         payload: { id: todayMenu.id, ...patch },
         userId,
       })
     } else {
-      // INSERT — create the row; unpatched fields default to null
       await createMenu.mutateAsync({
         date: todayStr,
         dinner: patch.dinner,
+        dinnerDescription: patch.dinnerDescription,
         notes:  patch.notes,
         createdBy: userId,
       })
     }
   }
-
-  /* ── Save dinner override ── */
   async function handleSaveDinner() {
-    const { dinner } = dinnerForm.getFieldsValue() as { dinner: string }
+    const { dinner, dinnerDescription } = dinnerForm.getFieldsValue() as { dinner: string; dinnerDescription: string }
     try {
-      await persistMenu({ dinner: dinner?.trim() || fixedDinner })
+      await persistMenu({
+        dinner: dinner?.trim() || fixedDinner,
+        dinnerDescription: dinnerDescription?.trim() || undefined,
+      })
       message.success('Dinner updated!')
       setDinnerModalOpen(false)
     } catch { message.error('Failed to save.') }
@@ -460,7 +460,10 @@ export function CookMenuPage() {
                   type="primary"
                   icon={<EditOutlined />}
                   onClick={() => {
-                    dinnerForm.setFieldsValue({ dinner: actualDinner })
+                    dinnerForm.setFieldsValue({
+                      dinner: actualDinner,
+                      dinnerDescription: todayMenu?.dinner_description ?? '',
+                    })
                     setDinnerModalOpen(true)
                   }}
                 >
@@ -477,6 +480,11 @@ export function CookMenuPage() {
               <DinnerDisplay>
                 <div>
                   <DinnerMeal>{actualDinner}</DinnerMeal>
+                  {todayMenu?.dinner_description && (
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>
+                      {todayMenu.dinner_description}
+                    </div>
+                  )}
                   <DinnerMeta>
                     {today.format('dddd, DD MMMM YYYY')} · Serving ~9:00 PM
                     {isOverridden && (
@@ -733,11 +741,20 @@ export function CookMenuPage() {
           Fixed menu for {todayDay}: <strong>{fixedDinner}</strong>
         </Typography.Text>
         <Form form={dinnerForm} layout="vertical" requiredMark={false}>
-          <Form.Item name="dinner" label="Override with" style={{ marginBottom: 0 }}>
+          <Form.Item name="dinner" label="Override with" style={{ marginBottom: 12 }}>
             <Input
               placeholder={fixedDinner}
               allowClear
               autoFocus
+            />
+          </Form.Item>
+          <Form.Item name="dinnerDescription" label="Description (optional)" style={{ marginBottom: 0 }}>
+            <Input.TextArea
+              placeholder="e.g. Boneless chicken, extra spicy, served with naan"
+              rows={3}
+              maxLength={200}
+              showCount
+              style={{ resize: 'none' }}
             />
           </Form.Item>
         </Form>

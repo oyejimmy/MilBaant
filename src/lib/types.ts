@@ -325,6 +325,7 @@ export interface DailyMenu {
   breakfast: string | null
   lunch: string | null
   dinner: string | null
+  dinner_description: string | null
   notes: string | null
   created_by: string
   created_at: string
@@ -337,6 +338,7 @@ export interface CreateDailyMenuInput {
   breakfast?: string
   lunch?: string
   dinner?: string
+  dinnerDescription?: string
   notes?: string
   createdBy: string
 }
@@ -346,6 +348,7 @@ export interface UpdateDailyMenuInput {
   breakfast?: string
   lunch?: string
   dinner?: string
+  dinnerDescription?: string
   notes?: string
 }
 

@@ -70,6 +70,11 @@ const ContributionsPage = lazy(() =>
     default: module.ContributionsPage,
   })),
 )
+const AnnouncementsPage = lazy(() =>
+  import('@/pages/AnnouncementsPage').then((module) => ({
+    default: module.AnnouncementsPage,
+  })),
+)
 const CookDashboardPage = lazy(() =>
   import('@/pages/CookDashboardPage').then((module) => ({
     default: module.CookDashboardPage,
@@ -162,6 +167,7 @@ function App() {
           <Route path="expenses"         element={<ExpensesPage />} />
           <Route path="weekend-expenses" element={<WeekendExpensesPage />} />
           <Route path="contributions"    element={<ContributionsPage />} />
+          <Route path="announcements"    element={<AnnouncementsPage />} />
           <Route path="rides"            element={<RidesPage />} />
           <Route path="cook"             element={<CookPage />} />
           <Route path="daily-menu"       element={<CookMenuPage />} />

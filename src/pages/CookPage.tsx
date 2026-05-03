@@ -29,6 +29,8 @@ import {
   ShoppingCartOutlined,
   CalendarOutlined,
   DollarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons'
 import styled from 'styled-components'
 import { PageHeader } from '@/components/PageHeader'
@@ -44,6 +46,7 @@ import {
   useDeleteAdvance,
   useDeletePurchase,
 } from '@/hooks/useCook'
+import { useExpenses } from '@/hooks/useExpenses'
 import {
   PURCHASE_CATEGORY_OPTIONS,
   PURCHASE_CATEGORY_COLORS,
@@ -141,6 +144,21 @@ const SectionLabel = styled.div`
   }
 `
 
+const SalaryCard = styled.div<{ $paid: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1.5px solid ${({ $paid }) => $paid ? 'rgba(82,196,26,0.35)' : 'rgba(255,77,79,0.25)'};
+  background: ${({ $paid }) => $paid
+    ? 'linear-gradient(135deg, rgba(82,196,26,0.06) 0%, rgba(82,196,26,0.02) 100%)'
+    : 'linear-gradient(135deg, rgba(255,77,79,0.06) 0%, rgba(255,77,79,0.02) 100%)'};
+  flex-wrap: wrap;
+  gap: 12px;
+`
+
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 
 export function CookPage() {
@@ -158,6 +176,13 @@ export function CookPage() {
   const createPurchase = useCreatePurchase()
   const deleteAdvance = useDeleteAdvance()
   const deletePurchase = useDeletePurchase()
+
+  // Cook salary — pulled from the expenses table (cook_salary category)
+  const salaryMonth = filterMonth ?? dayjs().startOf('month')
+  const expensesQuery = useExpenses(salaryMonth)
+  const cookSalaryExpense = (expensesQuery.data ?? []).find(e => e.category === 'cook_salary') ?? null
+  const cookSalaryAmount = cookSalaryExpense?.amount ?? 0
+  const cookSalaryPaid = !!cookSalaryExpense
 
   const allAdvances = advancesQuery.data ?? []
   const allPurchases = purchasesQuery.data ?? []
@@ -441,6 +466,49 @@ export function CookPage() {
             />
           </div>
         </BalanceCard>
+
+        {/* Cook Salary Card */}
+        <SalaryCard $paid={cookSalaryPaid}>
+          <Flex align="center" gap={14} style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+              background: cookSalaryPaid
+                ? 'linear-gradient(135deg, #52c41a, #389e0d)'
+                : 'linear-gradient(135deg, #ff7875, #e53935)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: cookSalaryPaid
+                ? '0 3px 10px rgba(82,196,26,0.35)'
+                : '0 3px 10px rgba(229,57,53,0.3)',
+            }}>
+              <DollarOutlined style={{ color: '#fff', fontSize: 20 }} />
+            </div>
+            <div>
+              <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+                Cook Salary · {salaryMonth.format('MMMM YYYY')}
+              </Typography.Text>
+              <Typography.Text strong style={{ fontSize: 20, color: cookSalaryPaid ? '#52c41a' : '#ff4d4f', letterSpacing: '-0.3px' }}>
+                {cookSalaryPaid ? formatCurrency(cookSalaryAmount) : 'Not Paid Yet'}
+              </Typography.Text>
+              {cookSalaryExpense && (
+                <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                  Recorded on {formatDate(cookSalaryExpense.date)}
+                  {cookSalaryExpense.description ? ` · ${cookSalaryExpense.description}` : ''}
+                </Typography.Text>
+              )}
+            </div>
+          </Flex>
+          <div style={{ flexShrink: 0 }}>
+            {cookSalaryPaid ? (
+              <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20 }}>
+                Salary Paid
+              </Tag>
+            ) : (
+              <Tag icon={<ClockCircleOutlined />} color="error" style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20 }}>
+                Unpaid
+              </Tag>
+            )}
+          </div>
+        </SalaryCard>
 
         {/* Stats */}
         <ResponsiveGrid>

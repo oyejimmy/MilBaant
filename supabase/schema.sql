@@ -137,16 +137,20 @@ CREATE TABLE IF NOT EXISTS public.cook_purchases (
 );
 
 CREATE TABLE IF NOT EXISTS public.daily_menu (
-    id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-    date       date        NOT NULL UNIQUE,
-    breakfast  text,
-    lunch      text,
-    dinner     text,
-    notes      text,
-    created_by uuid        NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
-    created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
-    updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
+    id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    date                date        NOT NULL UNIQUE,
+    breakfast           text,
+    lunch               text,
+    dinner              text,
+    dinner_description  text,
+    notes               text,
+    created_by          uuid        NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at          timestamptz NOT NULL DEFAULT timezone('utc', now()),
+    updated_at          timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
+
+-- Ensure dinner_description column exists on existing databases
+ALTER TABLE public.daily_menu ADD COLUMN IF NOT EXISTS dinner_description text;
 
 CREATE TABLE IF NOT EXISTS public.activity_logs (
     id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),

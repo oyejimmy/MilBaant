@@ -1,0 +1,217 @@
+
+export function DashboardPage() {
+  const navigate = useNavigate()
+  const { profile } = useAuth()
+  const { message } = App.useApp()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
+
+  /* ── Date / month ─────────────────────────────────────────────────────── */
+  const today = dayjs()
+  const currentMonth = today.startOf('month')
+  const currentMonthStr = currentMonth.format('YYYY-MM')
+  const todayDow = today.day() // 0=Sun … 6=Sat
+
+  /* ── Data hooks ───────────────────────────────────────────────────────── */
+  const expensesQuery      = useExpenses(currentMonth)
+  const profilesQuery      = useProfiles()
+  const memberCountQuery   = useMemberCountSetting()
+  const contributeQuery    = useContributeInfo()
+  const prevRemQuery       = usePrevMonthRemainder()
+  const paymentsQuery      = useContributionPayments(currentMonthStr)
+  const cookRequestsQuery  = useCookRequests()
+  const flatAllocQuery     = useFlatFundAllocations()
+  const flatExpQuery       = useFlatFundExpenses()
+
+  const upsertContribute   = useUpsertContributeInfo()
+  const upsertRemainder    = useUpsertPrevMonthRemainder()
+
+  /* ── Local state ──────────────────────────────────────────────────────── */
+  const [editing, setEditing]               = useState(false)
+  const [draftAccount, setDraftAccount]     = useState('')
+  const [draftMethod, setDraftMethod]       = useState('')
+  const [draftName, setDraftName]           = useState('')
+  const [editingRemainder, setEditingRemainder] = useState(false)
+  const [draftRemainder, setDraftRemainder] = useState(0)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser]     = useState<{ id: string; name: string; owed: number } | null>(null)
+
+  /* ── Derived data ─────────────────────────────────────────────────────── */
+  const expenses    = expensesQuery.data  ?? []
+  const allProfiles = profilesQuery.data  ?? []
+  const memberCount = memberCountQuery.data ?? 10
+  const contributeInfo = contributeQuery.data
+  const prevRemainder  = prevRemQuery.data ?? 0
+  const payments       = paymentsQuery.data ?? []
+  const cookRequests   = cookRequestsQuery.data ?? []
+  const flatAllocations = flatAllocQuery.data ?? []
+  const flatExpenses    = flatExpQuery.data ?? []
+
+  // Exclude cook role from member list
+  const members = allProfiles.filter(p => p.role !== 'cook')
+
+  // Pending cook requests count
+  const pendingCookCount = cookRequests.filter(r => r.status === 'pending').length
+
+  // Split expenses
+  const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses)
+  const fixedTotal      = calculateFixedTotal(fixedExpenses)
+  const perMemberShare  = calculatePerMemberShare(fixedTotal, memberCount)
+
+  // Cook salary expense
+  const cookSalaryExpense = fixedExpenses.find(e => e.category === 'cook_salary')
+  const cookSalaryAmount  = cookSalaryExpense?.amount ?? 0
+
+  // Contribution totals
+  const totalCollected = payments.reduce((s, p) => s + p.amount, 0)
+  const netAfterSalary = totalCollected - cookSalaryAmount
+
+  // Monthly summary per member
+  const monthlySummary: UserMonthlySummary[] = buildMonthlyUserSummary(
+    members,
+    perMemberShare,
+    weekendExpenses,
+  )
+
+  // Payment status map: userId -> paid amount
+  const paymentStatusMap = new Map<string, number>()
+  payments.forEach(p => {
+    paymentStatusMap.set(p.user_id, (paymentStatusMap.get(p.user_id) ?? 0) + p.amount)
+  })
+
+  // Paid member count
+  const paidCount = members.filter(m => (paymentStatusMap.get(m.id) ?? 0) >= perMemberShare).length
+
+  // Flat fund totals
+  const totalAllocated = flatAllocations.reduce((s, a) => s + a.amount, 0)
+  const totalFlatSpent = flatExpenses.reduce((s, e) => s + e.amount, 0)
+  const flatBalance    = totalAllocated - totalFlatSpent
+
+  // Tonight's dinner
+  const tonightDinner = WEEKLY_DINNER[todayDow] ?? 'Check with cook'
+
+  /* ── Edit handlers ────────────────────────────────────────────────────── */
+  function startEditing() {
+    setDraftAccount(contributeInfo?.accountNumber ?? '')
+    setDraftMethod(contributeInfo?.paymentMethod ?? '')
+    setDraftName(contributeInfo?.accountName ?? '')
+    setEditing(true)
+  }
+
+  async function saveContribute() {
+    try {
+      await upsertContribute.mutateAsync({
+        accountNumber: draftAccount.trim(),
+        paymentMethod: draftMethod.trim(),
+        accountName:   draftName.trim(),
+      })
+      message.success('Payment info updated')
+      setEditing(false)
+    } catch {
+      message.error('Failed to save')
+    }
+  }
+
+  async function saveRemainder() {
+    try {
+      await upsertRemainder.mutateAsync(draftRemainder)
+      message.success('Remainder updated')
+      setEditingRemainder(false)
+    } catch {
+      message.error('Failed to save')
+    }
+  }
+
+  /* ── Balance table columns ────────────────────────────────────────────── */
+  const balanceColumns: ColumnsType<UserMonthlySummary> = [
+    {
+      title: 'Flatmate',
+      dataIndex: 'fullName',
+      key: 'fullName',
+      render: (name: string) => (
+        <Flex align="center" gap={8}>
+          <Avatar size={28} icon={<UserOutlined />} style={{ background: 'var(--primary)', flexShrink: 0 }} />
+          <Typography.Text strong style={{ fontSize: 13 }}>{name}</Typography.Text>
+        </Flex>
+      ),
+    },
+    {
+      title: 'Share',
+      dataIndex: 'fixedShare',
+      key: 'fixedShare',
+      align: 'right' as const,
+      render: (v: number) => (
+        <Typography.Text style={{ fontSize: 13 }}>{formatCurrency(v)}</Typography.Text>
+      ),
+    },
+    {
+      title: 'Weekend Share',
+      dataIndex: 'weekendShare',
+      key: 'weekendShare',
+      align: 'right' as const,
+      render: (v: number) => (
+        <Typography.Text style={{ fontSize: 13, color: v > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+          {v > 0 ? formatCurrency(v) : '—'}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: 'Total Owed',
+      dataIndex: 'totalOwed',
+      key: 'totalOwed',
+      align: 'right' as const,
+      render: (v: number) => (
+        <Typography.Text strong style={{ fontSize: 13, color: 'var(--primary)' }}>{formatCurrency(v)}</Typography.Text>
+      ),
+    },
+    {
+      title: 'Payment Status',
+      key: 'status',
+      align: 'center' as const,
+      render: (_: unknown, row: UserMonthlySummary) => {
+        const paid = paymentStatusMap.get(row.userId) ?? 0
+        if (paid >= row.totalOwed) return <Tag color="success" icon={<CheckCircleOutlined />}>Paid</Tag>
+        if (paid > 0)              return <Tag color="warning" icon={<ClockCircleOutlined />}>Partial</Tag>
+        return <Tag color="error" icon={<ClockCircleOutlined />}>Pending</Tag>
+      },
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      align: 'center' as const,
+      render: (_: unknown, row: UserMonthlySummary) => {
+        const paid = paymentStatusMap.get(row.userId) ?? 0
+        const submitted = paid >= row.totalOwed
+        return (
+          <Button
+            size="small"
+            type={submitted ? 'default' : 'primary'}
+            disabled={submitted}
+            icon={submitted ? <CheckCircleOutlined /> : <DollarOutlined />}
+            onClick={() => {
+              if (!submitted) {
+                setSelectedUser({ id: row.userId, name: row.fullName, owed: row.totalOwed - paid })
+                setPaymentModalOpen(true)
+              }
+            }}
+          >
+            {submitted ? 'Submitted' : 'Submit Payment'}
+          </Button>
+        )
+      },
+    },
+  ]
+
+  /* ── Loading / error state ────────────────────────────────────────────── */
+  const isLoading = expensesQuery.isLoading || profilesQuery.isLoading
+  const queryError = expensesQuery.error ?? profilesQuery.error ?? null
+
+  if (isLoading || queryError) {
+    return (
+      <PageStack>
+        <QueryState isLoading={isLoading} error={queryError as Error | null} isEmpty={false}>
+          <></>
+        </QueryState>
+      </PageStack>
+    )
+  }

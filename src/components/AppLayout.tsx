@@ -19,6 +19,7 @@ import type { MenuProps } from 'antd'
 import {
   ApartmentOutlined,
   AuditOutlined,
+  BellOutlined,
   CarOutlined,
   CoffeeOutlined,
   DashboardOutlined,
@@ -45,6 +46,8 @@ import { AppFooter } from '@/components/AppFooter'
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/context/ThemeModeContext'
 import { supabase } from '@/lib/supabase'
+import { useCookRequests } from '@/hooks/useCookRequests'
+import { useAnnouncements } from '@/hooks/useAnnouncements'
 
 const { Header, Content, Sider } = Layout
 const { useBreakpoint } = Grid
@@ -69,32 +72,33 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Management',
     items: [
-      { key: '/expenses',         label: 'Expenses',       icon: <WalletOutlined /> },
-      { key: '/flat-expenses',    label: 'Flat Fund',      icon: <FundOutlined /> },
-      { key: '/contributions',    label: 'Contributions',  icon: <DollarCircleOutlined /> },
-      { key: '/cook',             label: 'Cook Ledger',    icon: <CoffeeOutlined /> },
-      { key: '/daily-menu',       label: 'Daily Menu',     icon: <ScheduleOutlined /> },
-      { key: '/cook-requests',    label: 'Cook Requests',  icon: <InboxOutlined /> },
+      { key: '/expenses',         label: 'Expenses',          icon: <WalletOutlined /> },
+      { key: '/flat-expenses',    label: 'Flat Fund',         icon: <FundOutlined /> },
+      { key: '/contributions',    label: 'Monthly Payments',  icon: <DollarCircleOutlined /> },
+      { key: '/cook',             label: 'Cook Accounts',     icon: <CoffeeOutlined /> },
+      { key: '/daily-menu',       label: 'Menu & Meals',      icon: <ScheduleOutlined /> },
+      { key: '/cook-requests',    label: 'Kitchen Requests',  icon: <InboxOutlined /> },
     ],
   },
   {
     label: '',
     items: [
-      { key: '/weekend-expenses', label: 'Weekend Meals',  icon: <CarOutlined /> },
-      { key: '/rides',            label: 'Rides',          icon: <CarOutlined /> },
+      { key: '/weekend-expenses', label: 'Weekend Expenses',  icon: <CarOutlined /> },
+      { key: '/rides',            label: 'Rides',             icon: <CarOutlined /> },
     ],
   },
   {
     label: 'Community',
     items: [
-      { key: '/logs',             label: 'Activity Logs',  icon: <AuditOutlined /> },
+      { key: '/announcements',    label: 'Announcements',     icon: <BellOutlined /> },
+      { key: '/logs',             label: 'Audit Log',         icon: <AuditOutlined /> },
     ],
   },
   {
     label: 'System',
     items: [
-      { key: '/flat-view',        label: 'Flat View',      icon: <ApartmentOutlined /> },
-      { key: '/admin',            label: 'Admin',          icon: <SettingOutlined />, adminOnly: true },
+      { key: '/flat-view',        label: 'Room Layout',       icon: <ApartmentOutlined /> },
+      { key: '/admin',            label: 'Admin',             icon: <SettingOutlined />, adminOnly: true },
     ],
   },
 ]
@@ -586,6 +590,12 @@ export function AppLayout() {
   const { mode, toggleMode } = useThemeMode()
   const { message } = App.useApp()
 
+  // Live badge counts
+  const cookRequestsQuery = useCookRequests()
+  const announcementsQuery = useAnnouncements()
+  const pendingRequestCount = (cookRequestsQuery.data ?? []).filter(r => r.status === 'pending').length
+  const announcementCount = (announcementsQuery.data ?? []).length
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -605,22 +615,46 @@ export function AppLayout() {
 
       // Add nav items with labels (hidden when collapsed)
       visibleItems.forEach((item) => {
+        const badge =
+          item.key === '/cook-requests' && pendingRequestCount > 0 ? pendingRequestCount :
+          item.key === '/announcements' && announcementCount > 0 ? announcementCount : 0
+
         items.push({
           key: item.key,
           icon: item.icon,
-          label: collapsed ? null : item.label,
-          title: item.label, // Tooltip for collapsed state
+          label: collapsed ? null : (
+            badge > 0 ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                {item.label}
+                <span style={{
+                  background: item.key === '/cook-requests' ? '#ff4d4f' : 'var(--primary)',
+                  color: '#fff',
+                  borderRadius: 10,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  lineHeight: '16px',
+                  minWidth: 18,
+                  textAlign: 'center',
+                }}>
+                  {badge}
+                </span>
+              </span>
+            ) : item.label
+          ),
+          title: item.label,
         })
       })
     })
     return items
-  }, [isAdmin, collapsed])
+  }, [isAdmin, collapsed, pendingRequestCount, announcementCount])
 
-  // Flat list for mobile bottom nav (first 5 most important)
+  // Flat list for mobile bottom nav — most-used pages for a 6-person flat
   const mobileItems = useMemo(() => {
+    const priority = ['/', '/expenses', '/cook-requests', '/contributions', '/daily-menu']
     return NAV_GROUPS.flatMap((g) => g.items)
-      .filter((i) => !i.adminOnly || isAdmin)
-      .slice(0, 5)
+      .filter((i) => (!i.adminOnly || isAdmin) && priority.includes(i.key))
+      .sort((a, b) => priority.indexOf(a.key) - priority.indexOf(b.key))
   }, [isAdmin])
 
   const profileMenuItems: MenuProps['items'] = [
@@ -870,7 +904,47 @@ export function AppLayout() {
               aria-label={item.label}
               aria-current={activePath === item.key ? 'page' : undefined}
             >
-              {item.icon}
+              <span style={{ position: 'relative', display: 'inline-flex' }}>
+                {item.icon}
+                {item.key === '/cook-requests' && pendingRequestCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -6,
+                    background: '#ff4d4f',
+                    color: '#fff',
+                    borderRadius: 8,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    padding: '0 4px',
+                    lineHeight: '14px',
+                    minWidth: 14,
+                    textAlign: 'center',
+                    pointerEvents: 'none',
+                  }}>
+                    {pendingRequestCount}
+                  </span>
+                )}
+                {item.key === '/announcements' && announcementCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -6,
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    borderRadius: 8,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    padding: '0 4px',
+                    lineHeight: '14px',
+                    minWidth: 14,
+                    textAlign: 'center',
+                    pointerEvents: 'none',
+                  }}>
+                    {announcementCount}
+                  </span>
+                )}
+              </span>
               <BottomNavLabel>{item.label}</BottomNavLabel>
             </BottomNavItem>
           ))}

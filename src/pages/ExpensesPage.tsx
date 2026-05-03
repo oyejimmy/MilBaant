@@ -104,7 +104,7 @@ export function ExpensesPage() {
   const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses)
   const fixedTotal = calculateFixedTotal(fixedExpenses)
   const perMemberShare = calculatePerMemberShare(fixedTotal, memberCount)
-  const userSummary = buildMonthlyUserSummary(profiles, perMemberShare, weekendExpenses)
+  const userSummary = buildMonthlyUserSummary(profiles.filter(p => p.role !== 'cook'), perMemberShare, weekendExpenses)
 
   function toggleDescription(id: string) {
     setExpandedDescriptions((prev) => {

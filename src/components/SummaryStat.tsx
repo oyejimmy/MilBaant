@@ -9,66 +9,87 @@ interface SummaryStatProps extends SummaryStatItem {
 
 const StatCard = styled.div<{ $color: string }>`
   background: var(--card-bg);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 2px 8px rgba(0,0,0,0.07),
+    0 1px 2px rgba(0,0,0,0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  /* Colored bottom accent bar */
+  &::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 2px;
+    background: ${({ $color }) => $color};
+    border-radius: 2px 2px 0 0;
+    opacity: 0.7;
+  }
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
-  }
-
-  @media (min-width: 768px) {
-    padding: 14px 16px;
-    border-radius: 14px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.06) inset,
+      0 8px 24px rgba(0,0,0,0.11),
+      0 2px 6px rgba(0,0,0,0.06);
   }
 `
 
 const IconWrap = styled.div<{ $color: string }>`
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   background: ${({ $color }) => `${$color}18`};
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: 20px;
   color: ${({ $color }) => $color};
+`
 
-  @media (min-width: 768px) {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-  }
+const StatLabel = styled.div`
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 5px;
 `
 
 const StatValue = styled.div`
-  font-size: clamp(14px, 3.5vw, 18px);
-  font-weight: 700;
-  color: var(--text-strong);
-  letter-spacing: -0.3px;
-  line-height: 1.2;
+  font-size: clamp(16px, 3.5vw, 22px);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+`
+
+const StatSub = styled.div`
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
 `
 
 export function SummaryStat({ title, value, subtitle, icon, color = 'var(--primary)' }: SummaryStatProps) {
   return (
     <StatCard $color={color}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-          {title}
-        </div>
+        <StatLabel>{title}</StatLabel>
         <StatValue>{value}</StatValue>
-        {subtitle && (
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.3 }}>
-            {subtitle}
-          </div>
-        )}
+        {subtitle && <StatSub>{subtitle}</StatSub>}
       </div>
       {icon && <IconWrap $color={color}>{icon}</IconWrap>}
     </StatCard>

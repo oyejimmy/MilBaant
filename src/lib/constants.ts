@@ -44,14 +44,14 @@ export const CATEGORY_LABELS: Record<ExpenseCategory, string> =
 export const NAV_ITEMS: NavItem[] = [
   { key: '/', label: 'Dashboard' },
   { key: '/expenses', label: 'Expenses' },
-  { key: '/weekend-expenses', label: 'Weekend Meals' },
+  { key: '/weekend-expenses', label: 'Weekend Expenses' },
   { key: '/rides', label: 'Rides' },
-  { key: '/cook', label: 'Cook Ledger' },
-  { key: '/daily-menu', label: 'Daily Menu' },
-  { key: '/contributions', label: 'Contributions' },
-  { key: '/flat-view', label: 'Flat View' },
+  { key: '/cook', label: 'Cook Accounts' },
+  { key: '/daily-menu', label: 'Menu & Meals' },
+  { key: '/contributions', label: 'Monthly Payments' },
+  { key: '/flat-view', label: 'Room Layout' },
   { key: '/admin', label: 'Admin', adminOnly: true },
-  { key: '/logs', label: 'Activity Logs' },
+  { key: '/logs', label: 'Audit Log' },
 ]
 
 export const QUERY_KEYS = {

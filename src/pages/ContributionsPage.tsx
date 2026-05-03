@@ -379,7 +379,7 @@ export function ContributionsPage() {
   const profiles = profilesQuery.data ?? []
 
   const paymentMap = new Map(payments.map(p => [p.user_id, p]))
-  const summary = profiles.map(profile => {
+  const summary = profiles.filter(profile => profile.role !== 'cook').map(profile => {
     const payment = paymentMap.get(profile.id)
     return {
       userId:   profile.id,

@@ -14,6 +14,7 @@ interface RawDailyMenu {
   breakfast: string | null
   lunch: string | null
   dinner: string | null
+  dinner_description: string | null
   notes: string | null
   created_by: string
   created_at: string
@@ -39,6 +40,7 @@ const SELECT_FIELDS = `
   breakfast,
   lunch,
   dinner,
+  dinner_description,
   notes,
   created_by,
   created_at,
@@ -78,7 +80,7 @@ export function useMenuByDate(date: string) {
   return useQuery({
     queryKey: [...QUERY_KEYS.dailyMenu, date],
     queryFn:  () => fetchMenuByDate(date),
-    staleTime: 1000 * 60 * 2, // 2 min — shorter so prefs refresh quickly
+    staleTime: 1000 * 60 * 2,
   })
 }
 
@@ -98,12 +100,13 @@ export function useCreateMenu() {
       const { data, error } = await supabase
         .from('daily_menu')
         .insert({
-          date:      payload.date,
-          breakfast: payload.breakfast?.trim() || null,
-          lunch:     payload.lunch?.trim()     || null,
-          dinner:    payload.dinner?.trim()    || null,
-          notes:     payload.notes?.trim()     || null,
-          created_by: payload.createdBy,
+          date:               payload.date,
+          breakfast:          payload.breakfast?.trim()         || null,
+          lunch:              payload.lunch?.trim()             || null,
+          dinner:             payload.dinner?.trim()            || null,
+          dinner_description: payload.dinnerDescription?.trim() || null,
+          notes:              payload.notes?.trim()             || null,
+          created_by:         payload.createdBy,
         })
         .select('id')
         .single()
@@ -125,14 +128,6 @@ export function useCreateMenu() {
 }
 
 /* ── Update ──────────────────────────────────────────────────────────────── */
-/*
- * Key fixes vs the old version:
- *  1. `updated_at` is NOT sent from the client — the DB trigger sets it.
- *     Sending it caused a CORS-looking error because Supabase rejected the
- *     request when the column value conflicted with the trigger.
- *  2. Only the fields present in the payload are included in the update
- *     object, so a notes-only patch never touches dinner/breakfast/lunch.
- */
 
 export function useUpdateMenu() {
   return useMutation({
@@ -143,15 +138,16 @@ export function useUpdateMenu() {
       payload: UpdateDailyMenuInput
       userId: string
     }) => {
-      // Build a sparse update — only include fields that were explicitly passed
+      // Build a sparse update — only include fields explicitly passed
       const update: Record<string, string | null> = {}
 
-      if ('breakfast' in payload) update.breakfast = payload.breakfast?.trim() || null
-      if ('lunch'     in payload) update.lunch     = payload.lunch?.trim()     || null
-      if ('dinner'    in payload) update.dinner    = payload.dinner?.trim()    || null
-      if ('notes'     in payload) update.notes     = payload.notes?.trim()     || null
+      if ('breakfast'         in payload) update.breakfast          = payload.breakfast?.trim()         || null
+      if ('lunch'             in payload) update.lunch              = payload.lunch?.trim()             || null
+      if ('dinner'            in payload) update.dinner             = payload.dinner?.trim()            || null
+      if ('dinnerDescription' in payload) update.dinner_description = payload.dinnerDescription?.trim() || null
+      if ('notes'             in payload) update.notes              = payload.notes?.trim()             || null
 
-      if (Object.keys(update).length === 0) return // nothing to update
+      if (Object.keys(update).length === 0) return
 
       const { error } = await supabase
         .from('daily_menu')
