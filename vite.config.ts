@@ -3,13 +3,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Include all icon assets
       includeAssets: [
         'pwa-icon.png',
         'pwa-icon.svg',
@@ -33,36 +31,11 @@ export default defineConfig({
         start_url: '/?source=pwa',
         id: '/',
         icons: [
-          {
-            src: '/favicon-32.png',
-            sizes: '32x32',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/pwa-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/pwa-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/pwa-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-          {
-            src: '/pwa-icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any',
-          },
+          { src: '/favicon-32.png',  sizes: '32x32',   type: 'image/png',     purpose: 'any' },
+          { src: '/pwa-192.png',     sizes: '192x192', type: 'image/png',     purpose: 'any' },
+          { src: '/pwa-512.png',     sizes: '512x512', type: 'image/png',     purpose: 'any' },
+          { src: '/pwa-512.png',     sizes: '512x512', type: 'image/png',     purpose: 'maskable' },
+          { src: '/pwa-icon.svg',    sizes: 'any',     type: 'image/svg+xml', purpose: 'any' },
         ],
         screenshots: [
           {
@@ -78,14 +51,17 @@ export default defineConfig({
         dir: 'ltr',
       },
       workbox: {
-        // Cache app shell and static assets
+        // Cache all static assets (JS, CSS, fonts, images)
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
         navigateFallback: 'index.html',
-        // Don't cache Supabase API calls or auth endpoints
         navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/auth\//],
+
+        // Increase precache size limit (three.js chunk is large)
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MB
+
         runtimeCaching: [
+          // ── Google Fonts ──────────────────────────────────────────────
           {
-            // Cache Google Fonts
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -95,7 +71,6 @@ export default defineConfig({
             },
           },
           {
-            // Cache font files
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -104,8 +79,38 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+
+          // ── Supabase REST API — NetworkFirst with offline fallback ────
+          // Serves cached data when offline; updates cache when online.
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+
+          // ── Supabase Storage (bill images, avatars, screenshots) ──────
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
-        // Skip waiting so new SW activates immediately
+
         skipWaiting: true,
         clientsClaim: true,
       },
@@ -115,30 +120,46 @@ export default defineConfig({
       },
     }),
   ],
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
+
+  // Don't pre-bundle heavy optional deps — keep them in their own lazy chunks
   optimizeDeps: {
-    include: [
-      '@react-three/fiber',
-      '@react-three/drei',
-      'three',
-    ],
+    exclude: [],
   },
+
   build: {
-    // Raise the warning threshold — large vendor chunks are expected
     chunkSizeWarningLimit: 1400,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Three.js + React Three Fiber/Drei → isolated chunk (largest dep)
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
-          // React core
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // xlsx (heavy, rarely changes)
-          'vendor-xlsx': ['xlsx'],
+        manualChunks(id) {
+          // React core — always needed, small and stable
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/react-router-dom/')) {
+            return 'vendor-react'
+          }
+          // xlsx — heavy, only used for exports
+          if (id.includes('node_modules/xlsx')) {
+            return 'vendor-xlsx'
+          }
+          // html2canvas — only used for screenshots
+          if (id.includes('node_modules/html2canvas')) {
+            return 'vendor-html2canvas'
+          }
+          // Ant Design — large but needed on most pages
+          if (id.includes('node_modules/antd') ||
+              id.includes('node_modules/@ant-design')) {
+            return 'vendor-antd'
+          }
+          // Supabase client
+          if (id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase'
+          }
         },
       },
     },

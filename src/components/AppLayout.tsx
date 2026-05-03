@@ -17,7 +17,6 @@ import {
 } from 'antd'
 import type { MenuProps } from 'antd'
 import {
-  ApartmentOutlined,
   AuditOutlined,
   BellOutlined,
   CarOutlined,
@@ -97,7 +96,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'System',
     items: [
-      { key: '/flat-view',        label: 'Room Layout',       icon: <ApartmentOutlined /> },
       { key: '/admin',            label: 'Admin',             icon: <SettingOutlined />, adminOnly: true },
     ],
   },

@@ -54,11 +54,6 @@ const WeekendExpensesPage = lazy(() =>
 const RidesPage = lazy(() =>
   import('@/pages/RidesPage').then((module) => ({ default: module.RidesPage })),
 )
-const FlatViewPage = lazy(() =>
-  import('@/pages/FlatViewPage').then((module) => ({
-    default: module.FlatViewPage,
-  })),
-)
 const AdminPage = lazy(() =>
   import('@/pages/AdminPage').then((module) => ({ default: module.AdminPage })),
 )
@@ -172,7 +167,6 @@ function App() {
           <Route path="cook"             element={<CookPage />} />
           <Route path="daily-menu"       element={<CookMenuPage />} />
           <Route path="flat-expenses"    element={<FlatExpensesPage />} />
-          <Route path="flat-view"        element={<FlatViewPage />} />
           <Route path="admin"            element={<AdminPage />} />
           <Route path="logs"             element={<LogsPage />} />
           <Route path="profile"          element={<ProfilePage />} />
@@ -197,7 +191,6 @@ function App() {
           <Route path="daily-menu"       element={<CookMenuPage />} />
           <Route path="weekend-expenses" element={<WeekendExpensesPage />} />
           <Route path="logs"             element={<LogsPage />} />
-          <Route path="flat-view"        element={<FlatViewPage />} />
           <Route path="profile"          element={<ProfilePage />} />
           {/* Any unknown sub-path inside the cook portal → 404 */}
           <Route path="*" element={<NotFoundPage />} />
