@@ -107,6 +107,36 @@ body {
   transition: none;
 }
 
+/* ── Mobile performance: reduce paint/composite cost ─────────────────────── */
+@media (max-width: 767px) {
+  /* Promote scrollable containers to their own layer */
+  .ant-layout-content,
+  #root {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* Contain layout/paint for card-like elements */
+  .ant-card,
+  .ant-table-wrapper {
+    contain: layout style;
+  }
+
+  /* Disable hover animations on touch — saves GPU on mobile */
+  @media (hover: none) {
+    * {
+      transition: none !important;
+      animation-duration: 0.01ms !important;
+    }
+    /* Re-enable only essential transitions */
+    .ant-btn,
+    .ant-input,
+    .ant-select-selector {
+      transition: border-color 0.15s, box-shadow 0.15s !important;
+    }
+  }
+}
+
 /* Mobile: tighter spacing for Ant Design components */
 @media (max-width: 767px) {
   .ant-table-cell {

@@ -35,8 +35,10 @@ import {
   ScheduleOutlined,
   SettingOutlined,
   SunOutlined,
+  SyncOutlined,
   UserOutlined,
   WalletOutlined,
+  WifiOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
@@ -47,6 +49,7 @@ import { useThemeMode } from '@/context/ThemeModeContext'
 import { supabase } from '@/lib/supabase'
 import { useCookRequests } from '@/hooks/useCookRequests'
 import { useAnnouncements } from '@/hooks/useAnnouncements'
+import { useSyncQueue } from '@/hooks/useSyncQueue'
 
 const { Header, Content, Sider } = Layout
 const { useBreakpoint } = Grid
@@ -594,6 +597,9 @@ export function AppLayout() {
   const pendingRequestCount = (cookRequestsQuery.data ?? []).filter(r => r.status === 'pending').length
   const announcementCount = (announcementsQuery.data ?? []).length
 
+  // Offline sync queue
+  const { isOnline, pendingCount, status: syncStatus, sync } = useSyncQueue()
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -860,6 +866,36 @@ export function AppLayout() {
           </NavCenter>
 
           <NavRight>
+            {/* ── Offline / sync indicator ── */}
+            {(!isOnline || pendingCount > 0) && (
+              <Tooltip title={
+                !isOnline
+                  ? `Offline${pendingCount > 0 ? ` · ${pendingCount} change${pendingCount > 1 ? 's' : ''} queued` : ''}`
+                  : syncStatus === 'syncing'
+                    ? 'Syncing changes…'
+                    : `${pendingCount} change${pendingCount > 1 ? 's' : ''} pending sync`
+              }>
+                <NavBtn
+                  onClick={() => void sync()}
+                  aria-label="Sync status"
+                  style={{ position: 'relative' }}
+                >
+                  {!isOnline
+                    ? <WifiOutlined style={{ color: '#ff4d4f' }} />
+                    : <SyncOutlined spin={syncStatus === 'syncing'} style={{ color: '#f59e0b' }} />
+                  }
+                  {pendingCount > 0 && (
+                    <span style={{
+                      position: 'absolute', top: 2, right: 2,
+                      width: 7, height: 7, borderRadius: '50%',
+                      background: !isOnline ? '#ff4d4f' : '#f59e0b',
+                      border: '1.5px solid var(--navbar-bg)',
+                    }} />
+                  )}
+                </NavBtn>
+              </Tooltip>
+            )}
+
             <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
               <NavBtn
                 icon={mode === 'dark' ? <SunOutlined /> : <MoonOutlined />}

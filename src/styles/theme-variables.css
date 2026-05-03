@@ -206,9 +206,9 @@
   --info-light:    #01344a;
 
   /* ── Backgrounds ────────────────────────────────────────────────────── */
-  --bg-page:     #121212;
-  --bg-card:     #1e1e1e;
-  --bg-elevated: #2a2a2a;
+  --bg-page:     #0a0e1a;
+  --bg-card:     #1a1e2e;
+  --bg-elevated: #252938;
   --bg-overlay:  rgba(0, 0, 0, 0.8);
 
   /* ── Borders ────────────────────────────────────────────────────────── */
@@ -228,17 +228,17 @@
   --primary-soft:  #0c3c60;
 
   /* ── Surface / component aliases ────────────────────────────────────── */
-  --surface:        #1e1e1e;
+  --surface:        #1a1e2e;
   --surface-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --card-bg:        #1e1e1e;
-  --card-border:    #333333;
-  --sidebar-bg:     #1e1e1e;
-  --sidebar-border: #333333;
-  --navbar-bg:      #1e1e1e;
-  --navbar-bg-rgb:  30, 30, 30;
-  --navbar-border:  #333333;
-  --app-bg:         #121212;
-  --content-bg:     #121212;
+  --card-bg:        #1a1e2e;
+  --card-border:    #2a2e3e;
+  --sidebar-bg:     #1a1e2e;
+  --sidebar-border: #2a2e3e;
+  --navbar-bg:      #1a1e2e;
+  --navbar-bg-rgb:  26, 30, 46;
+  --navbar-border:  #2a2e3e;
+  --app-bg:         #0a0e1a;
+  --content-bg:     #0a0e1a;
 
   /* ── Interactive states ─────────────────────────────────────────────── */
   --menu-hover-bg: #2a2a2a;

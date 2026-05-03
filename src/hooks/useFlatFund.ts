@@ -3,12 +3,8 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { logActivity } from '@/hooks/useActivityLog'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
-import type {
-  CreateFlatFundAllocationInput,
-  CreateFlatFundExpenseInput,
-  FlatFundAllocation,
-  FlatFundExpense,
-} from '@/lib/types'
+import { withOfflineSupport } from '@/lib/offline-mutation'
+import type { CreateFlatFundAllocationInput, CreateFlatFundExpenseInput, FlatFundAllocation, FlatFundExpense } from '@/lib/types'
 
 /* ─── Raw types ───────────────────────────────────────────────────────────── */
 
@@ -50,51 +46,28 @@ export function useFlatFundAllocations() {
 
 export function useCreateFlatFundAllocation() {
   return useMutation({
-    mutationFn: async (input: CreateFlatFundAllocationInput) => {
-      const { data, error } = await supabase
-        .from('flat_fund_allocations')
-        .insert({
-          user_id: input.userId,
-          amount: input.amount,
-          note: input.note?.trim() || null,
-          allocated_by: input.allocatedBy,
-          date: input.date,
-        })
-        .select('id')
-        .single()
-
-      if (error) throw new Error(error.message)
-
-      await logActivity({
-        userId: input.allocatedBy,
-        action: 'create',
-        entity: 'flat_fund_allocation',
-        entityId: data.id,
-        description: `Allocated PKR ${input.amount} to member for flat fund`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundAllocations })
-    },
+    mutationFn: (input: CreateFlatFundAllocationInput) =>
+      withOfflineSupport('create_flat_fund_allocation', input, async () => {
+        const { data, error } = await supabase.from('flat_fund_allocations').insert({
+          user_id: input.userId, amount: input.amount, note: input.note?.trim() || null,
+          allocated_by: input.allocatedBy, date: input.date,
+        }).select('id').single()
+        if (error) throw new Error(error.message)
+        await logActivity({ userId: input.allocatedBy, action: 'create', entity: 'flat_fund_allocation', entityId: data.id, description: `Allocated PKR ${input.amount} to member for flat fund` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundAllocations }) },
   })
 }
 
 export function useDeleteFlatFundAllocation() {
   return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase.from('flat_fund_allocations').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId,
-        action: 'delete',
-        entity: 'flat_fund_allocation',
-        entityId: id,
-        description: 'Deleted flat fund allocation',
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundAllocations })
-    },
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      withOfflineSupport('delete_flat_fund_allocation', { id, userId }, async () => {
+        const { error } = await supabase.from('flat_fund_allocations').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'delete', entity: 'flat_fund_allocation', entityId: id, description: 'Deleted flat fund allocation' })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundAllocations }) },
   })
 }
 
@@ -130,51 +103,27 @@ export function useFlatFundExpenses() {
 
 export function useCreateFlatFundExpense() {
   return useMutation({
-    mutationFn: async (input: CreateFlatFundExpenseInput) => {
-      const { data, error } = await supabase
-        .from('flat_fund_expenses')
-        .insert({
-          user_id: input.userId,
-          amount: input.amount,
-          description: input.description.trim(),
-          category: input.category,
-          date: input.date,
-          created_by: input.createdBy,
-        })
-        .select('id')
-        .single()
-
-      if (error) throw new Error(error.message)
-
-      await logActivity({
-        userId: input.createdBy,
-        action: 'create',
-        entity: 'flat_fund_expense',
-        entityId: data.id,
-        description: `Logged flat expense: ${input.description} — PKR ${input.amount}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundExpenses })
-    },
+    mutationFn: (input: CreateFlatFundExpenseInput) =>
+      withOfflineSupport('create_flat_fund_expense', input, async () => {
+        const { data, error } = await supabase.from('flat_fund_expenses').insert({
+          user_id: input.userId, amount: input.amount, description: input.description.trim(),
+          category: input.category, date: input.date, created_by: input.createdBy,
+        }).select('id').single()
+        if (error) throw new Error(error.message)
+        await logActivity({ userId: input.createdBy, action: 'create', entity: 'flat_fund_expense', entityId: data.id, description: `Logged flat expense: ${input.description} — PKR ${input.amount}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundExpenses }) },
   })
 }
 
 export function useDeleteFlatFundExpense() {
   return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase.from('flat_fund_expenses').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId,
-        action: 'delete',
-        entity: 'flat_fund_expense',
-        entityId: id,
-        description: 'Deleted flat fund expense',
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundExpenses })
-    },
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      withOfflineSupport('delete_flat_fund_expense', { id, userId }, async () => {
+        const { error } = await supabase.from('flat_fund_expenses').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'delete', entity: 'flat_fund_expense', entityId: id, description: 'Deleted flat fund expense' })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.flatFundExpenses }) },
   })
 }

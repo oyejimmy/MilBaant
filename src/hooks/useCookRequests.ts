@@ -3,6 +3,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { logActivity } from '@/hooks/useActivityLog'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
+import { withOfflineSupport } from '@/lib/offline-mutation'
 import type { CookRequest, CookRequestStatus, CreateCookRequestInput } from '@/lib/types'
 
 /* ─── Raw normalizer ──────────────────────────────────────────────────────── */
@@ -47,97 +48,41 @@ export function useCookRequests() {
 
 export function useCreateCookRequest() {
   return useMutation({
-    mutationFn: async (input: CreateCookRequestInput) => {
-      const { data, error } = await supabase
-        .from('cook_requests')
-        .insert({
-          item:         input.item.trim(),
-          quantity:     input.quantity?.trim() || null,
-          note:         input.note?.trim()     || null,
-          requested_by: input.requestedBy,
-          status:       'pending',
-        })
-        .select('id')
-        .single()
-
-      if (error) throw new Error(error.message)
-
-      await logActivity({
-        userId:      input.requestedBy,
-        action:      'create',
-        entity:      'cook_request',
-        entityId:    data.id,
-        description: `Requested item from cook: ${input.item}${input.quantity ? ` (${input.quantity})` : ''}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookRequests })
-    },
+    mutationFn: (input: CreateCookRequestInput) =>
+      withOfflineSupport('create_cook_request', input, async () => {
+        const { data, error } = await supabase.from('cook_requests').insert({
+          item: input.item.trim(), quantity: input.quantity?.trim() || null,
+          note: input.note?.trim() || null, requested_by: input.requestedBy, status: 'pending',
+        }).select('id').single()
+        if (error) throw new Error(error.message)
+        await logActivity({ userId: input.requestedBy, action: 'create', entity: 'cook_request', entityId: data.id, description: `Requested item from cook: ${input.item}${input.quantity ? ` (${input.quantity})` : ''}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookRequests }) },
   })
 }
-
-/* ─── Cook reply: update status + leave a comment ────────────────────────── */
 
 export function useCookReply() {
   return useMutation({
-    mutationFn: async ({
-      id,
-      status,
-      cookComment,
-      userId,
-    }: {
-      id: string
-      status: CookRequestStatus
-      cookComment: string
-      userId: string
-    }) => {
-      const { error } = await supabase
-        .from('cook_requests')
-        .update({
-          status,
-          cook_comment: cookComment.trim() || null,
-          // updated_at is set automatically by the DB trigger — do not send from client
-        })
-        .eq('id', id)
-
-      if (error) throw new Error(error.message)
-
-      await logActivity({
-        userId,
-        action:      'update',
-        entity:      'cook_request',
-        entityId:    id,
-        description: `Cook replied to request — status: ${status}${cookComment ? ` · "${cookComment.trim()}"` : ''}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookRequests })
-    },
+    mutationFn: ({ id, status, cookComment, userId }: { id: string; status: CookRequestStatus; cookComment: string; userId: string }) =>
+      withOfflineSupport('cook_reply', { id, status, cookComment, userId }, async () => {
+        const { error } = await supabase.from('cook_requests').update({
+          status, cook_comment: cookComment.trim() || null,
+        }).eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'update', entity: 'cook_request', entityId: id, description: `Cook replied to request — status: ${status}${cookComment ? ` · "${cookComment.trim()}"` : ''}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookRequests }) },
   })
 }
 
-/* ─── Delete ──────────────────────────────────────────────────────────────── */
-
 export function useDeleteCookRequest() {
   return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase
-        .from('cook_requests')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw new Error(error.message)
-
-      await logActivity({
-        userId,
-        action:      'delete',
-        entity:      'cook_request',
-        entityId:    id,
-        description: 'Deleted cook request',
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookRequests })
-    },
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      withOfflineSupport('delete_cook_request', { id, userId }, async () => {
+        const { error } = await supabase.from('cook_requests').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'delete', entity: 'cook_request', entityId: id, description: 'Deleted cook request' })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookRequests }) },
   })
 }

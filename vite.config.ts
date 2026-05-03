@@ -133,9 +133,19 @@ export default defineConfig({
   },
 
   build: {
+    // Target modern mobile browsers — smaller output, no legacy polyfills
+    target: ['es2020', 'chrome80', 'safari14'],
     chunkSizeWarningLimit: 1400,
+    // Enable CSS code splitting so each page only loads its own styles
+    cssCodeSplit: true,
+    // Minify with esbuild (default) — fastest, good for mobile
+    minify: 'esbuild',
     rollupOptions: {
       output: {
+        // Use content hashes for long-term caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks(id) {
           // React core — always needed, small and stable
           if (id.includes('node_modules/react/') ||
@@ -151,14 +161,25 @@ export default defineConfig({
           if (id.includes('node_modules/html2canvas')) {
             return 'vendor-html2canvas'
           }
-          // Ant Design — large but needed on most pages
-          if (id.includes('node_modules/antd') ||
-              id.includes('node_modules/@ant-design')) {
+          // Ant Design icons — separate from antd core so tree-shaking works
+          if (id.includes('node_modules/@ant-design/icons')) {
+            return 'vendor-antd-icons'
+          }
+          // Ant Design core
+          if (id.includes('node_modules/antd')) {
             return 'vendor-antd'
           }
           // Supabase client
           if (id.includes('node_modules/@supabase')) {
             return 'vendor-supabase'
+          }
+          // styled-components — used everywhere
+          if (id.includes('node_modules/styled-components')) {
+            return 'vendor-styled'
+          }
+          // TanStack Query
+          if (id.includes('node_modules/@tanstack')) {
+            return 'vendor-query'
           }
         },
       },

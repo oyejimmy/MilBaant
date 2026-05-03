@@ -42,32 +42,34 @@ const fadeUp = keyframes`
 `
 
 /* ─── Time-of-day gradients ───────────────────────────────────────────────── */
-// All three periods use the app's blue palette (--blue-700 → --blue-400 → --blue-500)
-// Morning:   deeper blue → sky blue
-// Afternoon: sky blue → teal-blue (lighter, brighter)
-// Evening:   navy blue → medium blue (slightly darker/cooler)
-const GREETING_GRADIENTS = {
+// Light mode: colorful gradients based on time of day
+// Dark mode: neutral card background
+const GREETING_GRADIENTS_LIGHT = {
   morning: 'linear-gradient(135deg, #1465a3 0%, #1c8ee5 55%, #49a5ea 100%)',
   afternoon: 'linear-gradient(135deg, #1c8ee5 0%, #4096ff 55%, #49a5ea 100%)',
   evening: 'linear-gradient(135deg, #0f4e7e 0%, #1465a3 50%, #1c8ee5 100%)',
 } as const
 
-type GreetingPeriod = keyof typeof GREETING_GRADIENTS
+type GreetingPeriod = keyof typeof GREETING_GRADIENTS_LIGHT
 
 /* ─── Hero Banner ─────────────────────────────────────────────────────────── */
 const HeroBanner = styled.div<{ $period: GreetingPeriod }>`
-  background: ${p => GREETING_GRADIENTS[p.$period]};
+  /* Dark mode: neutral background */
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 16px;
   padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
   position: relative;
   overflow: hidden;
   animation: ${fadeUp} 0.3s ease;
   transition: background 0.6s ease;
+
+  /* Light mode: colorful gradient */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: ${p => GREETING_GRADIENTS_LIGHT[p.$period]};
+    border: none;
+  }
 
   &::before {
     content: '';
@@ -75,8 +77,14 @@ const HeroBanner = styled.div<{ $period: GreetingPeriod }>`
     top: -50px; right: -50px;
     width: 180px; height: 180px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.07);
+    background: rgba(128,128,128,0.05);
     pointer-events: none;
+    
+    /* Light mode: white decorative circles */
+    [data-theme="light"] &,
+    :root:not([data-theme="dark"]) & {
+      background: rgba(255,255,255,0.07);
+    }
   }
   &::after {
     content: '';
@@ -84,8 +92,173 @@ const HeroBanner = styled.div<{ $period: GreetingPeriod }>`
     bottom: -40px; left: 20px;
     width: 120px; height: 120px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.04);
+    background: rgba(128,128,128,0.03);
     pointer-events: none;
+    
+    /* Light mode: white decorative circles */
+    [data-theme="light"] &,
+    :root:not([data-theme="dark"]) & {
+      background: rgba(255,255,255,0.04);
+    }
+  }
+`
+
+const HeroBannerTop = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+`
+
+const HeroBannerBottom = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--card-border);
+  
+  /* Light mode: white border */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    border-top: 1px solid rgba(255,255,255,0.12);
+  }
+`
+
+/* ─── Hero text that adapts to light/dark mode ─────────────────────────── */
+const HeroDateText = styled.div`
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 5px;
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: rgba(255,255,255,0.65);
+  }
+`
+
+const HeroGreetingText = styled.div<{ $mobile: boolean }>`
+  font-size: ${p => p.$mobile ? '19px' : '24px'};
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: #fff;
+  }
+`
+
+const HeroLabelText = styled.div`
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: rgba(255,255,255,0.6);
+  }
+`
+
+const HeroAmountText = styled.div<{ $mobile: boolean }>`
+  font-size: ${p => p.$mobile ? '20px' : '28px'};
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: #fff;
+  }
+`
+
+const HeroPillText = styled.span<{ $bold?: boolean }>`
+  font-size: 11px;
+  font-weight: ${p => p.$bold ? 700 : 400};
+  color: ${p => p.$bold ? 'var(--text-primary)' : 'var(--text-secondary)'};
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: ${p => p.$bold ? '#fff' : 'rgba(255,255,255,0.7)'};
+  }
+`
+
+const HeroMonthText = styled.span`
+  font-size: 11px;
+  color: var(--text-muted);
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: rgba(255,255,255,0.55);
+  }
+`
+
+const HeroPercentText = styled.span`
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: rgba(255,255,255,0.6);
+  }
+`
+
+const HeroPill = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  
+  /* Light mode: translucent white */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(4px);
+  }
+`
+
+const HeroProgressBar = styled.div`
+  background: var(--border-light);
+  
+  /* Light mode: translucent white */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: rgba(255,255,255,0.2);
+  }
+`
+
+const HeroProgressFill = styled.div<{ $width: number; $complete: boolean }>`
+  height: 100%;
+  width: ${p => p.$width}%;
+  background: ${p => p.$complete ? '#86efac' : 'var(--primary)'};
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  
+  /* Light mode: white fill */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: ${p => p.$complete ? '#86efac' : '#fff'};
   }
 `
 
@@ -125,16 +298,31 @@ const LinkBtn = styled.button`
 /* ─── Premium Payment Card ────────────────────────────────────────────────── */
 const PremiumCard = styled.div`
   position: relative; width: 100%; min-height: 190px;
-  background: linear-gradient(135deg, #0a2540 0%, #1a3a5c 40%, #0d4f3c 100%);
+  /* Dark mode: neutral background */
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   overflow: hidden; display: flex; flex-direction: column;
   justify-content: space-between;
   padding: 20px 24px; cursor: default; user-select: none;
   border-radius: 14px;
 
+  /* Light mode: colorful gradient */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: linear-gradient(135deg, #0a2540 0%, #1a3a5c 40%, #0d4f3c 100%);
+    border: none;
+  }
+
   &::after {
     content: ''; position: absolute; inset: 0;
-    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%);
+    background: linear-gradient(105deg, transparent 40%, rgba(128,128,128,0.05) 50%, transparent 60%);
     transform: translateX(-100%); transition: transform 0.6s ease; pointer-events: none;
+    
+    /* Light mode: white shimmer */
+    [data-theme="light"] &,
+    :root:not([data-theme="dark"]) & {
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%);
+    }
   }
   &:hover::after { transform: translateX(100%); }
 `
@@ -142,12 +330,12 @@ const PremiumCard = styled.div`
 const EditCardBtn = styled.button`
   position: absolute; top: 12px; right: 12px;
   width: 28px; height: 28px; border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+  border: 1px solid var(--card-border);
+  background: var(--bg-elevated); color: var(--text-secondary);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; font-size: 12px; z-index: 10;
-  backdrop-filter: blur(8px); transition: background 0.15s;
-  &:hover { background: rgba(255,255,255,0.22); color: #fff; }
+  transition: background 0.15s;
+  &:hover { background: var(--menu-hover-bg); color: var(--text-primary); }
 `
 
 const PremiumChip = styled.div`
@@ -164,7 +352,8 @@ const CardPoly = styled.div<{
 }>`
   position: absolute;
   width: ${p => p.$w}px; height: ${p => p.$h}px;
-  background: rgba(255,255,255,${p => p.$opacity});
+  background: var(--border-light);
+  opacity: ${p => p.$opacity};
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   top: ${p => p.$top ?? 'auto'}; bottom: ${p => p.$bottom ?? 'auto'};
   left: ${p => p.$left ?? 'auto'}; right: ${p => p.$right ?? 'auto'};
@@ -176,7 +365,7 @@ const CardPoly = styled.div<{
 const StatCardsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  gap: 6px;
   @media (max-width: 1100px) { grid-template-columns: repeat(3, 1fr); }
   @media (max-width: 560px)  { grid-template-columns: repeat(2, 1fr); }
 `
@@ -184,11 +373,11 @@ const StatCardsGrid = styled.div`
 const StatCard = styled.div<{ $accent: string }>`
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 9px 11px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 
   &::after {
@@ -197,7 +386,7 @@ const StatCard = styled.div<{ $accent: string }>`
     left: 0; top: 0; bottom: 0;
     width: 3px;
     background: ${p => p.$accent};
-    border-radius: 12px 0 0 12px;
+    border-radius: 10px 0 0 10px;
   }
   &:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(0,0,0,0.08); }
 `
@@ -205,7 +394,9 @@ const StatCard = styled.div<{ $accent: string }>`
 /* ─── Dinner card ─────────────────────────────────────────────────────────── */
 const DinnerCard = styled.div`
   position: relative;
-  background: linear-gradient(135deg, #0f2027 0%, #1a3a4a 50%, #1e4d3a 100%);
+  /* Dark mode: neutral background */
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 16px;
   padding: 20px 22px;
   display: flex;
@@ -215,16 +406,28 @@ const DinnerCard = styled.div`
   overflow: hidden;
   min-height: 160px;
   cursor: default;
-  border: 1px solid rgba(255,255,255,0.06);
+
+  /* Light mode: colorful gradient */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: linear-gradient(135deg, #0f2027 0%, #1a3a4a 50%, #1e4d3a 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
 
   /* shimmer sweep on hover */
   &::before {
     content: '';
     position: absolute; inset: 0;
-    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.05) 50%, transparent 65%);
+    background: linear-gradient(105deg, transparent 35%, rgba(128,128,128,0.05) 50%, transparent 65%);
     transform: translateX(-100%);
     transition: transform 0.55s ease;
     pointer-events: none;
+    
+    /* Light mode: white shimmer */
+    [data-theme="light"] &,
+    :root:not([data-theme="dark"]) & {
+      background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.05) 50%, transparent 65%);
+    }
   }
   &:hover::before { transform: translateX(100%); }
 
@@ -234,10 +437,16 @@ const DinnerCard = styled.div`
     position: absolute;
     right: -8px; bottom: -12px;
     font-size: 90px;
-    opacity: 0.10;
+    opacity: 0.08;
     line-height: 1;
     pointer-events: none;
     user-select: none;
+    
+    /* Light mode: slightly more visible */
+    [data-theme="light"] &,
+    :root:not([data-theme="dark"]) & {
+      opacity: 0.10;
+    }
   }
 `
 
@@ -245,17 +454,85 @@ const DinnerBadge = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.14);
+  background: var(--bg-elevated);
+  border: 1px solid var(--card-border);
   border-radius: 20px;
   padding: 3px 10px;
   font-size: 10px;
   font-weight: 700;
-  color: rgba(255,255,255,0.7);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.7px;
   width: fit-content;
   backdrop-filter: blur(4px);
+  
+  /* Light mode: translucent white */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.7);
+  }
+`
+
+/* ─── Card text components for light/dark adaptation ──────────────────────── */
+const CardPrimaryText = styled.div<{ $size?: number }>`
+  font-size: ${p => p.$size ?? 24}px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+`
+
+const CardSecondaryText = styled.div<{ $size?: number }>`
+  font-size: ${p => p.$size ?? 12}px;
+  color: var(--text-secondary);
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: rgba(255,255,255,0.65);
+  }
+`
+
+const CardMutedText = styled.div<{ $size?: number }>`
+  font-size: ${p => p.$size ?? 11}px;
+  color: var(--text-muted);
+  
+  /* Light mode: white text */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    color: rgba(255,255,255,0.55);
+  }
+`
+
+const CardButton = styled.button`
+  background: var(--bg-elevated);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  
+  /* Light mode: translucent white */
+  [data-theme="light"] &,
+  :root:not([data-theme="dark"]) & {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+    backdrop-filter: blur(4px);
+  }
 `
 
 /* ─── Balance table (desktop) ────────────────────────────────────────────── */
@@ -483,30 +760,67 @@ export function DashboardPage() {
     <PageStack>
       {/* ── Hero Banner ── */}
       <HeroBanner $period={greetingPeriod}>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>
-            {today.format('dddd, DD MMMM YYYY')}
+        {/* Top row: greeting left, share amount right */}
+        <HeroBannerTop>
+          <div style={{ minWidth: 0 }}>
+            <HeroDateText>
+              {today.format('ddd, DD MMM YYYY')}
+            </HeroDateText>
+            <HeroGreetingText $mobile={isMobile}>
+              {greetingText}, {firstName} 👋
+            </HeroGreetingText>
           </div>
-          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
-            {greetingText}, {firstName} 👋
+
+          {/* Share amount — top-right on all sizes */}
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <HeroLabelText>
+              Your share
+            </HeroLabelText>
+            <HeroAmountText $mobile={isMobile}>
+              {formatCurrency(myBalance)}
+            </HeroAmountText>
+            {iAmPaid ? (
+              <div style={{ fontSize: 11, color: '#86efac', fontWeight: 700, marginTop: 3, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#86efac', display: 'inline-block' }} />
+                Paid
+              </div>
+            ) : myOwed > 0 ? (
+              <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginTop: 3 }}>
+                {formatCurrency(myOwed)} due
+              </div>
+            ) : null}
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 6 }}>
-            {paidCount} of {flatmates.length} flatmates paid this month
+        </HeroBannerTop>
+
+        {/* Bottom row: paid status pill + month */}
+        <HeroBannerBottom>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <HeroPill>
+              <HeroPillText $bold>
+                {paidCount}/{flatmates.length}
+              </HeroPillText>
+              <HeroPillText>paid</HeroPillText>
+            </HeroPill>
+            <HeroMonthText>
+              {today.format('MMMM YYYY')}
+            </HeroMonthText>
           </div>
-        </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 2 }}>Your share</div>
-          <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
-            {formatCurrency(myBalance)}
-          </div>
-          {iAmPaid ? (
-            <div style={{ fontSize: 11, color: '#86efac', fontWeight: 600, marginTop: 2 }}>✓ Paid</div>
-          ) : myOwed > 0 ? (
-            <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginTop: 2 }}>
-              {formatCurrency(myOwed)} remaining
+
+          {/* Progress bar */}
+          {flatmates.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <HeroProgressBar style={{ width: isMobile ? 60 : 80, height: 4, borderRadius: 4, overflow: 'hidden' }}>
+                <HeroProgressFill 
+                  $width={(paidCount / flatmates.length) * 100}
+                  $complete={paidCount === flatmates.length}
+                />
+              </HeroProgressBar>
+              <HeroPercentText>
+                {Math.round((paidCount / flatmates.length) * 100)}%
+              </HeroPercentText>
             </div>
-          ) : null}
-        </div>
+          )}
+        </HeroBannerBottom>
       </HeroBanner>
 
 
@@ -559,11 +873,11 @@ export function DashboardPage() {
             },
           ] as const).map(item => (
             <StatCard key={item.label} $accent={item.accent}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', paddingTop: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', paddingTop: 2, lineHeight: 1.3 }}>
                   {item.label}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {isAdmin && item.label === 'Prev. Remainder' && (
                     <button
                       type="button"
@@ -574,9 +888,9 @@ export function DashboardPage() {
                       style={{
                         border: '1px solid var(--card-border)',
                         background: 'transparent',
-                        borderRadius: 6,
-                        width: 22,
-                        height: 22,
+                        borderRadius: 5,
+                        width: 20,
+                        height: 20,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -585,23 +899,23 @@ export function DashboardPage() {
                       }}
                       title="Edit previous remainder"
                     >
-                      <EditOutlined style={{ fontSize: 11 }} />
+                      <EditOutlined style={{ fontSize: 10 }} />
                     </button>
                   )}
                   <div style={{
-                    width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+                    width: 24, height: 24, borderRadius: 6, flexShrink: 0,
                     background: `${item.accent}18`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, color: item.accent,
+                    fontSize: 12, color: item.accent,
                   }}>
                     {item.icon}
                   </div>
                 </div>
               </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.2px', lineHeight: 1.2 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', letterSpacing: '-0.2px', lineHeight: 1.2 }}>
                 {item.value}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.35 }}>
+              <div style={{ fontSize: 9.5, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.3 }}>
                 {item.sub}
               </div>
             </StatCard>
@@ -615,58 +929,31 @@ export function DashboardPage() {
 
             {/* middle: dish name + description */}
             <div>
-              <div style={{
-                fontSize: isMobile ? 20 : 24,
-                fontWeight: 800,
-                color: '#fff',
-                lineHeight: 1.25,
-                letterSpacing: '-0.3px',
-                textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              }}>
+              <CardPrimaryText $size={isMobile ? 20 : 24}>
                 {tonightDinner}
-              </div>
+              </CardPrimaryText>
               {dinnerDescription && (
-                <div style={{
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.65)',
-                  marginTop: 5,
-                  lineHeight: 1.5,
-                }}>
+                <CardSecondaryText style={{ marginTop: 5, lineHeight: 1.5 }}>
                   {dinnerDescription}
-                </div>
+                </CardSecondaryText>
               )}
             </div>
 
             {/* bottom: source label / cta */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               {hasDinnerFromMenu ? (
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CardMutedText style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#86efac', display: 'inline-block' }} />
                   Set from menu
-                </div>
+                </CardMutedText>
               ) : (
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                <CardMutedText>
                   Default schedule
-                </div>
+                </CardMutedText>
               )}
-              <button
-                onClick={() => navigate('/daily-menu')}
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  border: '1px solid rgba(255,255,255,0.22)',
-                  borderRadius: 8,
-                  color: '#fff',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: '4px 10px',
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(4px)',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
+              <CardButton onClick={() => navigate('/daily-menu')}>
                 {hasDinnerFromMenu ? 'Edit menu' : "Set today's menu"}
-              </button>
+              </CardButton>
             </div>
           </DinnerCard>
 
@@ -675,14 +962,14 @@ export function DashboardPage() {
               <CardPoly $w={120} $h={120} $top="-30px" $right="-20px" $opacity={0.04} />
               <CardPoly $w={80} $h={80} $bottom="-20px" $left="30px" $rotate={45} $opacity={0.03} />
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <CardMutedText $size={10} style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <CreditCardOutlined style={{ fontSize: 11 }} /> Pay Your Share
-                </div>
+                </CardMutedText>
                 <PremiumChip />
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.5px' }}>
+                <CardPrimaryText $size={13} style={{ letterSpacing: '0.5px' }}>
                   {contributeInfo.accountName}
-                </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+                </CardPrimaryText>
+                <CardSecondaryText style={{ marginTop: 2 }}>
                   {contributeInfo.paymentMethod} · {contributeInfo.accountNumber}
                   <button
                     type="button"
@@ -691,7 +978,7 @@ export function DashboardPage() {
                       marginLeft: 8,
                       background: 'transparent',
                       border: 'none',
-                      color: 'rgba(255,255,255,0.8)',
+                      color: 'var(--text-secondary)',
                       cursor: 'pointer',
                       padding: 0,
                       lineHeight: 1,
@@ -701,14 +988,14 @@ export function DashboardPage() {
                   >
                     <CopyOutlined />
                   </button>
-                </div>
+                </CardSecondaryText>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>Your share this month</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
+                  <CardMutedText $size={10} style={{ marginBottom: 2 }}>Your share this month</CardMutedText>
+                  <CardPrimaryText $size={22} style={{ letterSpacing: '-0.5px' }}>
                     {formatCurrency(myBalance)}
-                  </div>
+                  </CardPrimaryText>
                 </div>
                 {isAdmin && (
                   <EditCardBtn onClick={() => navigate('/admin')} title="Edit payment info">

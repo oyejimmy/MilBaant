@@ -5,6 +5,7 @@ import { getMonthRange } from '@/lib/formatters'
 import { logActivity } from '@/hooks/useActivityLog'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
+import { withOfflineSupport } from '@/lib/offline-mutation'
 import type { CreateRideInput, Ride, RideRider } from '@/lib/types'
 
 /* ─── Raw types ───────────────────────────────────────────────────────────── */
@@ -83,59 +84,31 @@ export function useRides(month: Dayjs) {
 
 export function useCreateRide() {
   return useMutation({
-    mutationFn: async (input: CreateRideInput) => {
-      const { data, error } = await supabase
-        .from('rides')
-        .insert({
-          date: input.date,
-          service: input.service,
-          route: input.route?.trim() || null,
-          amount: input.amount,
-          paid_by: input.paidBy,
-          note: input.note?.trim() || null,
-          created_by: input.createdBy,
-        })
-        .select('id')
-        .single()
-
-      if (error) throw new Error(error.message)
-
-      if (input.riderIds.length > 0) {
-        const { error: ridersError } = await supabase
-          .from('ride_riders')
-          .insert(input.riderIds.map((uid) => ({ ride_id: data.id, user_id: uid })))
-        if (ridersError) throw new Error(ridersError.message)
-      }
-
-      await logActivity({
-        userId: input.createdBy,
-        action: 'create',
-        entity: 'ride',
-        entityId: data.id,
-        description: `Added ride: ${input.service}${input.route ? ` — ${input.route}` : ''} — PKR ${input.amount} on ${input.date}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rides })
-    },
+    mutationFn: (input: CreateRideInput) =>
+      withOfflineSupport('create_ride', input, async () => {
+        const { data, error } = await supabase.from('rides').insert({
+          date: input.date, service: input.service, route: input.route?.trim() || null,
+          amount: input.amount, paid_by: input.paidBy, note: input.note?.trim() || null, created_by: input.createdBy,
+        }).select('id').single()
+        if (error) throw new Error(error.message)
+        if (input.riderIds.length > 0) {
+          const { error: re } = await supabase.from('ride_riders').insert(input.riderIds.map(uid => ({ ride_id: data.id, user_id: uid })))
+          if (re) throw new Error(re.message)
+        }
+        await logActivity({ userId: input.createdBy, action: 'create', entity: 'ride', entityId: data.id, description: `Added ride: ${input.service}${input.route ? ` — ${input.route}` : ''} — PKR ${input.amount} on ${input.date}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rides }) },
   })
 }
 
 export function useDeleteRide() {
   return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase.from('rides').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId,
-        action: 'delete',
-        entity: 'ride',
-        entityId: id,
-        description: `Deleted ride`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rides })
-    },
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      withOfflineSupport('delete_ride', { id, userId }, async () => {
+        const { error } = await supabase.from('rides').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'delete', entity: 'ride', entityId: id, description: 'Deleted ride' })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rides }) },
   })
 }

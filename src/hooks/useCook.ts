@@ -3,6 +3,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { logActivity } from '@/hooks/useActivityLog'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
+import { withOfflineSupport } from '@/lib/offline-mutation'
 import type { CookAdvance, CookPurchase, PurchaseCategory } from '@/lib/types'
 
 /* ─── Raw normalizers ─────────────────────────────────────────────────────── */
@@ -38,43 +39,25 @@ export function useCookAdvances() {
 
 export function useCreateAdvance() {
   return useMutation({
-    mutationFn: async (input: { amount: number; date: string; note?: string; givenBy: string }) => {
-      const { error } = await supabase.from('cook_advances').insert({
-        amount: input.amount,
-        date: input.date,
-        note: input.note?.trim() || null,
-        given_by: input.givenBy,
-      })
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId: input.givenBy,
-        action: 'create',
-        entity: 'cook_advance',
-        description: `Gave cook advance: PKR ${input.amount} on ${input.date}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookAdvances })
-    },
+    mutationFn: (input: { amount: number; date: string; note?: string; givenBy: string }) =>
+      withOfflineSupport('create_cook_advance', input, async () => {
+        const { error } = await supabase.from('cook_advances').insert({ amount: input.amount, date: input.date, note: input.note?.trim() || null, given_by: input.givenBy })
+        if (error) throw new Error(error.message)
+        await logActivity({ userId: input.givenBy, action: 'create', entity: 'cook_advance', description: `Gave cook advance: PKR ${input.amount} on ${input.date}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookAdvances }) },
   })
 }
 
 export function useDeleteAdvance() {
   return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase.from('cook_advances').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId,
-        action: 'delete',
-        entity: 'cook_advance',
-        entityId: id,
-        description: `Deleted cook advance`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookAdvances })
-    },
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      withOfflineSupport('delete_cook_advance', { id, userId }, async () => {
+        const { error } = await supabase.from('cook_advances').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'delete', entity: 'cook_advance', entityId: id, description: 'Deleted cook advance' })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookAdvances }) },
   })
 }
 
@@ -103,51 +86,24 @@ export function useCookPurchases() {
 
 export function useCreatePurchase() {
   return useMutation({
-    mutationFn: async (input: {
-      date: string
-      item: string
-      amount: number
-      category: PurchaseCategory
-      note?: string
-      createdBy: string
-    }) => {
-      const { error } = await supabase.from('cook_purchases').insert({
-        date: input.date,
-        item: input.item.trim(),
-        amount: input.amount,
-        category: input.category,
-        note: input.note?.trim() || null,
-        created_by: input.createdBy,
-      })
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId: input.createdBy,
-        action: 'create',
-        entity: 'cook_purchase',
-        description: `Added cook purchase: ${input.item} (${input.category}) — PKR ${input.amount} on ${input.date}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookPurchases })
-    },
+    mutationFn: (input: { date: string; item: string; amount: number; category: PurchaseCategory; note?: string; createdBy: string }) =>
+      withOfflineSupport('create_cook_purchase', input, async () => {
+        const { error } = await supabase.from('cook_purchases').insert({ date: input.date, item: input.item.trim(), amount: input.amount, category: input.category, note: input.note?.trim() || null, created_by: input.createdBy })
+        if (error) throw new Error(error.message)
+        await logActivity({ userId: input.createdBy, action: 'create', entity: 'cook_purchase', description: `Added cook purchase: ${input.item} (${input.category}) — PKR ${input.amount} on ${input.date}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookPurchases }) },
   })
 }
 
 export function useDeletePurchase() {
   return useMutation({
-    mutationFn: async ({ id, userId, item }: { id: string; userId: string; item?: string }) => {
-      const { error } = await supabase.from('cook_purchases').delete().eq('id', id)
-      if (error) throw new Error(error.message)
-      await logActivity({
-        userId,
-        action: 'delete',
-        entity: 'cook_purchase',
-        entityId: id,
-        description: `Deleted cook purchase${item ? `: ${item}` : ''}`,
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookPurchases })
-    },
+    mutationFn: ({ id, userId, item }: { id: string; userId: string; item?: string }) =>
+      withOfflineSupport('delete_cook_purchase', { id, userId, item }, async () => {
+        const { error } = await supabase.from('cook_purchases').delete().eq('id', id)
+        if (error) throw new Error(error.message)
+        await logActivity({ userId, action: 'delete', entity: 'cook_purchase', entityId: id, description: `Deleted cook purchase${item ? `: ${item}` : ''}` })
+      }),
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookPurchases }) },
   })
 }
