@@ -161,12 +161,10 @@ export default defineConfig({
           if (id.includes('node_modules/html2canvas')) {
             return 'vendor-html2canvas'
           }
-          // Ant Design icons — separate from antd core so tree-shaking works
-          if (id.includes('node_modules/@ant-design/icons')) {
-            return 'vendor-antd-icons'
-          }
-          // Ant Design core
-          if (id.includes('node_modules/antd')) {
+          // Ant Design (icons + core together to avoid circular init errors)
+          if (id.includes('node_modules/@ant-design/icons') ||
+              id.includes('node_modules/antd') ||
+              id.includes('node_modules/@ant-design/')) {
             return 'vendor-antd'
           }
           // Supabase client
