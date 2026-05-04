@@ -68,24 +68,20 @@ export function useMenuByDate(date: string) {
   })
 }
 
-/* ── Create ──────────────────────────────────────────────────────────────── */
+/* ── Upsert via RPC (avoids CORS preflight on PATCH/INSERT) ─────────────── */
 
 export function useCreateMenu() {
   return useMutation({
     mutationFn: async (payload: CreateDailyMenuInput) => {
-      const { data, error } = await supabase
-        .from('daily_menu')
-        .insert({
-          date:               payload.date,
-          breakfast:          payload.breakfast?.trim()         || null,
-          lunch:              payload.lunch?.trim()             || null,
-          dinner:             payload.dinner?.trim()            || null,
-          dinner_description: payload.dinnerDescription?.trim() || null,
-          notes:              payload.notes?.trim()             || null,
-          created_by:         payload.createdBy,
-        })
-        .select('id')
-        .single()
+      const { data, error } = await supabase.rpc('upsert_daily_menu', {
+        p_date:               payload.date,
+        p_dinner:             payload.dinner?.trim()             ?? null,
+        p_dinner_description: payload.dinnerDescription?.trim()  ?? null,
+        p_notes:              payload.notes?.trim()              ?? null,
+        p_breakfast:          payload.breakfast?.trim()          ?? null,
+        p_lunch:              payload.lunch?.trim()              ?? null,
+        p_created_by:         payload.createdBy,
+      })
 
       if (error) throw new Error(error.message)
 
@@ -93,7 +89,7 @@ export function useCreateMenu() {
         userId:      payload.createdBy,
         action:      'create',
         entity:      'daily_menu',
-        entityId:    data.id,
+        entityId:    data as string,
         description: `Added menu for ${payload.date}`,
       })
     },
@@ -102,8 +98,6 @@ export function useCreateMenu() {
     },
   })
 }
-
-/* ── Update ──────────────────────────────────────────────────────────────── */
 
 export function useUpdateMenu() {
   return useMutation({
@@ -114,27 +108,17 @@ export function useUpdateMenu() {
       payload: UpdateDailyMenuInput
       userId: string
     }) => {
-      // Build a sparse update — only include fields explicitly passed.
-      // Using Record<string, string | null> so null values are sent to DB
-      // (clearing a field) rather than being omitted.
-      const update: Record<string, string | null> = {}
-
-      if ('breakfast'         in payload) update.breakfast          = payload.breakfast?.trim()         || null
-      if ('lunch'             in payload) update.lunch              = payload.lunch?.trim()             || null
-      if ('dinner'            in payload) update.dinner             = payload.dinner?.trim()            || null
-      if ('dinnerDescription' in payload) update.dinner_description = payload.dinnerDescription?.trim() || null
-      if ('notes'             in payload) update.notes              = payload.notes?.trim()             || null
-
-      if (Object.keys(update).length === 0) return
-
-      // Use .select() so Supabase sends `Prefer: return=representation`
-      // instead of `return=minimal`. The minimal header triggers a CORS
-      // preflight that some Supabase project configs reject.
-      const { error } = await supabase
-        .from('daily_menu')
-        .update(update)
-        .eq('id', payload.id)
-        .select('id')
+      // Sparse args — pass only fields explicitly present in payload.
+      // Fields absent from payload are passed as null, which the RPC
+      // treats as "leave unchanged".
+      const { error } = await supabase.rpc('upsert_daily_menu', {
+        p_date:               payload.date,
+        p_dinner:             'dinner'             in payload ? (payload.dinner?.trim()             ?? null) : null,
+        p_dinner_description: 'dinnerDescription'  in payload ? (payload.dinnerDescription?.trim()  ?? null) : null,
+        p_notes:              'notes'              in payload ? (payload.notes?.trim()              ?? null) : null,
+        p_breakfast:          'breakfast'          in payload ? (payload.breakfast?.trim()          ?? null) : null,
+        p_lunch:              'lunch'              in payload ? (payload.lunch?.trim()              ?? null) : null,
+      })
 
       if (error) throw new Error(error.message)
 

@@ -141,7 +141,7 @@ export function CookMenuPage() {
 
     if (todayMenu) {
       await updateMenu.mutateAsync({
-        payload: { id: todayMenu.id, ...patch },
+        payload: { id: todayMenu.id, date: todayMenu.date, ...patch },
         userId,
       })
     } else {

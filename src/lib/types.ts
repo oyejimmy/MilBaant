@@ -345,6 +345,7 @@ export interface CreateDailyMenuInput {
 
 export interface UpdateDailyMenuInput {
   id: string
+  date: string
   breakfast?: string
   lunch?: string
   dinner?: string

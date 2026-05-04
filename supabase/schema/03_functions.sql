@@ -132,6 +132,76 @@ BEGIN
 END;
 $$;
 
+-- ── Daily Menu Functions ─────────────────────────────────────────────────────
+
+-- Upsert daily menu — any authenticated user can call this.
+-- Using SECURITY DEFINER + RPC (POST) avoids the CORS preflight that
+-- Supabase's PATCH endpoint triggers on some project configurations.
+CREATE OR REPLACE FUNCTION public.upsert_daily_menu(
+  p_date                text,
+  p_dinner              text    DEFAULT NULL,
+  p_dinner_description  text    DEFAULT NULL,
+  p_notes               text    DEFAULT NULL,
+  p_breakfast           text    DEFAULT NULL,
+  p_lunch               text    DEFAULT NULL,
+  p_created_by          uuid    DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_existing_id uuid;
+  v_result_id   uuid;
+  v_creator     uuid;
+BEGIN
+  v_creator := COALESCE(p_created_by, auth.uid());
+
+  IF v_creator IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Check if a row already exists for this date
+  SELECT id INTO v_existing_id
+  FROM public.daily_menu
+  WHERE date = p_date::date;
+
+  IF v_existing_id IS NOT NULL THEN
+    -- Sparse update: only overwrite columns that were explicitly passed (non-NULL)
+    UPDATE public.daily_menu
+    SET
+      dinner             = CASE WHEN p_dinner             IS NOT NULL THEN p_dinner             ELSE dinner             END,
+      dinner_description = CASE WHEN p_dinner_description IS NOT NULL THEN p_dinner_description ELSE dinner_description END,
+      notes              = CASE WHEN p_notes              IS NOT NULL THEN p_notes              ELSE notes              END,
+      breakfast          = CASE WHEN p_breakfast          IS NOT NULL THEN p_breakfast          ELSE breakfast          END,
+      lunch              = CASE WHEN p_lunch              IS NOT NULL THEN p_lunch              ELSE lunch              END,
+      updated_at         = timezone('utc', now())
+    WHERE id = v_existing_id;
+
+    v_result_id := v_existing_id;
+  ELSE
+    -- Insert new row
+    INSERT INTO public.daily_menu (date, dinner, dinner_description, notes, breakfast, lunch, created_by)
+    VALUES (
+      p_date::date,
+      p_dinner,
+      p_dinner_description,
+      p_notes,
+      p_breakfast,
+      p_lunch,
+      v_creator
+    )
+    RETURNING id INTO v_result_id;
+  END IF;
+
+  RETURN v_result_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.upsert_daily_menu(text, text, text, text, text, text, uuid)
+  TO authenticated;
+
 -- ============================================================
 -- Verification
 -- ============================================================
