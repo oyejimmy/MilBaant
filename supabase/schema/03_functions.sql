@@ -119,6 +119,112 @@ $$;
 GRANT EXECUTE ON FUNCTION public.admin_update_profile(uuid, text, boolean, text, boolean)
   TO authenticated;
 
+-- ── Hard-delete a user and all their data ────────────────────────────────────
+--
+-- Permanently removes a user from auth.users (which cascades to profiles and
+-- all ON DELETE CASCADE child rows).  Tables that use ON DELETE RESTRICT are
+-- handled explicitly before the auth.users delete so the operation never
+-- fails with a foreign-key violation.
+--
+-- Safety rules enforced inside the function:
+--   • Caller must be an admin.
+--   • An admin cannot delete themselves.
+--   • The target user must already be deactivated (is_active = false) to
+--     prevent accidental deletion of active accounts.
+--
+CREATE OR REPLACE FUNCTION public.admin_hard_delete_user(
+  target_user_id uuid
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_is_active boolean;
+BEGIN
+  -- 1. Caller must be an admin
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Permission denied: admin role required';
+  END IF;
+
+  -- 2. Cannot delete yourself
+  IF target_user_id = auth.uid() THEN
+    RAISE EXCEPTION 'Cannot delete your own account';
+  END IF;
+
+  -- 3. Target must be deactivated first (safety gate)
+  SELECT is_active INTO v_is_active
+  FROM public.profiles
+  WHERE id = target_user_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  IF v_is_active IS TRUE THEN
+    RAISE EXCEPTION 'User must be deactivated before permanent deletion';
+  END IF;
+
+  -- 4. Handle ON DELETE RESTRICT tables by nullifying or deleting rows
+  --    that reference this user before we remove the auth.users row.
+
+  -- expenses.created_by → RESTRICT: delete the expense (and its participants cascade)
+  DELETE FROM public.expenses
+  WHERE created_by = target_user_id;
+
+  -- debt_settlements.created_by → RESTRICT: delete settlements created by this user
+  DELETE FROM public.debt_settlements
+  WHERE created_by = target_user_id;
+
+  -- rides.created_by / paid_by → RESTRICT: delete rides created or paid by this user
+  DELETE FROM public.rides
+  WHERE created_by = target_user_id
+     OR paid_by    = target_user_id;
+
+  -- cook_advances.given_by → RESTRICT
+  DELETE FROM public.cook_advances
+  WHERE given_by = target_user_id;
+
+  -- cook_purchases.created_by → RESTRICT
+  DELETE FROM public.cook_purchases
+  WHERE created_by = target_user_id;
+
+  -- daily_menu.created_by → RESTRICT
+  DELETE FROM public.daily_menu
+  WHERE created_by = target_user_id;
+
+  -- flat_fund_allocations.allocated_by → RESTRICT
+  DELETE FROM public.flat_fund_allocations
+  WHERE allocated_by = target_user_id;
+
+  -- flat_fund_expenses.created_by → RESTRICT
+  DELETE FROM public.flat_fund_expenses
+  WHERE created_by = target_user_id;
+
+  -- contribution_payments.created_by → RESTRICT
+  DELETE FROM public.contribution_payments
+  WHERE created_by = target_user_id;
+
+  -- announcements.created_by → RESTRICT
+  DELETE FROM public.announcements
+  WHERE created_by = target_user_id;
+
+  -- activity_logs.user_id → RESTRICT
+  DELETE FROM public.activity_logs
+  WHERE user_id = target_user_id;
+
+  -- 5. Delete from auth.users — cascades to profiles and all
+  --    ON DELETE CASCADE child rows (bed_assignments, expense_participants,
+  --    ride_riders, debt_settlements as payer/payee, flat_fund rows, etc.)
+  DELETE FROM auth.users
+  WHERE id = target_user_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_hard_delete_user(uuid)
+  TO authenticated;
+
 -- ── Utility Functions ────────────────────────────────────────────────────────
 
 -- Trigger function to automatically set updated_at timestamp

@@ -31,6 +31,7 @@ import {
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
+  ExclamationCircleOutlined,
   LockOutlined,
   MailOutlined,
   SaveOutlined,
@@ -53,6 +54,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAssignBed, useBedAssignments, useBeds, useRooms } from '@/hooks/useFlatLayout'
 import {
   useAdminCreateUser,
+  useAdminDeleteUser,
   useProfiles,
   useUpdateProfilePermissions,
 } from '@/hooks/useProfiles'
@@ -164,7 +166,6 @@ const RestoreBtn = styled(Button)`
   color: var(--success)  ; box-shadow: none  ;
   &:hover { background: var(--success-light)  ; border-color: var(--success)  ; }
 `
-
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
 const AVATAR_COLORS = ['#1c8ee5', '#6a6a6a', '#52c41a', '#fa8c16', '#13c2c2', '#eb2f96', '#722ed1', '#cf1322']
@@ -191,6 +192,7 @@ export function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'removed'>('all')
   const [editUser, setEditUser]         = useState<Profile | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<Profile | null>(null)
   const [addUserOpen, setAddUserOpen]   = useState(false)
   const [memberCountDraft, setMemberCountDraft] = useState<number | null>(null)
 
@@ -201,6 +203,7 @@ export function AdminPage() {
   const memberCountQuery   = useMemberCountSetting()
   const updateProfile      = useUpdateProfilePermissions()
   const createUser         = useAdminCreateUser()
+  const deleteUser         = useAdminDeleteUser()
   const saveMemberCount    = useUpsertMemberCount()
   const roomsQuery         = useRooms()
   const bedsQuery          = useBeds()
@@ -275,6 +278,16 @@ export function AdminPage() {
       message.success(`${profile.full_name} has been reactivated.`)
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Unable to reactivate user.')
+    }
+  }
+
+  async function handlePermanentDelete(profile: Profile) {
+    try {
+      await deleteUser.mutateAsync(profile.id)
+      message.success(`${profile.full_name} has been permanently removed.`)
+      setRemoveTarget(null)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Unable to remove user.')
     }
   }
 
@@ -360,7 +373,7 @@ export function AdminPage() {
     {
       title: 'Actions',
       key: 'actions',
-      width: 100,
+      width: 120,
       align: 'right' as const,
       render: (_: unknown, p: Profile) => {
         const isRemoved = p.is_active === false
@@ -371,9 +384,14 @@ export function AdminPage() {
               <Button size="small" icon={<EditOutlined />} onClick={() => setEditUser(p)} disabled={isRemoved} />
             </Tooltip>
             {isRemoved ? (
-              <Tooltip title="Reactivate user">
-                <RestoreBtn size="small" icon={<CheckCircleOutlined />} onClick={() => void handleRestoreUser(p)} />
-              </Tooltip>
+              <Flex gap={4}>
+                <Tooltip title="Reactivate user">
+                  <RestoreBtn size="small" icon={<CheckCircleOutlined />} onClick={() => void handleRestoreUser(p)} />
+                </Tooltip>
+                <Tooltip title="Remove permanently">
+                  <Button size="small" danger icon={<ExclamationCircleOutlined />} onClick={() => setRemoveTarget(p)} />
+                </Tooltip>
+              </Flex>
             ) : (
               <Tooltip title={isSelf ? "Can't deactivate yourself" : 'Deactivate user'}>
                 <DangerBtn size="small" icon={<DeleteOutlined />} disabled={isSelf} onClick={() => setDeleteTarget(p)} />
@@ -522,7 +540,10 @@ export function AdminPage() {
                             <Switch size="small" checked={p.can_add_expenses} disabled={isRemoved} onChange={(checked) => void handlePermissionChange(p, checked)} />
                           </CardRow>
                           {isRemoved ? (
-                            <RestoreBtn block icon={<CheckCircleOutlined />} onClick={() => void handleRestoreUser(p)}>Reactivate User</RestoreBtn>
+                            <Flex gap={8} style={{ width: '100%' }}>
+                              <RestoreBtn style={{ flex: 1 }} icon={<CheckCircleOutlined />} onClick={() => void handleRestoreUser(p)}>Reactivate</RestoreBtn>
+                              <Button danger style={{ flex: 1 }} icon={<ExclamationCircleOutlined />} onClick={() => setRemoveTarget(p)}>Remove</Button>
+                            </Flex>
                           ) : (
                             <DangerBtn block icon={<DeleteOutlined />} disabled={isSelf} onClick={() => setDeleteTarget(p)}>
                               {isSelf ? "Can't deactivate yourself" : 'Deactivate User'}
@@ -653,6 +674,15 @@ export function AdminPage() {
           submitting={updateProfile.isPending}
           onClose={() => setDeleteTarget(null)}
           onConfirm={() => void handleDeleteUser(deleteTarget)}
+        />
+      )}
+
+      {removeTarget && (
+        <RemoveUserModal
+          profile={removeTarget}
+          submitting={deleteUser.isPending}
+          onClose={() => setRemoveTarget(null)}
+          onConfirm={() => void handlePermanentDelete(removeTarget)}
         />
       )}
 
@@ -829,6 +859,101 @@ function EditUserModal({ profile, submitting, onClose, onSave, onRoleChange, onP
           </Col>
         </Row>
       </Form>
+    </Modal>
+  )
+}
+
+/* ─── Remove User Modal (permanent hard delete) ───────────────────────────── */
+
+const ConfirmNameWrap = styled.div`
+  margin-top: 16px;
+`
+
+function RemoveUserModal({ profile, submitting, onClose, onConfirm }: {
+  profile: Profile; submitting: boolean; onClose: () => void; onConfirm: () => void
+}) {
+  const { Text } = Typography
+  const [confirmName, setConfirmName] = useState('')
+  const nameMatches = confirmName.trim().toLowerCase() === profile.full_name.trim().toLowerCase()
+
+  return (
+    <Modal
+      open
+      title={
+        <Flex align="center" gap={8}>
+          <ExclamationCircleOutlined style={{ color: '#cf1322' }} />
+          <span>Remove User Permanently</span>
+        </Flex>
+      }
+      okText="Yes, Remove Permanently"
+      okButtonProps={{ danger: true, loading: submitting, disabled: !nameMatches }}
+      cancelText="Cancel"
+      onCancel={onClose}
+      onOk={onConfirm}
+      width="min(460px, 95vw)"
+    >
+      <Space direction="vertical" size={16} style={{ width: '100%', paddingTop: 8 }}>
+        <Flex align="center" gap={12}>
+          <Avatar
+            size={44}
+            style={{
+              background: '#bfbfbf',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 16,
+              flexShrink: 0,
+            }}
+          >
+            {initials(profile.full_name)}
+          </Avatar>
+          <div>
+            <Text strong style={{ color: 'var(--text-strong)', display: 'block', fontSize: 15 }}>
+              {profile.full_name}
+            </Text>
+            <RoleTag $role={profile.role}>
+              {ROLE_META[profile.role]?.icon} {ROLE_META[profile.role]?.label}
+            </RoleTag>
+          </div>
+        </Flex>
+
+        <Alert
+          type="error"
+          showIcon
+          message="This action cannot be undone"
+          description={
+            <Space direction="vertical" size={4}>
+              <Text style={{ fontSize: 13 }}>
+                Permanently removing this user will delete:
+              </Text>
+              <Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                • Their profile and login credentials
+              </Text>
+              <Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                • All expenses, rides, and settlements they created
+              </Text>
+              <Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                • Their bed assignment, contributions, and activity logs
+              </Text>
+              <Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                • All other data associated with this account
+              </Text>
+            </Space>
+          }
+        />
+
+        <ConfirmNameWrap>
+          <Text style={{ fontSize: 13, color: 'var(--text-strong)', display: 'block', marginBottom: 6 }}>
+            Type <Text strong style={{ color: '#cf1322' }}>{profile.full_name}</Text> to confirm:
+          </Text>
+          <Input
+            value={confirmName}
+            onChange={(e) => setConfirmName(e.target.value)}
+            placeholder={profile.full_name}
+            status={confirmName.length > 0 && !nameMatches ? 'error' : undefined}
+            autoComplete="off"
+          />
+        </ConfirmNameWrap>
+      </Space>
     </Modal>
   )
 }

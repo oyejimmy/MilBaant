@@ -107,6 +107,43 @@ export function useUpdateOwnProfile() {
 }
 
 /**
+ * Permanently removes a user and all their data from Supabase.
+ *
+ * The target user MUST already be deactivated (is_active = false).
+ * The server-side function handles all FK-RESTRICT tables before
+ * deleting from auth.users, which cascades to profiles and all
+ * ON DELETE CASCADE child rows.
+ */
+export function useAdminDeleteUser() {
+  return useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { error } = await supabase.rpc('admin_hard_delete_user', {
+        target_user_id: targetUserId,
+      })
+
+      if (error) {
+        if (
+          error.message.includes('Permission denied') ||
+          error.message.includes('admin role required')
+        ) {
+          throw new Error('Admin access required. Please refresh and try again.')
+        }
+        if (error.message.includes('must be deactivated')) {
+          throw new Error('User must be deactivated before permanent deletion.')
+        }
+        if (error.message.includes('own account')) {
+          throw new Error('You cannot delete your own account.')
+        }
+        throw new Error(error.message)
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
+    },
+  })
+}
+
+/**
  * Admin creates a new user by signing them up.
  *
  * Uses a separate isolated Supabase client (supabaseSignup) with in-memory
