@@ -1,0 +1,348 @@
+# Database Architecture
+
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        MilBaant Database                         │
+│                     (PostgreSQL + Supabase)                      │
+└─────────────────────────────────────────────────────────────────┘
+                                 │
+                ┌────────────────┼────────────────┐
+                │                │                │
+        ┌───────▼──────┐  ┌─────▼─────┐  ┌──────▼──────┐
+        │   Tables     │  │ Functions │  │   Storage   │
+        │  (17 total)  │  │ (5 total) │  │ (3 buckets) │
+        └──────────────┘  └───────────┘  └─────────────┘
+                │                │                │
+        ┌───────▼──────┐  ┌─────▼─────┐  ┌──────▼──────┐
+        │   Indexes    │  │ Triggers  │  │ RLS Policies│
+        │  (24 total)  │  │ (3 total) │  │  (50+ total)│
+        └──────────────┘  └───────────┘  └─────────────┘
+```
+
+## 📊 Database Schema Layers
+
+### Layer 1: Extensions
+```
+┌─────────────────────┐
+│   00_extensions     │  ← PostgreSQL extensions (pgcrypto)
+└─────────────────────┘
+```
+
+### Layer 2: Data Structure
+```
+┌─────────────────────┐
+│     01_tables       │  ← 17 tables (profiles, expenses, etc.)
+└─────────────────────┘
+           │
+┌─────────────────────┐
+│     02_indexes      │  ← 24 indexes for performance
+└─────────────────────┘
+```
+
+### Layer 3: Business Logic
+```
+┌─────────────────────┐
+│    03_functions     │  ← 5 functions (is_admin, is_cook, etc.)
+└─────────────────────┘
+           │
+┌─────────────────────┐
+│    04_triggers      │  ← 3 triggers (auto-create profile, etc.)
+└─────────────────────┘
+```
+
+### Layer 4: Security
+```
+┌─────────────────────┐
+│   05_rls_enable     │  ← Enable RLS on all tables
+└─────────────────────┘
+           │
+┌─────────────────────┐
+│  06_rls_policies    │  ← 50+ policies for access control
+└─────────────────────┘
+```
+
+### Layer 5: Storage & Data
+```
+┌─────────────────────┐
+│    07_storage       │  ← 3 storage buckets + policies
+└─────────────────────┘
+           │
+┌─────────────────────┐
+│   08_seed_data      │  ← Initial data (rooms, beds, settings)
+└─────────────────────┘
+```
+
+## 🗂️ Table Relationships
+
+```
+                    ┌──────────────┐
+                    │   profiles   │ ← Central user table
+                    └──────┬───────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+┌───────▼────────┐  ┌─────▼──────┐  ┌───────▼────────┐
+│   expenses     │  │   rides    │  │ cook_requests  │
+└───────┬────────┘  └─────┬──────┘  └────────────────┘
+        │                 │
+┌───────▼────────┐  ┌─────▼──────┐
+│ expense_       │  │ ride_      │
+│ participants   │  │ riders     │
+└────────────────┘  └────────────┘
+
+        ┌──────────────────┐
+        │  bed_assignments │
+        └────────┬─────────┘
+                 │
+        ┌────────▼─────────┐
+        │      beds        │
+        └────────┬─────────┘
+                 │
+        ┌────────▼─────────┐
+        │      rooms       │
+        └──────────────────┘
+```
+
+## 🔐 Security Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Row Level Security (RLS)                  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+┌───────▼────────┐   ┌────────▼────────┐   ┌──────▼──────┐
+│  Public Read   │   │  Owner Write    │   │ Admin Full  │
+│  (SELECT all)  │   │  (own records)  │   │  (all ops)  │
+└────────────────┘   └─────────────────┘   └─────────────┘
+
+Helper Functions:
+├── is_admin()                    → Check admin role
+├── is_cook()                     → Check cook role
+├── can_current_user_add_expenses() → Check expense permission
+└── admin_update_profile()        → Admin profile updates (SECURITY DEFINER)
+```
+
+## 💾 Storage Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Storage Buckets                         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+┌───────▼────────┐   ┌────────▼────────┐   ┌──────▼──────┐
+│  bill-images   │   │ payment-        │   │  avatars    │
+│  (public read) │   │ screenshots     │   │ (owner only)│
+└────────────────┘   └─────────────────┘   └─────────────┘
+
+Policies:
+├── Public read access
+├── Authenticated insert
+├── Owner delete
+└── Admin delete
+```
+
+## 🔄 Data Flow
+
+### User Registration Flow
+```
+1. User signs up
+   ↓
+2. auth.users row created
+   ↓
+3. Trigger: on_auth_user_created
+   ↓
+4. profiles row auto-created
+   ↓
+5. First user → admin role
+   Others → user role
+```
+
+### Expense Creation Flow
+```
+1. User creates expense
+   ↓
+2. Check: can_current_user_add_expenses()
+   ↓
+3. Insert into expenses table
+   ↓
+4. Insert participants (if custom split)
+   ↓
+5. Upload bill image (optional)
+   ↓
+6. Log activity
+```
+
+### Admin Update Flow
+```
+1. Admin updates user profile
+   ↓
+2. Call: admin_update_profile()
+   ↓
+3. Function checks: is_admin()
+   ↓
+4. Update bypasses RLS (SECURITY DEFINER)
+   ↓
+5. Profile updated successfully
+```
+
+## 📁 File Organization
+
+```
+supabase/
+│
+├── 📖 Documentation Layer
+│   ├── README.md                  ← Main documentation
+│   ├── MIGRATION_GUIDE.md         ← Migration instructions
+│   ├── QUICK_REFERENCE.md         ← Quick lookup
+│   ├── ARCHITECTURE.md            ← This file
+│   └── RESTRUCTURE_SUMMARY.md     ← Restructuring summary
+│
+├── 🗂️ Schema Layer (Source of Truth)
+│   └── schema/
+│       ├── 00_extensions.sql      ← Extensions
+│       ├── 01_tables.sql          ← Tables
+│       ├── 02_indexes.sql         ← Indexes
+│       ├── 03_functions.sql       ← Functions
+│       ├── 04_triggers.sql        ← Triggers
+│       ├── 05_rls_enable.sql      ← Enable RLS
+│       ├── 06_rls_policies.sql    ← RLS policies
+│       ├── 07_storage.sql         ← Storage
+│       └── 08_seed_data.sql       ← Seed data
+│
+├── 🛠️ Operations Layer
+│   └── scripts/
+│       ├── setup.sql              ← Complete setup
+│       ├── reset.sql              ← Database reset
+│       └── verify.sql             ← Verification
+│
+├── 📅 Evolution Layer
+│   └── migrations/
+│       └── YYYYMMDD_*.sql         ← Timestamped changes
+│
+├── 🧪 Testing Layer
+│   └── tests/
+│       └── *.sql                  ← Test files
+│
+├── 📚 Historical Layer
+│   └── docs/
+│       └── *.md                   ← Historical docs
+│
+└── 📦 Archive Layer
+    └── archive/
+        └── *.sql                  ← Old files
+```
+
+## 🔄 Development Workflow
+
+```
+┌─────────────────┐
+│  Make Change    │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│ Update Schema   │  ← Edit appropriate schema/*.sql file
+│     File        │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│ Create          │  ← Create migrations/YYYYMMDD_*.sql
+│  Migration      │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│ Test Locally    │  ← Run scripts/verify.sql
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│ Apply to        │  ← Run migration in Supabase
+│  Production     │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│ Verify          │  ← Run scripts/verify.sql
+└─────────────────┘
+```
+
+## 🎯 Design Principles
+
+### 1. **Idempotency**
+All scripts can be run multiple times safely:
+- `CREATE ... IF NOT EXISTS`
+- `DROP ... IF EXISTS`
+- `ON CONFLICT ... DO NOTHING`
+
+### 2. **Modularity**
+Each file has a single responsibility:
+- Tables in one file
+- Functions in another
+- Clear separation
+
+### 3. **Security First**
+RLS enabled on all tables:
+- Public read (most tables)
+- Owner write (own records)
+- Admin full access
+
+### 4. **Documentation**
+Every file is documented:
+- Purpose clearly stated
+- Comments explain why
+- Examples provided
+
+### 5. **Maintainability**
+Easy to understand and modify:
+- Logical organization
+- Standard naming
+- Clear structure
+
+## 📊 Performance Considerations
+
+### Indexes Strategy
+```
+┌─────────────────────────────────────┐
+│         Index Types Used            │
+├─────────────────────────────────────┤
+│ • Date columns (for filtering)      │
+│ • Foreign keys (for joins)          │
+│ • Status columns (for filtering)    │
+│ • Composite indexes (where needed)  │
+│ • Partial indexes (for conditions)  │
+└─────────────────────────────────────┘
+```
+
+### Query Optimization
+- Indexes on frequently queried columns
+- Foreign key indexes for joins
+- Partial indexes for specific conditions
+- Covering indexes where beneficial
+
+## 🔍 Monitoring & Verification
+
+```
+┌─────────────────────────────────────┐
+│      Verification Points            │
+├─────────────────────────────────────┤
+│ ✓ All tables created                │
+│ ✓ All indexes created               │
+│ ✓ All functions created             │
+│ ✓ All triggers created              │
+│ ✓ RLS enabled on all tables         │
+│ ✓ All policies created              │
+│ ✓ All storage buckets created       │
+│ ✓ Seed data inserted                │
+└─────────────────────────────────────┘
+
+Run: scripts/verify.sql
+```
+
+---
+
+**Last Updated**: May 4, 2026  
+**Database Version**: 1.0  
+**Architecture**: Modular PostgreSQL + Supabase

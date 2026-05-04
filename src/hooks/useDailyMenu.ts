@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import type { Dayjs } from 'dayjs'
 import { QUERY_KEYS } from '@/lib/constants'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
@@ -61,34 +60,11 @@ async function fetchMenuByDate(date: string): Promise<DailyMenu | null> {
   return data ? normalizeDailyMenu(data as RawDailyMenu) : null
 }
 
-async function fetchMenuByMonth(month: Dayjs): Promise<DailyMenu[]> {
-  const startDate = month.startOf('month').format('YYYY-MM-DD')
-  const endDate   = month.endOf('month').format('YYYY-MM-DD')
-
-  const { data, error } = await supabase
-    .from('daily_menu')
-    .select(SELECT_FIELDS)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date', { ascending: true })
-
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(item => normalizeDailyMenu(item as RawDailyMenu))
-}
-
 export function useMenuByDate(date: string) {
   return useQuery({
     queryKey: [...QUERY_KEYS.dailyMenu, date],
     queryFn:  () => fetchMenuByDate(date),
     staleTime: 1000 * 60 * 2,
-  })
-}
-
-export function useMenuByMonth(month: Dayjs) {
-  return useQuery({
-    queryKey: [...QUERY_KEYS.dailyMenu, month.format('YYYY-MM')],
-    queryFn:  () => fetchMenuByMonth(month),
-    staleTime: 1000 * 60 * 5,
   })
 }
 
@@ -138,7 +114,9 @@ export function useUpdateMenu() {
       payload: UpdateDailyMenuInput
       userId: string
     }) => {
-      // Build a sparse update — only include fields explicitly passed
+      // Build a sparse update — only include fields explicitly passed.
+      // Using Record<string, string | null> so null values are sent to DB
+      // (clearing a field) rather than being omitted.
       const update: Record<string, string | null> = {}
 
       if ('breakfast'         in payload) update.breakfast          = payload.breakfast?.trim()         || null
@@ -149,10 +127,14 @@ export function useUpdateMenu() {
 
       if (Object.keys(update).length === 0) return
 
+      // Use .select() so Supabase sends `Prefer: return=representation`
+      // instead of `return=minimal`. The minimal header triggers a CORS
+      // preflight that some Supabase project configs reject.
       const { error } = await supabase
         .from('daily_menu')
         .update(update)
         .eq('id', payload.id)
+        .select('id')
 
       if (error) throw new Error(error.message)
 
@@ -170,28 +152,3 @@ export function useUpdateMenu() {
   })
 }
 
-/* ── Delete ──────────────────────────────────────────────────────────────── */
-
-export function useDeleteMenu() {
-  return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { error } = await supabase
-        .from('daily_menu')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw new Error(error.message)
-
-      await logActivity({
-        userId,
-        action:      'delete',
-        entity:      'daily_menu',
-        entityId:    id,
-        description: 'Deleted daily menu',
-      })
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dailyMenu })
-    },
-  })
-}

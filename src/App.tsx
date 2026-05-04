@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { AppLayout } from '@/components/AppLayout'
+import { AppLayout } from '@/components/AppLayout/index'
 import { BrandLoader } from '@/components/BrandLoader'
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute'
-import { CookLayout } from '@/components/CookLayout'
-import { CookRoute } from '@/components/CookRoute'
-import { NotFoundPage } from '@/pages/NotFoundPage'
+import { CookLayout } from '@/components/CookLayout/index'
+import { CookRoute } from '@/components/CookRoute/index'
+import { NotFoundPage } from '@/containers/NotFound'
 
 /**
  * FadingLoader — wraps BrandLoader so it fades out smoothly instead of
@@ -29,91 +29,61 @@ function FadingLoader() {
 }
 
 const LoginPage = lazy(() =>
-  import('@/pages/LoginPage').then((module) => ({ default: module.LoginPage })),
+  import('@/containers/Login').then((m) => ({ default: m.LoginPage })),
 )
 const RegisterPage = lazy(() =>
-  import('@/pages/RegisterPage').then((module) => ({
-    default: module.RegisterPage,
-  })),
+  import('@/containers/Register').then((m) => ({ default: m.RegisterPage })),
 )
 const DashboardPage = lazy(() =>
-  import('@/pages/DashboardPage').then((module) => ({
-    default: module.DashboardPage,
-  })),
+  import('@/containers/Dashboard').then((m) => ({ default: m.DashboardPage })),
 )
 const ExpensesPage = lazy(() =>
-  import('@/pages/ExpensesPage').then((module) => ({
-    default: module.ExpensesPage,
-  })),
+  import('@/containers/Expenses').then((m) => ({ default: m.ExpensesPage })),
 )
 const WeekendExpensesPage = lazy(() =>
-  import('@/pages/WeekendExpensesPage').then((module) => ({
-    default: module.WeekendExpensesPage,
-  })),
+  import('@/containers/WeekendExpenses').then((m) => ({ default: m.WeekendExpensesPage })),
 )
 const RidesPage = lazy(() =>
-  import('@/pages/RidesPage').then((module) => ({ default: module.RidesPage })),
+  import('@/containers/Rides').then((m) => ({ default: m.RidesPage })),
 )
 const AdminPage = lazy(() =>
-  import('@/pages/AdminPage').then((module) => ({ default: module.AdminPage })),
+  import('@/containers/Admin').then((m) => ({ default: m.AdminPage })),
 )
 const LogsPage = lazy(() =>
-  import('@/pages/LogsPage').then((module) => ({ default: module.LogsPage })),
+  import('@/containers/Logs').then((m) => ({ default: m.LogsPage })),
 )
 const ContributionsPage = lazy(() =>
-  import('@/pages/ContributionsPage').then((module) => ({
-    default: module.ContributionsPage,
-  })),
+  import('@/containers/Contributions').then((m) => ({ default: m.ContributionsPage })),
 )
 const AnnouncementsPage = lazy(() =>
-  import('@/pages/AnnouncementsPage').then((module) => ({
-    default: module.AnnouncementsPage,
-  })),
+  import('@/containers/Announcements').then((m) => ({ default: m.AnnouncementsPage })),
 )
 const CookDashboardPage = lazy(() =>
-  import('@/pages/CookDashboardPage').then((module) => ({
-    default: module.CookDashboardPage,
-  })),
+  import('@/containers/CookDashboard').then((m) => ({ default: m.CookDashboardPage })),
 )
 const CookRequestsPage = lazy(() =>
-  import('@/pages/CookRequestsPage').then((module) => ({
-    default: module.CookRequestsPage,
-  })),
+  import('@/containers/CookRequests').then((m) => ({ default: m.CookRequestsPage })),
 )
 const CookPage = lazy(() =>
-  import('@/pages/CookPage').then((module) => ({
-    default: module.CookPage,
-  })),
+  import('@/containers/Cook').then((m) => ({ default: m.CookPage })),
 )
 const CookMenuPage = lazy(() =>
-  import('@/pages/CookMenuPage').then((module) => ({
-    default: module.CookMenuPage,
-  })),
+  import('@/containers/CookMenu').then((m) => ({ default: m.CookMenuPage })),
 )
 const FlatExpensesPage = lazy(() =>
-  import('@/pages/FlatExpensesPage').then((module) => ({
-    default: module.FlatExpensesPage,
-  })),
+  import('@/containers/FlatExpenses').then((m) => ({ default: m.FlatExpensesPage })),
 )
 const ProfilePage = lazy(() =>
-  import('@/pages/ProfilePage').then((module) => ({
-    default: module.ProfilePage,
-  })),
+  import('@/containers/Profile').then((m) => ({ default: m.ProfilePage })),
 )
 const ForgotPasswordPage = lazy(() =>
-  import('@/pages/ForgotPasswordPage').then((module) => ({
-    default: module.ForgotPasswordPage,
-  })),
+  import('@/containers/ForgotPassword').then((m) => ({ default: m.ForgotPasswordPage })),
 )
 const ResetPasswordPage = lazy(() =>
-  import('@/pages/ResetPasswordPage').then((module) => ({
-    default: module.ResetPasswordPage,
-  })),
+  import('@/containers/ResetPassword').then((m) => ({ default: m.ResetPasswordPage })),
 )
 const PendingApprovalPage = lazy(() =>
-  import('@/pages/PendingApprovalPage').then((module) => ({
-    default: module.PendingApprovalPage,
-  })),
+  import('@/containers/PendingApproval').then((m) => ({ default: m.PendingApprovalPage })),
 )
 function App() {
   return (

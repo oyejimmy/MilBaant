@@ -14,7 +14,7 @@ import { ThemeModeProvider, useThemeMode } from '@/context/ThemeModeContext'
 import { queryClient } from '@/lib/query-client'
 import { GlobalStyles } from '@/styles/global-styles'
 import { createAntTheme } from '@/styles/theme'
-import { InstallPrompt } from '@/components/InstallPrompt'
+import { InstallPrompt } from '@/components/InstallPrompt/index'
 import './index.css'
 
 dayjs.extend(advancedFormat)
