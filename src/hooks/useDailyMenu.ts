@@ -75,11 +75,11 @@ export function useCreateMenu() {
     mutationFn: async (payload: CreateDailyMenuInput) => {
       const { data, error } = await supabase.rpc('upsert_daily_menu', {
         p_date:               payload.date,
-        p_dinner:             payload.dinner?.trim()             ?? null,
-        p_dinner_description: payload.dinnerDescription?.trim()  ?? null,
-        p_notes:              payload.notes?.trim()              ?? null,
-        p_breakfast:          payload.breakfast?.trim()          ?? null,
-        p_lunch:              payload.lunch?.trim()              ?? null,
+        p_dinner:             payload.dinner?.trim()             || null,
+        p_dinner_description: payload.dinnerDescription?.trim()  || null,
+        p_notes:              payload.notes?.trim()              || null,
+        p_breakfast:          payload.breakfast?.trim()          || null,
+        p_lunch:              payload.lunch?.trim()              || null,
         p_created_by:         payload.createdBy,
       })
 
@@ -91,6 +91,30 @@ export function useCreateMenu() {
         entity:      'daily_menu',
         entityId:    data as string,
         description: `Added menu for ${payload.date}`,
+      })
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dailyMenu })
+    },
+  })
+}
+
+export function useResetMenuDinner() {
+  return useMutation({
+    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
+      const { error } = await supabase
+        .from('daily_menu')
+        .update({ dinner: null, dinner_description: null })
+        .eq('id', id)
+
+      if (error) throw new Error(error.message)
+
+      await logActivity({
+        userId,
+        action:      'update',
+        entity:      'daily_menu',
+        entityId:    id,
+        description: 'Reset dinner to weekly fixed menu',
       })
     },
     onSuccess: () => {
@@ -113,11 +137,11 @@ export function useUpdateMenu() {
       // treats as "leave unchanged".
       const { error } = await supabase.rpc('upsert_daily_menu', {
         p_date:               payload.date,
-        p_dinner:             'dinner'             in payload ? (payload.dinner?.trim()             ?? null) : null,
-        p_dinner_description: 'dinnerDescription'  in payload ? (payload.dinnerDescription?.trim()  ?? null) : null,
-        p_notes:              'notes'              in payload ? (payload.notes?.trim()              ?? null) : null,
-        p_breakfast:          'breakfast'          in payload ? (payload.breakfast?.trim()          ?? null) : null,
-        p_lunch:              'lunch'              in payload ? (payload.lunch?.trim()              ?? null) : null,
+        p_dinner:             'dinner'             in payload ? (payload.dinner?.trim()             || null) : null,
+        p_dinner_description: 'dinnerDescription'  in payload ? (payload.dinnerDescription?.trim()  || null) : null,
+        p_notes:              'notes'              in payload ? (payload.notes?.trim()              || null) : null,
+        p_breakfast:          'breakfast'          in payload ? (payload.breakfast?.trim()          || null) : null,
+        p_lunch:              'lunch'              in payload ? (payload.lunch?.trim()              || null) : null,
       })
 
       if (error) throw new Error(error.message)

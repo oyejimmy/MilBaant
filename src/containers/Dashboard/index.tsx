@@ -699,9 +699,9 @@ export function DashboardPage() {
   const flatFundBalance = totalAllocated - totalFlatSpent
 
   // Tonight's dinner
-  const tonightDinner = todayMenu?.dinner ?? WEEKLY_DINNER[weekday] ?? 'Not set'
-  const hasDinnerFromMenu = !!todayMenu?.dinner
-  const dinnerDescription = todayMenu?.dinner_description ?? null
+  const tonightDinner = todayMenu?.dinner?.trim() || WEEKLY_DINNER[weekday] || 'Not set'
+  const hasDinnerFromMenu = !!(todayMenu?.dinner?.trim())
+  const dinnerDescription = todayMenu?.dinner_description?.trim() || null
 
   // My balance
   const myBalance = userId ? (userSummary.find(s => s.userId === userId)?.totalOwed ?? 0) : 0

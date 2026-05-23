@@ -55,14 +55,24 @@ export function GiveAdvanceModal({
     <Modal
       open={open}
       title={null}
-      onCancel={onClose}
       onOk={() => void handleOk()}
       confirmLoading={submitting}
-      okText="Save Advance"
-      cancelText="Cancel"
       width="min(460px, 95vw)"
+      footer={[
+        <Button size="small" key="cancel" onClick={onClose}>
+          Cancel
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          loading={submitting}
+          size="small"
+          onClick={() => void handleOk()}
+        >
+          Save Advance
+        </Button>,
+      ]}
       styles={{
-        body: { padding: "14px 18px 6px" },
         footer: {
           padding: "10px 18px 14px",
           borderTop: "1px solid var(--border-light)",
@@ -96,6 +106,7 @@ export function GiveAdvanceModal({
               min={1}
               precision={2}
               style={{ width: "100%" }}
+              placeholder="Enter the Amount here"
               prefix={<DollarOutlined />}
             />
           </Form.Item>
@@ -109,7 +120,10 @@ export function GiveAdvanceModal({
           </Form.Item>
 
           <Form.Item label="Note" name="note">
-            <Input.TextArea rows={2} />
+            <Input.TextArea
+              placeholder="Enter the addtional note here"
+              rows={2}
+            />
           </Form.Item>
         </Form>
       </FormBody>

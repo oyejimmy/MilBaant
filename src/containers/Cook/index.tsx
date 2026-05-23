@@ -104,13 +104,15 @@ export function CookPage() {
   const usedPercent =
     totalAdvanced > 0 ? Math.min(100, (totalSpent / totalAdvanced) * 100) : 0;
 
-  const categoryBreakdown = PURCHASE_CATEGORY_OPTIONS.map(({ label, value }) => ({
-    label,
-    value,
-    total: purchases
-      .filter((p) => p.category === value)
-      .reduce((s, p) => s + p.amount, 0),
-  })).filter((c) => c.total > 0);
+  const categoryBreakdown = PURCHASE_CATEGORY_OPTIONS.map(
+    ({ label, value }) => ({
+      label,
+      value,
+      total: purchases
+        .filter((p) => p.category === value)
+        .reduce((s, p) => s + p.amount, 0),
+    }),
+  ).filter((c) => c.total > 0);
 
   /* ── Handlers ── */
 
@@ -221,7 +223,7 @@ export function CookPage() {
     {
       title: "Logged By",
       key: "creator",
-      responsive: ["md"] as ("md")[],
+      responsive: ["md"] as "md"[],
       render: (_: unknown, r: CookPurchase) => (
         <Tag color="purple">{r.creator?.full_name ?? "—"}</Tag>
       ),
@@ -231,7 +233,7 @@ export function CookPage() {
       dataIndex: "note",
       key: "note",
       ellipsis: true,
-      responsive: ["lg"] as ("lg")[],
+      responsive: ["lg"] as "lg"[],
       render: (v: string | null) =>
         v || <Typography.Text type="secondary">—</Typography.Text>,
     },
@@ -283,7 +285,7 @@ export function CookPage() {
       dataIndex: "note",
       key: "note",
       ellipsis: true,
-      responsive: ["md"] as ("md")[],
+      responsive: ["md"] as "md"[],
       render: (v: string | null) =>
         v || <Typography.Text type="secondary">—</Typography.Text>,
     },
@@ -389,9 +391,7 @@ export function CookPage() {
             <Progress
               percent={usedPercent}
               showInfo={false}
-              strokeColor={
-                balanceStatus === "deficit" ? "#ff4d4f" : "#52c41a"
-              }
+              strokeColor={balanceStatus === "deficit" ? "#ff4d4f" : "#52c41a"}
               size="small"
             />
           </div>
@@ -549,7 +549,11 @@ export function CookPage() {
               size="small"
               columns={purchaseColumns}
               dataSource={purchases}
-              pagination={{ pageSize: 12, hideOnSinglePage: true, size: "small" }}
+              pagination={{
+                pageSize: 12,
+                hideOnSinglePage: true,
+                size: "small",
+              }}
               scroll={{ x: 500 }}
               locale={{ emptyText: "No purchases logged yet." }}
             />
@@ -618,7 +622,11 @@ export function CookPage() {
               size="small"
               columns={advanceColumns}
               dataSource={advances}
-              pagination={{ pageSize: 8, hideOnSinglePage: true, size: "small" }}
+              pagination={{
+                pageSize: 8,
+                hideOnSinglePage: true,
+                size: "small",
+              }}
               scroll={{ x: 450 }}
               locale={{ emptyText: "No advances recorded yet." }}
             />

@@ -62,13 +62,14 @@ export function LogCookPurchaseModal({
       onCancel={onClose}
       width="min(480px,95vw)"
       footer={[
-        <Button key="cancel" onClick={onClose}>
+        <Button size="small" key="cancel" onClick={onClose}>
           Cancel
         </Button>,
         <Button
           key="submit"
           type="primary"
           loading={submitting}
+          size="small"
           onClick={() => void handleOk()}
         >
           Save Purchase
@@ -116,7 +117,10 @@ export function LogCookPurchaseModal({
 
           <TwoCol>
             <Form.Item name="item" label="Item" rules={[{ required: true }]}>
-              <Input prefix={<CoffeeOutlined />} />
+              <Input
+                placeholder="Enter Item Chicken, Tomatoes, Rice"
+                prefix={<CoffeeOutlined />}
+              />
             </Form.Item>
 
             <Form.Item
@@ -138,6 +142,7 @@ export function LogCookPurchaseModal({
                 min={1}
                 precision={2}
                 style={{ width: "100%" }}
+                placeholder="Enter Amount here"
                 prefix={<DollarOutlined />}
               />
             </Form.Item>
@@ -153,7 +158,10 @@ export function LogCookPurchaseModal({
           <SectionDivider />
 
           <Form.Item name="note" label="Note">
-            <Input.TextArea rows={2} />
+            <Input.TextArea
+              placeholder="e.g. Bought from local market, PCC or Imtiaz"
+              rows={2}
+            />
           </Form.Item>
         </Form>
       </FormBody>
