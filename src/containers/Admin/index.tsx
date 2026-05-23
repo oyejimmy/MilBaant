@@ -18,6 +18,9 @@ import {
   TeamOutlined,
   DownloadOutlined,
   UserAddOutlined,
+  CrownOutlined,
+  CoffeeOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader/index";
 import { QueryState } from "@/components/QueryState";
@@ -372,7 +375,7 @@ export function AdminPage() {
                 <MobileUserCard
                   key={p.id}
                   profile={p}
-                  userId={userId}
+                  userId={userId ?? undefined}
                   onEdit={setEditUser}
                   onRoleChange={handleRoleChange}
                   onPermissionChange={handlePermissionChange}
@@ -385,7 +388,7 @@ export function AdminPage() {
           ) : (
             <UserTable
               profiles={filtered}
-              userId={userId}
+              userId={userId ?? undefined}
               onEdit={setEditUser}
               onRoleChange={handleRoleChange}
               onPermissionChange={handlePermissionChange}

@@ -91,7 +91,7 @@ export function ProfilePage() {
         <Flex vertical gap={16}>
           <ProfileHeader
             profile={profile}
-            email={email}
+            email={email ?? undefined}
             editing={editing}
             uploadingAvatar={uploadingAvatar}
             avatarPreview={avatarPreview}
@@ -105,7 +105,7 @@ export function ProfilePage() {
               form.resetFields();
             }}
             onSave={handleSave}
-            onAvatarUpload={onDrop}
+            onAvatarUpload={(file: File) => onDrop([file])}
           />
 
           <ProfileForm form={form} editing={editing} />
@@ -113,7 +113,7 @@ export function ProfilePage() {
           {!editing && (
             <Flex gap={16} vertical={isMobile}>
               <ContactDetails
-                email={email}
+                email={email ?? undefined}
                 phone={profile.phone}
                 bio={profile.bio}
               />

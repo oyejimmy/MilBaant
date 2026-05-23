@@ -28,13 +28,12 @@ export function ProfileHeader({
   avatarSize,
   isMobile,
   updateProfile,
-  form,
   onEdit,
   onCancel,
   onSave,
   onAvatarUpload,
 }: ProfileHeaderProps) {
-  const roleMeta = ROLE_META[profile.role];
+  const roleMeta = ROLE_META[profile.role as keyof typeof ROLE_META];
   const isActive = profile.is_active !== false;
   const displayAvatar = avatarPreview ?? profile.avatar_url ?? null;
 

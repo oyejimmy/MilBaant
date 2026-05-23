@@ -241,7 +241,7 @@ export function CookRequestsPage() {
                 <MobileRequestCard
                   key={r.id}
                   request={r}
-                  userId={userId}
+                  userId={userId ?? undefined}
                   isCook={isCook}
                   isAdmin={isAdmin}
                   onView={setViewItem}
@@ -253,7 +253,7 @@ export function CookRequestsPage() {
           ) : (
             <RequestsTable
               requests={filtered}
-              userId={userId}
+              userId={userId ?? undefined}
               isCook={isCook}
               isAdmin={isAdmin}
               onView={setViewItem}

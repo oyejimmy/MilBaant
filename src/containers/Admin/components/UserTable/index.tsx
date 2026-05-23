@@ -7,8 +7,6 @@ import {
   Switch,
   Tooltip,
   Button,
-  Tag,
-  Space,
 } from "antd";
 import {
   EditOutlined,
@@ -19,8 +17,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { ROLE_OPTIONS } from "@/lib/constants";
 import type { Profile, Role } from "@/lib/types";
-import { ROLE_META } from "../../constants";
-import { avatarColor, initials } from "../../helpers";
+import { avatarColor, initials } from "../helpers";
 
 interface UserTableProps {
   profiles: Profile[];
@@ -37,7 +34,6 @@ interface UserTableProps {
 export function UserTable({
   profiles,
   userId,
-  isMobile,
   onEdit,
   onRoleChange,
   onPermissionChange,

@@ -291,14 +291,14 @@ export function FlatExpensesPage() {
               {isMobile ? (
                 <MobileExpensesList
                   expenses={expenses}
-                  userId={userId}
+                  userId={userId ?? undefined}
                   isAdmin={isAdmin}
                   onDelete={handleDeleteExpense}
                 />
               ) : (
                 <ExpensesTable
                   expenses={expenses}
-                  userId={userId}
+                  userId={userId ?? undefined}
                   isAdmin={isAdmin}
                   onDelete={handleDeleteExpense}
                 />

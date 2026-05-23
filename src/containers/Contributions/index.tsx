@@ -1,6 +1,6 @@
 import { useState } from "react";
 import dayjs, { type Dayjs } from "dayjs";
-import { Button, DatePicker, Flex, Grid, Tag, App, Card } from "antd";
+import { Button, DatePicker, Flex, Grid, Modal, App, Card } from "antd";
 import { CalendarOutlined, HomeOutlined } from "@ant-design/icons";
 import { PageStack } from "@/components/Glass/index";
 import { PageHeader } from "@/components/PageHeader/index";
@@ -165,7 +165,7 @@ export function ContributionsPage() {
                   paid={record.paid}
                   payment={record.payment}
                   isAdmin={isAdmin}
-                  currentUserId={userId}
+                  currentUserId={userId ?? undefined}
                   isPending={deletePayment.isPending}
                   onViewProof={(url) => {
                     setPreviewImage(url);
@@ -189,7 +189,7 @@ export function ContributionsPage() {
                   paid={record.paid}
                   payment={record.payment}
                   isAdmin={isAdmin}
-                  currentUserId={userId}
+                  currentUserId={userId ?? undefined}
                   isPending={deletePayment.isPending}
                   onViewProof={(url) => {
                     setPreviewImage(url);

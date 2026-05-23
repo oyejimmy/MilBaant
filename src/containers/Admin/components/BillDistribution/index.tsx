@@ -1,7 +1,7 @@
 import { Flex, Typography, InputNumber, Button, Avatar, Card } from "antd";
 import { TeamOutlined, SaveOutlined } from "@ant-design/icons";
 import type { Profile } from "@/lib/types";
-import { avatarColor, initials } from "../../helpers";
+import { avatarColor, initials } from "../helpers";
 
 interface BillDistributionProps {
   profiles: Profile[];

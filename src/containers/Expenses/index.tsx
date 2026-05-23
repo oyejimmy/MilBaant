@@ -460,7 +460,7 @@ export function ExpensesPage() {
                 summaries={userSummary}
                 paymentsByUser={paymentsByUser}
                 selectedMonth={selectedMonth}
-                userId={userId}
+                userId={userId ?? undefined}
                 isAdmin={isAdmin}
                 onDeletePayment={handleDeletePayment}
               />
@@ -469,7 +469,7 @@ export function ExpensesPage() {
                 summaries={userSummary}
                 paymentsByUser={paymentsByUser}
                 selectedMonth={selectedMonth}
-                userId={userId}
+                userId={userId ?? undefined}
                 isAdmin={isAdmin}
                 onDeletePayment={handleDeletePayment}
               />

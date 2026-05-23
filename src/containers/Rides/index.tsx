@@ -180,14 +180,14 @@ export function RidesPage() {
           {isMobile ? (
             <MobileRidesList
               rides={rides}
-              userId={userId}
+              userId={userId ?? undefined}
               onView={setViewRide}
               onDelete={handleDelete}
             />
           ) : (
             <RidesTable
               rides={rides}
-              userId={userId}
+              userId={userId ?? undefined}
               onView={setViewRide}
               onDelete={handleDelete}
             />
@@ -223,7 +223,7 @@ export function RidesPage() {
               message="All settled up — no outstanding ride debts this month."
             />
           ) : (
-            <DebtsList debts={debts} userId={userId} />
+            <DebtsList debts={debts} userId={userId ?? undefined} />
           )}
         </SectionBlock>
       </QueryState>
@@ -239,7 +239,7 @@ export function RidesPage() {
       <RideDetailModal
         ride={viewRide}
         open={!!viewRide}
-        userId={userId}
+        userId={userId ?? undefined}
         deleting={deleteRide.isPending}
         onClose={() => setViewRide(null)}
         onDelete={handleDelete}

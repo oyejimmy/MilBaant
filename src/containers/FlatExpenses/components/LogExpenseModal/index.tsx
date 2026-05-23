@@ -8,7 +8,6 @@ import {
   Typography,
 } from "antd";
 import {
-  UserOutlined,
   MinusCircleOutlined,
   DollarOutlined,
   CalendarOutlined,

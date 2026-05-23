@@ -1,6 +1,5 @@
 import { Card, Button, Tag, Flex, Typography } from "antd";
 import {
-  EyeOutlined,
   DeleteOutlined,
   DollarOutlined,
   PictureOutlined,
@@ -90,7 +89,7 @@ export function MobileMemberRow({
           </Flex>
         </div>
 
-        <Flex vertical align="flex-end" gap={6} flexShrink={0}>
+        <Flex vertical align="flex-end" gap={6} style={{ flexShrink: 0 }}>
           {paid ? (
             <Tag color="success">Paid</Tag>
           ) : (

@@ -20,21 +20,26 @@ export function AccountStatus({
   canAddExpenses,
   roleIcon,
 }: AccountStatusProps) {
-  const statusItems = [
+  const statusItems: Array<{
+    variant: "success" | "info" | "warning";
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+  }> = [
     {
-      variant: isActive ? "success" : ("warning" as const),
+      variant: isActive ? "success" : "warning",
       icon: <CheckCircleOutlined />,
       label: "Account",
       value: isActive ? "Active" : "Deactivated",
     },
     {
-      variant: "info" as const,
+      variant: "info",
       icon: roleIcon,
       label: "Role",
       value: roleMeta.label,
     },
     {
-      variant: canAddExpenses ? "success" : ("warning" as const),
+      variant: canAddExpenses ? "success" : "warning",
       icon: <UserOutlined />,
       label: "Expense Access",
       value: canAddExpenses ? "Can add expenses" : "View only",

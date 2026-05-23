@@ -1,8 +1,8 @@
 import { Modal, Flex, Avatar, Typography, Alert } from "antd";
 import { WarningOutlined } from "@ant-design/icons";
 import type { Profile } from "@/lib/types";
-import { ROLE_META } from "../../constants";
-import { avatarColor, initials } from "../../helpers";
+import { ROLE_META } from "../constants";
+import { avatarColor, initials } from "../helpers";
 
 interface DeleteUserModalProps {
   profile: Profile;

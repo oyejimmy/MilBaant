@@ -228,14 +228,14 @@ export function WeekendExpensesPage() {
           {isMobile ? (
             <MobileExpensesList
               expenses={weekendExpenses}
-              userId={userId}
+              userId={userId ?? undefined}
               onView={setViewExpense}
               onDelete={handleDelete}
             />
           ) : (
             <ExpensesTable
               expenses={weekendExpenses}
-              userId={userId}
+              userId={userId ?? undefined}
               onView={setViewExpense}
               onDelete={handleDelete}
             />
@@ -261,7 +261,7 @@ export function WeekendExpensesPage() {
           ) : (
             <DebtsList
               debts={debtRows}
-              userId={userId}
+              userId={userId ?? undefined}
               onSettle={setSettleModal}
             />
           )}
@@ -283,13 +283,13 @@ export function WeekendExpensesPage() {
           ) : isMobile ? (
             <MobileSettlementsList
               settlements={settlements}
-              userId={userId}
+              userId={userId ?? undefined}
               onDelete={handleDeleteSettlement}
             />
           ) : (
             <SettlementsTable
               settlements={settlements}
-              userId={userId}
+              userId={userId ?? undefined}
               onDelete={handleDeleteSettlement}
             />
           )}
@@ -307,7 +307,7 @@ export function WeekendExpensesPage() {
       <ExpenseDetailModal
         expense={viewExpense}
         open={!!viewExpense}
-        userId={userId}
+        userId={userId ?? undefined}
         deleting={deleteExpense.isPending}
         onClose={() => setViewExpense(null)}
         onDelete={handleDelete}

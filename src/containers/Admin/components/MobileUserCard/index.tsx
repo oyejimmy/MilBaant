@@ -6,7 +6,6 @@ import {
   Select,
   Switch,
   Button,
-  Space,
 } from "antd";
 import {
   EditOutlined,
@@ -16,8 +15,8 @@ import {
 } from "@ant-design/icons";
 import { ROLE_OPTIONS } from "@/lib/constants";
 import type { Profile, Role } from "@/lib/types";
-import { ROLE_META } from "../../constants";
-import { avatarColor, initials } from "../../helpers";
+import { ROLE_META } from "../constants";
+import { avatarColor, initials } from "../helpers";
 
 interface MobileUserCardProps {
   profile: Profile;

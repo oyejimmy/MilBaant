@@ -1,5 +1,3 @@
-import type { Dayjs } from "dayjs";
-
 export interface FlatFundMemberSummary {
   userId: string;
   fullName: string;

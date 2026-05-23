@@ -16,7 +16,6 @@ import {
   LockOutlined,
 } from "@ant-design/icons";
 import { ROLE_OPTIONS } from "@/lib/constants";
-import type { Role } from "@/lib/types";
 import type { AddUserFormValues } from "../../types";
 
 interface AddUserModalProps {

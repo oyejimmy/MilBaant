@@ -13,7 +13,7 @@ import { UserOutlined } from "@ant-design/icons";
 import { ROLE_OPTIONS } from "@/lib/constants";
 import type { Profile, Role } from "@/lib/types";
 import type { EditUserFormValues } from "../../types";
-import { avatarColor, initials } from "../../helpers";
+import { avatarColor, initials } from "../helpers";
 
 interface EditUserModalProps {
   profile: Profile;

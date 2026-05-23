@@ -12,7 +12,6 @@ interface MobileRidesListProps {
 
 export function MobileRidesList({
   rides,
-  userId,
   onView,
   onDelete,
 }: MobileRidesListProps) {

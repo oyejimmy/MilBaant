@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Modal,
   Form,
+  Input,
   InputNumber,
   DatePicker,
   Typography,

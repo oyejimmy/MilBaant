@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Modal, Flex, Avatar, Typography, Alert, Input, Space } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import type { Profile } from "@/lib/types";
-import { ROLE_META } from "../../constants";
-import { initials } from "../../helpers";
+import { ROLE_META } from "../constants";
+import { initials } from "../helpers";
 
 interface RemoveUserModalProps {
   profile: Profile;

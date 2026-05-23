@@ -15,7 +15,6 @@ interface RideDetailModalProps {
 export function RideDetailModal({
   ride,
   open,
-  userId,
   deleting,
   onClose,
   onDelete,

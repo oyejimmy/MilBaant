@@ -1,4 +1,4 @@
-import { Table, Tag, Typography, Button, Popconfirm, Space } from "antd";
+import { Table, Tag, Typography, Button, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { formatCurrency, formatDate } from "@/lib/formatters";

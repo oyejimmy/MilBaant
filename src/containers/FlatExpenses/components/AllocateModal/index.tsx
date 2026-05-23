@@ -21,10 +21,7 @@ import {
   SectionLabel,
   TwoCol,
 } from "../styles";
-import type {
-  AllocateModalProps,
-  CreateFlatFundAllocationInput,
-} from "../../types";
+import type { AllocateModalProps } from "../../types";
 
 export function AllocateModal({
   profiles,

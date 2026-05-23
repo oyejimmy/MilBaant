@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
 import type { UserMonthlySummary } from "../../types";
 import type { ContributionPayment } from "@/lib/types";
 

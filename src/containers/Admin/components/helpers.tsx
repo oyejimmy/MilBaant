@@ -1,4 +1,4 @@
-import { AVATAR_COLORS } from "../constants";
+import { AVATAR_COLORS } from "./constants";
 
 export function avatarColor(name: string) {
   let h = 0;
