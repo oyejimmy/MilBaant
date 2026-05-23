@@ -1,2 +1,5 @@
-// Local types for WeekendExpenses container.
-export type { Expense } from '@/lib/types'
+import type { DebtRow } from "@/lib/types";
+
+export interface DebtRowExtended extends DebtRow {
+  netAmount: number;
+}
