@@ -15,7 +15,6 @@ import {
 } from 'antd'
 import type { MenuProps } from 'antd'
 import {
-  ApartmentOutlined,
   AuditOutlined,
   BellOutlined,
   CoffeeOutlined,
@@ -30,6 +29,7 @@ import {
   ShoppingCartOutlined,
   SunOutlined,
   UserOutlined,
+  WalletOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import styled, { keyframes } from 'styled-components'
@@ -58,8 +58,8 @@ const COOK_NAV_ITEMS: CookNavItem[] = [
   { key: '/cook-portal/cook-requests',    label: 'Requests',       icon: <InboxOutlined /> },
   { key: '/cook-portal/daily-menu',       label: 'Daily Menu',     icon: <ScheduleOutlined /> },
   { key: '/cook-portal/weekend-expenses', label: 'Weekend Meals',  icon: <ShoppingCartOutlined /> },
+  { key: '/cook-portal/flat-expenses',    label: 'Flat Fund',      icon: <WalletOutlined /> },
   { key: '/cook-portal/logs',             label: 'Activity Logs',  icon: <AuditOutlined /> },
-  { key: '/cook-portal/flat-view',        label: 'Flat View',      icon: <ApartmentOutlined /> },
 ]
 
 // ── Page title map ─────────────────────────────────────────────────────────
@@ -69,8 +69,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/cook-portal/cook-requests':    'Item Requests',
   '/cook-portal/daily-menu':       'Daily Menu',
   '/cook-portal/weekend-expenses': 'Weekend Meals',
+  '/cook-portal/flat-expenses':    'Flat Fund',
   '/cook-portal/logs':             'Activity Logs',
-  '/cook-portal/flat-view':        'Flat View',
   '/cook-portal/profile':          'My Profile',
 }
 

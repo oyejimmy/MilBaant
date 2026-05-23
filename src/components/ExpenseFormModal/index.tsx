@@ -3,7 +3,6 @@ import dayjs from 'dayjs'
 import { useDropzone } from 'react-dropzone'
 import {
   Avatar,
-  Checkbox,
   DatePicker,
   Form,
   Image,
@@ -16,6 +15,7 @@ import {
 import {
   CalendarOutlined,
   CameraOutlined,
+  CheckOutlined,
   CloseCircleFilled,
   DollarOutlined,
   FileTextOutlined,
@@ -30,17 +30,22 @@ import type { Expense, ExpenseFormValues, Profile } from '@/lib/types'
 
 // ── Styled components ──────────────────────────────────────────────────────
 
-const ModalHeader = styled.div`
+const ModalBanner = styled.div<{ $edit: boolean }>`
+  background: ${({ $edit }) =>
+    $edit
+      ? 'linear-gradient(135deg, rgba(249,168,37,0.12) 0%, rgba(255,202,40,0.05) 100%)'
+      : 'linear-gradient(135deg, rgba(20,101,163,0.12) 0%, rgba(73,165,234,0.05) 100%)'};
+  border-bottom: 1px solid var(--border-light);
+  padding: 18px 24px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 24px 0;
+  gap: 14px;
 `
 
-const HeaderIcon = styled.div<{ $edit: boolean }>`
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+const BannerIcon = styled.div<{ $edit: boolean }>`
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   background: ${({ $edit }) =>
     $edit
       ? 'linear-gradient(135deg, #f9a825 0%, #ffca28 100%)'
@@ -51,17 +56,17 @@ const HeaderIcon = styled.div<{ $edit: boolean }>`
   flex-shrink: 0;
   box-shadow: ${({ $edit }) =>
     $edit
-      ? '0 4px 12px rgba(249,168,37,0.35)'
-      : '0 4px 12px rgba(28,142,229,0.35)'};
+      ? '0 4px 14px rgba(249,168,37,0.4)'
+      : '0 4px 14px rgba(20,101,163,0.35)'};
 
   .anticon {
     color: white;
-    font-size: 18px;
+    font-size: 20px;
   }
 `
 
 const FormBody = styled.div`
-  padding: 16px 24px 0;
+  padding: 14px 20px 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -71,12 +76,12 @@ const SectionLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 12px;
-  margin-top: 4px;
+  margin-bottom: 10px;
+  margin-top: 2px;
 
   .anticon {
     color: var(--primary);
-    font-size: 13px;
+    font-size: 12px;
   }
 `
 
@@ -93,23 +98,23 @@ const Row = styled.div`
 const Divider = styled.div`
   height: 1px;
   background: var(--border-light);
-  margin: 16px 0;
+  margin: 12px 0;
 `
 
 const TypeBadge = styled.div<{ $weekend: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 5px 11px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   background: ${({ $weekend }) =>
-    $weekend ? 'rgba(249,168,37,0.12)' : 'rgba(64,150,255,0.10)'};
+    $weekend ? 'rgba(249,168,37,0.1)' : 'rgba(64,150,255,0.08)'};
   color: ${({ $weekend }) => ($weekend ? '#f9a825' : 'var(--primary)')};
   border: 1px solid ${({ $weekend }) =>
-    $weekend ? 'rgba(249,168,37,0.25)' : 'rgba(64,150,255,0.20)'};
-  margin-bottom: 16px;
+    $weekend ? 'rgba(249,168,37,0.22)' : 'rgba(64,150,255,0.18)'};
+  margin-bottom: 12px;
 `
 
 const UploadZone = styled.div<{ $active: boolean; $hasFile: boolean }>`
@@ -117,7 +122,7 @@ const UploadZone = styled.div<{ $active: boolean; $hasFile: boolean }>`
     ${({ $active, $hasFile }) =>
       $active ? 'var(--primary)' : $hasFile ? 'var(--success)' : 'var(--border-default)'};
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px 16px;
   background: ${({ $active, $hasFile }) =>
     $active
       ? 'var(--primary-soft)'
@@ -137,8 +142,8 @@ const UploadZone = styled.div<{ $active: boolean; $hasFile: boolean }>`
 `
 
 const UploadIconWrap = styled.div<{ $hasFile: boolean }>`
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
   background: ${({ $hasFile }) =>
     $hasFile ? 'rgba(76,175,80,0.12)' : 'rgba(64,150,255,0.10)'};
@@ -148,7 +153,7 @@ const UploadIconWrap = styled.div<{ $hasFile: boolean }>`
   flex-shrink: 0;
 
   .anticon {
-    font-size: 16px;
+    font-size: 15px;
     color: ${({ $hasFile }) => ($hasFile ? 'var(--success)' : 'var(--primary)')};
   }
 `
@@ -184,7 +189,8 @@ const ParticipantGrid = styled.div`
   gap: 8px;
 `
 
-const ParticipantChip = styled.label<{ $checked: boolean }>`
+/* BUG FIX: was styled.label — label wrapping a checkbox caused double-toggle */
+const ParticipantChip = styled.div<{ $checked: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -199,6 +205,28 @@ const ParticipantChip = styled.label<{ $checked: boolean }>`
   &:hover {
     border-color: var(--primary);
     background: var(--primary-soft);
+  }
+`
+
+const CheckDot = styled.div<{ $checked: boolean }>`
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 1.5px solid ${({ $checked }) => ($checked ? 'var(--primary)' : 'var(--border-default)')};
+  background: ${({ $checked }) => ($checked ? 'var(--primary)' : 'transparent')};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: all 0.12s ease;
+
+  .anticon {
+    font-size: 9px;
+    color: white;
+    opacity: ${({ $checked }) => ($checked ? 1 : 0)};
+    transform: ${({ $checked }) => ($checked ? 'scale(1)' : 'scale(0)')};
+    transition: all 0.12s ease;
   }
 `
 
@@ -231,9 +259,9 @@ function ParticipantCheckbox({
           fontWeight: 700,
           flexShrink: 0,
         }}
-        icon={<UserOutlined />}
+        icon={!checked ? <UserOutlined /> : undefined}
       >
-        {initials}
+        {checked ? initials : null}
       </Avatar>
       <Typography.Text
         style={{
@@ -244,11 +272,14 @@ function ParticipantCheckbox({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          flex: 1,
         }}
       >
         {profile.full_name}
       </Typography.Text>
-      <Checkbox checked={checked} style={{ marginLeft: 'auto', flexShrink: 0 }} />
+      <CheckDot $checked={checked}>
+        <CheckOutlined />
+      </CheckDot>
     </ParticipantChip>
   )
 }
@@ -398,11 +429,11 @@ export function ExpenseFormModal({
     <Modal
       open={open}
       destroyOnHidden
-      width="min(600px, 95vw)"
-      style={{ top: 24 }}
+      width="min(580px, 96vw)"
+      style={{ top: 20 }}
       styles={{
-        body: { maxHeight: 'calc(100vh - 140px)', overflowY: 'auto', padding: 0 },
-        footer: { padding: '12px 24px 20px', borderTop: '1px solid var(--border-light)', margin: 0 },
+        body: { maxHeight: 'calc(100vh - 130px)', overflowY: 'auto', padding: 0 },
+        footer: { padding: '10px 20px 18px', borderTop: '1px solid var(--border-light)', margin: 0 },
       }}
       title={null}
       okText={isEditing ? 'Save Changes' : 'Add Expense'}
@@ -413,11 +444,11 @@ export function ExpenseFormModal({
       onCancel={handleClose}
       onOk={() => void handleOk()}
     >
-      {/* ── Header ── */}
-      <ModalHeader>
-        <HeaderIcon $edit={isEditing}>
+      {/* ── Banner Header ── */}
+      <ModalBanner $edit={isEditing}>
+        <BannerIcon $edit={isEditing}>
           <DollarOutlined />
-        </HeaderIcon>
+        </BannerIcon>
         <div>
           <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)', lineHeight: 1.3 }}>
             {isEditing ? 'Edit Expense' : 'Add Expense'}
@@ -426,7 +457,7 @@ export function ExpenseFormModal({
             {isEditing ? 'Update the expense details below' : 'Fill in the details to record a new expense'}
           </Typography.Text>
         </div>
-      </ModalHeader>
+      </ModalBanner>
 
       <FormBody>
         {/* Type badge */}
@@ -442,7 +473,7 @@ export function ExpenseFormModal({
           {/* ── Category & Amount ── */}
           <SectionLabel>
             <TagOutlined />
-            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography.Text strong style={{ fontSize: 11.5, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Expense Details
             </Typography.Text>
           </SectionLabel>
@@ -524,11 +555,7 @@ export function ExpenseFormModal({
           >
             <Input.TextArea
               rows={2}
-              placeholder={
-                isWeekendMeal
-                  ? 'e.g. Sunday breakfast groceries'
-                  : 'e.g. April gas bill'
-              }
+              placeholder={isWeekendMeal ? 'e.g. Sunday breakfast groceries' : 'e.g. April gas bill'}
               style={{ resize: 'none' }}
             />
           </Form.Item>
@@ -539,10 +566,10 @@ export function ExpenseFormModal({
               <Divider />
               <SectionLabel>
                 <TeamOutlined />
-                <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Typography.Text strong style={{ fontSize: 11.5, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Participants
                 </Typography.Text>
-                <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                <Typography.Text style={{ fontSize: 11.5, color: 'var(--text-muted)', marginLeft: 'auto' }}>
                   {participantIds.length} / {profiles.length} selected
                 </Typography.Text>
               </SectionLabel>
@@ -574,10 +601,10 @@ export function ExpenseFormModal({
           <Divider />
           <SectionLabel>
             <CameraOutlined />
-            <Typography.Text strong style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography.Text strong style={{ fontSize: 11.5, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Bill Image
-              <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 4 }}>(optional)</Typography.Text>
             </Typography.Text>
+            <Typography.Text style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 2 }}>(optional)</Typography.Text>
           </SectionLabel>
 
           <Form.Item name="billImage" style={{ marginBottom: 16 }}>

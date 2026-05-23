@@ -1,7 +1,7 @@
 import { CATEGORY_LABELS, FLAT_FUND_CATEGORY_LABELS } from '@/lib/constants'
 import { calculateWeekendExpenseShare } from '@/lib/expense-helpers'
 import { formatDate } from '@/lib/formatters'
-import type { Expense, FlatFundAllocation, FlatFundExpense, Profile } from '@/lib/types'
+import type { CookPurchase, Expense, FlatFundAllocation, FlatFundExpense, Profile } from '@/lib/types'
 
 async function loadWorkbookTools() {
   const { utils, writeFileXLSX } = await import('xlsx')
@@ -81,4 +81,28 @@ export async function exportFlatExpensesToExcel(
   utils.book_append_sheet(workbook, utils.json_to_sheet(expenseRows), 'Flat Expenses')
   utils.book_append_sheet(workbook, utils.json_to_sheet(allocationRows), 'Fund Allocations')
   writeFileXLSX(workbook, `flat-fund-${new Date().toISOString().slice(0, 10)}.xlsx`)
+}
+
+/* ─── Cook exports ────────────────────────────────────────────────────────── */
+
+export async function exportCookPurchasesToExcel(
+  purchases: CookPurchase[],
+  monthLabel?: string,
+) {
+  const { utils, writeFileXLSX } = await loadWorkbookTools()
+  const rows = purchases.map((p, i) => ({
+    'S.N': i + 1,
+    Date: formatDate(p.date),
+    Item: p.item,
+    Category: p.category.charAt(0).toUpperCase() + p.category.slice(1),
+    'Amount (PKR)': p.amount,
+    'Logged By': p.creator?.full_name ?? '—',
+    Note: p.note ?? '',
+  }))
+
+  const workbook = utils.book_new()
+  const worksheet = utils.json_to_sheet(rows)
+  utils.book_append_sheet(workbook, worksheet, 'Cook Purchases')
+  const suffix = monthLabel ?? new Date().toISOString().slice(0, 10)
+  writeFileXLSX(workbook, `cook-purchases-${suffix}.xlsx`)
 }

@@ -160,6 +160,7 @@ function App() {
           <Route path="cook-requests"    element={<CookRequestsPage />} />
           <Route path="daily-menu"       element={<CookMenuPage />} />
           <Route path="weekend-expenses" element={<WeekendExpensesPage />} />
+          <Route path="flat-expenses"    element={<FlatExpensesPage />} />
           <Route path="logs"             element={<LogsPage />} />
           <Route path="profile"          element={<ProfilePage />} />
           {/* Any unknown sub-path inside the cook portal → 404 */}

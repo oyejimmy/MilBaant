@@ -1,11 +1,13 @@
 import dayjs from 'dayjs'
-import { Button, Progress } from 'antd'
+import { Button, Progress, Tag } from 'antd'
 import {
   ArrowRightOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CoffeeOutlined,
+  EditOutlined,
   InboxOutlined,
+  LockOutlined,
   MoonOutlined,
   ShoppingCartOutlined,
   WalletOutlined,
@@ -18,15 +20,54 @@ import { useCookAdvances, useCookPurchases } from '@/hooks/useCook'
 import { useCookRequests } from '@/hooks/useCookRequests'
 import { useFlatFundAllocations, useFlatFundExpenses } from '@/hooks/useFlatFund'
 import { useExpenses } from '@/hooks/useExpenses'
+import { useMenuByDate } from '@/hooks/useDailyMenu'
 import { splitExpensesByType } from '@/lib/expense-helpers'
 import { formatCurrency } from '@/lib/formatters'
 import {
-  PageWrap, GreetingBanner, GreetingEmoji, ActionCard, ActionIcon, ActionContent,
-  ActionTitle, ActionSub, ActionArrow, BalanceCard, BalanceBig, BalanceLabel,
-  BalanceStatus, DinnerCard, DinnerEmoji, SectionHeader, UrgentDot,
+  PageWrap,
+  DashGrid,
+  GreetingBanner,
+  GreetingEmoji,
+  GreetingBody,
+  GreetingTitle,
+  GreetingDate,
+  GreetingStatsRow,
+  GreetingStatItem,
+  GreetingStatValue,
+  GreetingStatLabel,
+  DinnerCard,
+  DinnerTopRow,
+  DinnerSectionLabel,
+  DinnerMealName,
+  DinnerDescription,
+  DinnerMetaRow,
+  BalanceCard,
+  BalanceBig,
+  BalanceLabel,
+  BalanceStatus,
+  BalanceProgressSection,
+  BalanceProgressLabels,
+  BalanceProgressLabel,
+  StatsRow,
+  StatChip,
+  StatChipValue,
+  StatChipLabel,
+  SectionHeader,
+  ActionsGrid,
+  ActionCard,
+  ActionIcon,
+  ActionContent,
+  ActionTitle,
+  ActionSub,
+  ActionArrow,
+  UrgentDot,
+  AlertBox,
+  AlertIcon,
+  AlertTitle,
+  AlertBody,
 } from './styles'
 
-/* ─── Weekly dinner schedule ─────────────────────────────────────────────── */
+/* ─── Fixed weekly dinner schedule (fallback when no API override) ─────────── */
 
 const WEEKLY_DINNER: Record<number, string> = {
   1: 'Chicken Karahi + Roti',
@@ -39,15 +80,27 @@ const WEEKLY_DINNER: Record<number, string> = {
 }
 
 const DAY_NAMES: Record<number, string> = {
-  0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday',
-  4: 'Thursday', 5: 'Friday', 6: 'Saturday',
+  0: 'Sunday',
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
 }
 
-export function CookDashboardPage() {
-  const navigate = useNavigate()
-  const currentMonth = dayjs().startOf('month')
-  const todayDay = dayjs().day()
+/* ─── Component ─────────────────────────────────────────────────────────────── */
 
+export function CookDashboardPage() {
+  const navigate     = useNavigate()
+  const today        = dayjs()
+  const todayStr     = today.format('YYYY-MM-DD')
+  const todayDay     = today.day()
+  const currentMonth = today.startOf('month')
+  const hour         = today.hour()
+
+  /* ── Data hooks ── */
+  const menuQuery      = useMenuByDate(todayStr)
   const advancesQuery  = useCookAdvances()
   const purchasesQuery = useCookPurchases()
   const flatAllocQuery = useFlatFundAllocations()
@@ -55,26 +108,29 @@ export function CookDashboardPage() {
   const expensesQuery  = useExpenses(currentMonth)
   const requestsQuery  = useCookRequests()
 
-  const advances  = advancesQuery.data  ?? []
-  const purchases = purchasesQuery.data ?? []
-  const flatAlloc = flatAllocQuery.data ?? []
-  const flatExp   = flatExpQuery.data   ?? []
-  const expenses  = expensesQuery.data  ?? []
-  const requests  = requestsQuery.data  ?? []
+  const todayMenu  = menuQuery.data      ?? null
+  const advances   = advancesQuery.data  ?? []
+  const purchases  = purchasesQuery.data ?? []
+  const flatAlloc  = flatAllocQuery.data ?? []
+  const flatExp    = flatExpQuery.data   ?? []
+  const expenses   = expensesQuery.data  ?? []
+  const requests   = requestsQuery.data  ?? []
 
-  /* ── Cook Ledger ── */
+  /* ── Cook ledger ── */
   const totalAdvanced = advances.reduce((s, a) => s + a.amount, 0)
   const totalSpent    = purchases.reduce((s, p) => s + p.amount, 0)
   const balance       = totalAdvanced - totalSpent
-  const usedPercent   = totalAdvanced > 0 ? Math.min(100, (totalSpent / totalAdvanced) * 100) : 0
+  const usedPercent   = totalAdvanced > 0
+    ? Math.min(100, (totalSpent / totalAdvanced) * 100)
+    : 0
   const balanceStatus: 'good' | 'warn' | 'over' =
-    balance > totalAdvanced * 0.2 ? 'good' :
-    balance < 0 ? 'over' : 'warn'
+    balance < 0                   ? 'over' :
+    balance < totalAdvanced * 0.2 ? 'warn' : 'good'
 
-  /* ── Flat Fund ── */
-  const flatTotalAllocated = flatAlloc.reduce((s, a) => s + a.amount, 0)
-  const flatTotalSpent     = flatExp.reduce((s, e) => s + e.amount, 0)
-  const flatBalance        = flatTotalAllocated - flatTotalSpent
+  /* ── Flat fund ── */
+  const flatTotalAlloc = flatAlloc.reduce((s, a) => s + a.amount, 0)
+  const flatTotalSpent = flatExp.reduce((s, e) => s + e.amount, 0)
+  const flatBalance    = flatTotalAlloc - flatTotalSpent
 
   /* ── Weekend meals ── */
   const { weekendExpenses } = splitExpensesByType(expenses)
@@ -84,10 +140,17 @@ export function CookDashboardPage() {
   const pendingRequests = requests.filter(r => r.status === 'pending')
   const hasPending      = pendingRequests.length > 0
 
-  /* ── Tonight's dinner ── */
-  const todayDinner = WEEKLY_DINNER[todayDay]
+  /* ── Tonight's dinner — API first, fallback to fixed schedule ── */
+  const fixedDinner  = WEEKLY_DINNER[todayDay] ?? 'Not scheduled'
+  const actualDinner = todayMenu?.dinner?.trim() || fixedDinner
+  const dinnerDesc   = todayMenu?.dinner_description?.trim() ?? null
+  const isOverridden = Boolean(
+    todayMenu?.dinner?.trim() && todayMenu.dinner.trim() !== fixedDinner
+  )
 
+  /* ── Loading / error ── */
   const isLoading =
+    menuQuery.isLoading      ||
     advancesQuery.isLoading  ||
     purchasesQuery.isLoading ||
     flatAllocQuery.isLoading ||
@@ -95,93 +158,136 @@ export function CookDashboardPage() {
     requestsQuery.isLoading
 
   const error =
+    (menuQuery.error      as Error | null) ??
     (advancesQuery.error  as Error | null) ??
     (purchasesQuery.error as Error | null) ??
     (flatAllocQuery.error as Error | null) ??
     (flatExpQuery.error   as Error | null) ??
     (requestsQuery.error  as Error | null)
 
-  /* ── Greeting based on time ── */
-  const hour = dayjs().hour()
+  /* ── Time-based greeting ── */
   const greeting =
-    hour < 12 ? 'Good Morning! 🌅' :
-    hour < 17 ? 'Good Afternoon! ☀️' :
-                'Good Evening! 🌙'
+    hour < 12 ? 'Good Morning!' :
+    hour < 17 ? 'Good Afternoon!' : 'Good Evening!'
+  const greetingEmoji = hour < 12 ? '🌅' : hour < 17 ? '☀️' : '🌙'
 
   return (
     <PageWrap>
       <PageStack>
 
-        {/* ── Greeting ── */}
+        {/* ─── Greeting banner ─────────────────────────────────────────── */}
         <GreetingBanner>
           <GreetingEmoji>👨‍🍳</GreetingEmoji>
-          <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
-              {greeting}
-            </div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 3 }}>
-              {DAY_NAMES[todayDay]}, {dayjs().format('DD MMMM YYYY')}
-            </div>
-          </div>
+          <GreetingBody>
+            <GreetingTitle>{greeting} {greetingEmoji}</GreetingTitle>
+            <GreetingDate>
+              {DAY_NAMES[todayDay]}, {today.format('DD MMMM YYYY')}
+            </GreetingDate>
+
+            {/* Inline stats visible only on desktop via CSS */}
+            <GreetingStatsRow>
+              <GreetingStatItem>
+                <GreetingStatValue>{advances.length}</GreetingStatValue>
+                <GreetingStatLabel>Advances</GreetingStatLabel>
+              </GreetingStatItem>
+              <GreetingStatItem>
+                <GreetingStatValue>{purchases.length}</GreetingStatValue>
+                <GreetingStatLabel>Purchases</GreetingStatLabel>
+              </GreetingStatItem>
+              <GreetingStatItem>
+                <GreetingStatValue>{requests.length}</GreetingStatValue>
+                <GreetingStatLabel>Requests</GreetingStatLabel>
+              </GreetingStatItem>
+            </GreetingStatsRow>
+          </GreetingBody>
         </GreetingBanner>
 
         <QueryState isLoading={isLoading} error={error}>
 
-          {/* ── Tonight's Dinner ── */}
-          <DinnerCard>
-            <DinnerEmoji>🍽️</DinnerEmoji>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#722ed1', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>
-                Tonight's Dinner
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-strong)', lineHeight: 1.2 }}>
-                {todayDinner}
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <ClockCircleOutlined />
-                Serving at 9:00 PM
-              </div>
-            </div>
-            <Button
-              type="text"
-              size="small"
-              style={{ color: '#722ed1', padding: '4px 8px', flexShrink: 0 }}
-              onClick={() => navigate('/cook-portal/daily-menu')}
-            >
-              Change <ArrowRightOutlined />
-            </Button>
-          </DinnerCard>
+          {/* ─── Two-column grid: Dinner + Balance ───────────────────────── */}
+          <DashGrid>
 
-          {/* ── Money Balance ── */}
-          <div>
-            <SectionHeader>💰 Paisa / Money</SectionHeader>
+            {/* Tonight's Dinner — loaded from daily_menu API */}
+            <DinnerCard>
+              <DinnerTopRow>
+                <MoonOutlined style={{ color: '#722ed1', fontSize: 14 }} />
+                <DinnerSectionLabel>Tonight&apos;s Dinner</DinnerSectionLabel>
+                {isOverridden ? (
+                  <Tag
+                    color="purple"
+                    style={{ margin: 0, fontSize: 10, lineHeight: '18px' }}
+                  >
+                    Overridden
+                  </Tag>
+                ) : (
+                  <Tag
+                    color="default"
+                    style={{ margin: 0, fontSize: 10, lineHeight: '18px' }}
+                  >
+                    <LockOutlined style={{ marginRight: 3 }} />
+                    Fixed menu
+                  </Tag>
+                )}
+              </DinnerTopRow>
+
+              <DinnerMealName>{actualDinner}</DinnerMealName>
+
+              {dinnerDesc && (
+                <DinnerDescription>{dinnerDesc}</DinnerDescription>
+              )}
+
+              <DinnerMetaRow>
+                <ClockCircleOutlined style={{ color: '#722ed1' }} />
+                Serving at 9:00 PM
+              </DinnerMetaRow>
+
+              <Button
+                size="small"
+                icon={<EditOutlined />}
+                style={{
+                  background: 'rgba(114,46,209,0.12)',
+                  borderColor: 'rgba(114,46,209,0.3)',
+                  color: '#722ed1',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                }}
+                onClick={() => navigate('/cook-portal/daily-menu')}
+              >
+                Change Dinner
+              </Button>
+            </DinnerCard>
+
+            {/* Money Balance */}
             <BalanceCard $status={balanceStatus}>
               <BalanceLabel>
-                {balanceStatus === 'good' ? '✅ Paisa Bacha Hua Hai' :
-                 balanceStatus === 'over' ? '❌ Zyada Kharch Ho Gaya' :
-                                            '⚠️ Thora Paisa Bacha Hai'}
+                {balanceStatus === 'good'
+                  ? '✅ Paisa Bacha Hua Hai'
+                  : balanceStatus === 'over'
+                    ? '❌ Zyada Kharch Ho Gaya'
+                    : '⚠️ Thora Paisa Bacha Hai'}
               </BalanceLabel>
+
               <BalanceBig>
                 {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
               </BalanceBig>
+
               <BalanceStatus>
                 {balanceStatus === 'good'
-                  ? `Aap ke paas ${formatCurrency(balance)} bacha hua hai`
+                  ? `${formatCurrency(balance)} remaining from advances`
                   : balanceStatus === 'over'
-                  ? `${formatCurrency(Math.abs(balance))} zyada kharch ho gaya`
-                  : `Sirf ${formatCurrency(balance)} bacha hai — sambhal ke kharchein`}
+                    ? `${formatCurrency(Math.abs(balance))} over budget — ask admin`
+                    : `Only ${formatCurrency(balance)} left — spend carefully`}
               </BalanceStatus>
 
-              {/* Progress bar */}
-              <div style={{ marginTop: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-                    Kharch: {formatCurrency(totalSpent)}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-                    Mila: {formatCurrency(totalAdvanced)}
-                  </span>
-                </div>
+              <BalanceProgressSection>
+                <BalanceProgressLabels>
+                  <BalanceProgressLabel>
+                    Spent: {formatCurrency(totalSpent)}
+                  </BalanceProgressLabel>
+                  <BalanceProgressLabel>
+                    Received: {formatCurrency(totalAdvanced)}
+                  </BalanceProgressLabel>
+                </BalanceProgressLabels>
                 <Progress
                   percent={usedPercent}
                   showInfo={false}
@@ -189,11 +295,33 @@ export function CookDashboardPage() {
                   trailColor="rgba(255,255,255,0.2)"
                   size={['100%', 8]}
                 />
-              </div>
+              </BalanceProgressSection>
             </BalanceCard>
-          </div>
+          </DashGrid>
 
-          {/* ── Pending Requests alert ── */}
+          {/* ─── Quick stats strip ────────────────────────────────────────── */}
+          <StatsRow>
+            <StatChip $color="#f97316">
+              <StatChipValue $color="#f97316">{purchases.length}</StatChipValue>
+              <StatChipLabel>Purchases</StatChipLabel>
+            </StatChip>
+
+            <StatChip $color={hasPending ? '#f97316' : '#52c41a'}>
+              <StatChipValue $color={hasPending ? '#f97316' : '#52c41a'}>
+                {pendingRequests.length}
+              </StatChipValue>
+              <StatChipLabel>Pending</StatChipLabel>
+            </StatChip>
+
+            <StatChip $color={flatBalance >= 0 ? '#16a34a' : '#dc2626'}>
+              <StatChipValue $color={flatBalance >= 0 ? '#16a34a' : '#dc2626'}>
+                {formatCurrency(Math.abs(flatBalance))}
+              </StatChipValue>
+              <StatChipLabel>Flat Fund</StatChipLabel>
+            </StatChip>
+          </StatsRow>
+
+          {/* ─── Pending requests urgent alert ───────────────────────────── */}
           {hasPending && (
             <ActionCard
               $color="#f97316"
@@ -217,12 +345,11 @@ export function CookDashboardPage() {
             </ActionCard>
           )}
 
-          {/* ── Main Actions ── */}
+          {/* ─── Main action cards (2-col on desktop) ────────────────────── */}
           <div>
-            <SectionHeader>📋 Kya Karna Hai?</SectionHeader>
+            <SectionHeader>📋 Quick Actions</SectionHeader>
+            <ActionsGrid>
 
-            {/* Log Purchase */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <ActionCard
                 $color="#f97316"
                 onClick={() => navigate('/cook-portal/cook')}
@@ -233,8 +360,8 @@ export function CookDashboardPage() {
                 <ActionContent>
                   <ActionTitle>🛒 Khareedari Likhein</ActionTitle>
                   <ActionSub>
-                    Jo cheez kharidi — woh yahan likhein
-                    {purchases.length > 0 && ` · ${purchases.length} items logged`}
+                    Purchases log
+                    {purchases.length > 0 && ` · ${purchases.length} items`}
                   </ActionSub>
                 </ActionContent>
                 <ActionArrow $color="#f97316">
@@ -251,9 +378,7 @@ export function CookDashboardPage() {
                 </ActionIcon>
                 <ActionContent>
                   <ActionTitle>🍛 Khana Menu</ActionTitle>
-                  <ActionSub>
-                    Aaj ka khana dekho ya badlo
-                  </ActionSub>
+                  <ActionSub>Aaj ka khana dekho ya badlo</ActionSub>
                 </ActionContent>
                 <ActionArrow $color="#722ed1">
                   <ArrowRightOutlined />
@@ -275,7 +400,9 @@ export function CookDashboardPage() {
                         📬 Requests
                         <UrgentDot />
                       </span>
-                    ) : '✅ Requests'}
+                    ) : (
+                      '✅ Requests'
+                    )}
                   </ActionTitle>
                   <ActionSub>
                     {hasPending
@@ -298,8 +425,9 @@ export function CookDashboardPage() {
                 <ActionContent>
                   <ActionTitle>🍽️ Weekend Khana</ActionTitle>
                   <ActionSub>
-                    Weekend ka khana likhein
-                    {weekendExpenses.length > 0 && ` · ${formatCurrency(weekendTotal)} this month`}
+                    Weekend meals
+                    {weekendExpenses.length > 0 &&
+                      ` · ${formatCurrency(weekendTotal)} this month`}
                   </ActionSub>
                 </ActionContent>
                 <ActionArrow $color="#1890ff">
@@ -307,73 +435,59 @@ export function CookDashboardPage() {
                 </ActionArrow>
               </ActionCard>
 
-              <ActionCard
-                $color="#909ffa"
-                onClick={() => navigate('/cook-portal/flat-expenses')}
-              >
-                <ActionIcon $color="#909ffa">
-                  <WalletOutlined />
-                </ActionIcon>
-                <ActionContent>
-                  <ActionTitle>🏠 Ghar Ka Paisa</ActionTitle>
-                  <ActionSub>
-                    Flat fund — {flatBalance >= 0
-                      ? `${formatCurrency(flatBalance)} bacha hua`
-                      : `${formatCurrency(Math.abs(flatBalance))} zyada kharch`}
-                  </ActionSub>
-                </ActionContent>
-                <ActionArrow $color="#909ffa">
-                  <ArrowRightOutlined />
-                </ActionArrow>
-              </ActionCard>
-            </div>
+            </ActionsGrid>
           </div>
 
-          {/* ── Low balance warning ── */}
+          {/* ─── Flat fund card (full-width) ──────────────────────────────── */}
+          <ActionCard
+            $color="#7c3aed"
+            onClick={() => navigate('/cook-portal/flat-expenses')}
+          >
+            <ActionIcon $color="#7c3aed">
+              <WalletOutlined />
+            </ActionIcon>
+            <ActionContent>
+              <ActionTitle>🏠 Flat Fund Status</ActionTitle>
+              <ActionSub>
+                {flatBalance >= 0
+                  ? `${formatCurrency(flatBalance)} available in flat fund`
+                  : `${formatCurrency(Math.abs(flatBalance))} overspent from flat fund`}
+              </ActionSub>
+            </ActionContent>
+            <ActionArrow $color="#7c3aed">
+              <ArrowRightOutlined />
+            </ActionArrow>
+          </ActionCard>
+
+          {/* ─── Balance alerts ───────────────────────────────────────────── */}
           {balanceStatus === 'over' && (
-            <div style={{
-              background: 'rgba(220,38,38,0.1)',
-              border: '2px solid rgba(220,38,38,0.3)',
-              borderRadius: 14,
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 12,
-            }}>
-              <WarningOutlined style={{ color: '#dc2626', fontSize: 22, flexShrink: 0, marginTop: 2 }} />
+            <AlertBox $variant="error">
+              <AlertIcon $variant="error">
+                <WarningOutlined />
+              </AlertIcon>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>
-                  Paisa Khatam Ho Gaya!
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                <AlertTitle $variant="error">Paisa Khatam Ho Gaya!</AlertTitle>
+                <AlertBody>
                   Aap ne {formatCurrency(Math.abs(balance))} zyada kharch kar liya hai.
                   Admin se naya advance maangein.
-                </div>
+                </AlertBody>
               </div>
-            </div>
+            </AlertBox>
           )}
 
           {balanceStatus === 'warn' && (
-            <div style={{
-              background: 'rgba(217,119,6,0.1)',
-              border: '2px solid rgba(217,119,6,0.25)',
-              borderRadius: 14,
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 12,
-            }}>
-              <WarningOutlined style={{ color: '#d97706', fontSize: 22, flexShrink: 0, marginTop: 2 }} />
+            <AlertBox $variant="warn">
+              <AlertIcon $variant="warn">
+                <WarningOutlined />
+              </AlertIcon>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#d97706', marginBottom: 4 }}>
-                  Thora Paisa Bacha Hai
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Sirf {formatCurrency(balance)} bacha hai. Sambhal ke kharchein
-                  ya admin se baat karein.
-                </div>
+                <AlertTitle $variant="warn">Thora Paisa Bacha Hai</AlertTitle>
+                <AlertBody>
+                  Sirf {formatCurrency(balance)} bacha hai.
+                  Sambhal ke kharchein ya admin se baat karein.
+                </AlertBody>
               </div>
-            </div>
+            </AlertBox>
           )}
 
         </QueryState>

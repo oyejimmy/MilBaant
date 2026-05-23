@@ -63,13 +63,29 @@ const DebtCard = styled.div<{ $type: 'owe' | 'owed' | 'settled' }>`
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
-  border-radius: 7px;
+  padding: 10px 14px;
+  border-radius: 10px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   flex-wrap: wrap;
   border-left: 3px solid ${({ $type }) =>
     $type === 'owe' ? '#ff7875' : $type === 'owed' ? '#52c41a' : 'var(--card-border)'};
+  transition: box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+`
+
+const SectionTitle = styled.div`
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .ant-typography {
+    margin: 0;
+  }
 `
 
 /* ─── Main page ───────────────────────────────────────────────────────────── */
@@ -267,7 +283,10 @@ export function WeekendExpensesPage() {
 
         {/* Expenses */}
         <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 10px', color: 'var(--text-strong)' }}>All Weekend Meals</Typography.Title>
+          <SectionTitle>
+            <Typography.Title level={5} style={{ color: 'var(--text-strong)' }}>All Weekend Meals</Typography.Title>
+            <Tag color="default" style={{ fontSize: 11, marginBottom: 2 }}>{weekendExpenses.length} entries</Tag>
+          </SectionTitle>
           {isMobile ? (
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
               {weekendExpenses.length === 0 && <Typography.Text type="secondary">No weekend expenses for this month.</Typography.Text>}
@@ -322,12 +341,12 @@ export function WeekendExpensesPage() {
 
         {/* Who owes whom */}
         <SectionBlock>
-          <Space direction="vertical" size={4} style={{ width: '100%', marginBottom: 12 }}>
-            <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-strong)' }}>Who Owes Whom</Typography.Title>
-            <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-              Green = someone owes you · Red = you owe someone.
+          <SectionTitle>
+            <Typography.Title level={5} style={{ color: 'var(--text-strong)' }}>Who Owes Whom</Typography.Title>
+            <Typography.Text style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+              Green = owed to you · Red = you owe
             </Typography.Text>
-          </Space>
+          </SectionTitle>
           {debtRows.length === 0 ? (
             <Alert type="success" showIcon icon={<CheckCircleOutlined />} message="All settled up! No outstanding debts for this month." />
           ) : (
@@ -339,16 +358,16 @@ export function WeekendExpensesPage() {
                 return (
                   <DebtCard key={`${debt.fromId}-${debt.toId}`} $type={type}>
                     <Flex align="center" gap={6} wrap style={{ flex: 1, minWidth: 0 }}>
-                      <Avatar size={20} style={{ background: '#909ffa', color: '#fff', fontSize: 10, flexShrink: 0 }} icon={<UserOutlined />} />
+                      <Avatar size={22} style={{ background: '#909ffa', color: '#fff', fontSize: 10, flexShrink: 0 }} icon={<UserOutlined />} />
                       <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.82rem' }}>{debt.fromName}</Typography.Text>
                       <ArrowRightOutlined style={{ color: 'var(--text-muted)', fontSize: 10 }} />
-                      <Avatar size={20} style={{ background: '#52c41a', color: '#fff', fontSize: 10, flexShrink: 0 }} icon={<UserOutlined />} />
+                      <Avatar size={22} style={{ background: '#52c41a', color: '#fff', fontSize: 10, flexShrink: 0 }} icon={<UserOutlined />} />
                       <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.82rem' }}>{debt.toName}</Typography.Text>
                       {isCurrentUserDebtor && <Tag color="red" style={{ margin: 0, fontSize: 10 }}>You owe</Tag>}
                       {isCurrentUserCreditor && <Tag color="green" style={{ margin: 0, fontSize: 10 }}>Owed to you</Tag>}
                     </Flex>
-                    <Flex align="center" gap={6} style={{ flexShrink: 0 }}>
-                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.88rem' }}>{formatCurrency(debt.netAmount)}</Typography.Text>
+                    <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
+                      <Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.9rem' }}>{formatCurrency(debt.netAmount)}</Typography.Text>
                       {!!userId && (
                         <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => setSettleModal(debt)}>Settle</Button>
                       )}
@@ -362,7 +381,10 @@ export function WeekendExpensesPage() {
 
         {/* Settlement history */}
         <SectionBlock>
-          <Typography.Title level={5} style={{ margin: '0 0 10px', color: 'var(--text-strong)' }}>Settlement History</Typography.Title>
+          <SectionTitle>
+            <Typography.Title level={5} style={{ color: 'var(--text-strong)' }}>Settlement History</Typography.Title>
+            {settlements.length > 0 && <Tag color="default" style={{ fontSize: 11, marginBottom: 2 }}>{settlements.length} records</Tag>}
+          </SectionTitle>
           {settlements.length === 0 ? (
             <Typography.Text style={{ color: 'var(--text-muted)' }}>No settlements recorded yet.</Typography.Text>
           ) : isMobile ? (
@@ -423,78 +445,328 @@ function applySettlements(debts: DebtRow[], settlements: DebtSettlement[]): Debt
     .filter((d) => d.netAmount > 0.01)
 }
 
-/* ─── Expense detail modal ────────────────────────────────────────────────── */
+/* ─── Detail modal styled ─────────────────────────────────────────────────── */
 
-const ModalGrid = styled.div`
+const DetailBanner = styled.div`
+  background: linear-gradient(135deg, rgba(144,159,250,0.12) 0%, rgba(64,150,255,0.06) 100%);
+  border-bottom: 1px solid var(--border-light);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+`
+
+const DetailIcon = styled.div`
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #909ffa 0%, #4096ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(144,159,250,0.4);
+
+  .anticon {
+    color: white;
+    font-size: 19px;
+  }
+`
+
+const DetailGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding-top: 4px;
-  @media (max-width: 520px) { grid-template-columns: 1fr; }
-`
-const InfoBlock = styled.div`display: flex; flex-direction: column; gap: 10px;`
-const InfoRow = styled.div`display: flex; flex-direction: column; gap: 2px;`
-const InfoLabel = styled.span`font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;`
-const InfoValue = styled.span`font-size: 0.88rem; color: var(--text-strong); font-weight: 500;`
-const ParticipantList = styled.div`display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; &::-webkit-scrollbar { width: 3px; } &::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }`
-const ParticipantRow = styled.div`display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; border-radius: 6px; background: var(--content-bg); border: 1px solid var(--card-border);`
+  gap: 16px;
+  padding: 16px 20px 4px;
 
-function ExpenseDetailModal({ expense, onClose, onDelete, deleting }: { expense: Expense; onClose: () => void; onDelete?: (id: string) => Promise<void>; deleting: boolean }) {
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`
+
+const InfoBlock = styled.div`display: flex; flex-direction: column; gap: 10px;`
+
+const InfoRow = styled.div`display: flex; flex-direction: column; gap: 2px;`
+
+const InfoLabel = styled.span`
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+`
+
+const InfoValue = styled.span`
+  font-size: 0.88rem;
+  color: var(--text-strong);
+  font-weight: 500;
+`
+
+const ParticipantList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+`
+
+const ParticipantRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--content-bg);
+  border: 1px solid var(--card-border);
+`
+
+/* ─── Expense detail modal ────────────────────────────────────────────────── */
+
+function ExpenseDetailModal({
+  expense,
+  onClose,
+  onDelete,
+  deleting,
+}: {
+  expense: Expense
+  onClose: () => void
+  onDelete?: (id: string) => Promise<void>
+  deleting: boolean
+}) {
   const sharePerPerson = calculateWeekendExpenseShare(expense)
   return (
-    <Modal open onCancel={onClose}
-      title={<Flex align="center" gap={8}><Typography.Text strong style={{ color: 'var(--text-strong)', fontSize: '0.95rem' }}>Weekend Expense</Typography.Text><Tag color="blue" style={{ margin: 0 }}>Read Only</Tag>{expense.creator && <Tag color="purple" style={{ margin: 0 }}>{expense.creator.full_name}</Tag>}</Flex>}
-      footer={<Flex justify={onDelete ? 'space-between' : 'flex-end'} align="center">{onDelete && <Popconfirm title="Delete this expense?" onConfirm={() => void onDelete(expense.id)}><Button danger size="small" icon={<DeleteOutlined />} loading={deleting}>Delete</Button></Popconfirm>}<Button size="small" onClick={onClose}>Close</Button></Flex>}
-      width="min(480px, 95vw)" styles={{ body: { padding: '12px 16px 4px' } }}>
-      <ModalGrid>
+    <Modal
+      open
+      onCancel={onClose}
+      title={null}
+      style={{ top: 24 }}
+      styles={{ body: { padding: 0 } }}
+      footer={
+        <Flex justify={onDelete ? 'space-between' : 'flex-end'} align="center">
+          {onDelete && (
+            <Popconfirm title="Delete this expense?" onConfirm={() => void onDelete(expense.id)}>
+              <Button danger size="small" icon={<DeleteOutlined />} loading={deleting}>Delete</Button>
+            </Popconfirm>
+          )}
+          <Button size="small" onClick={onClose}>Close</Button>
+        </Flex>
+      }
+      width="min(500px, 96vw)"
+    >
+      {/* Banner */}
+      <DetailBanner>
+        <DetailIcon>
+          <WalletOutlined />
+        </DetailIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: '0 0 4px', color: 'var(--text-strong)', lineHeight: 1.2 }}>
+            Weekend Expense
+          </Typography.Title>
+          <Flex gap={6} wrap>
+            <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>Read Only</Tag>
+            {expense.creator && <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>{expense.creator.full_name}</Tag>}
+          </Flex>
+        </div>
+      </DetailBanner>
+
+      {/* Info grid */}
+      <DetailGrid>
         <InfoBlock>
-          <InfoRow><InfoLabel>Date</InfoLabel><InfoValue>{formatDate(expense.date)}</InfoValue></InfoRow>
-          <InfoRow><InfoLabel>Amount</InfoLabel><InfoValue style={{ color: '#909ffa', fontSize: '1rem', fontWeight: 700 }}>{formatCurrency(expense.amount)}</InfoValue></InfoRow>
-          <InfoRow><InfoLabel>Share / Person</InfoLabel><InfoValue>{formatCurrency(sharePerPerson)}</InfoValue></InfoRow>
-          <InfoRow><InfoLabel>Description</InfoLabel><InfoValue style={{ fontWeight: 400 }}>{expense.description || 'No description'}</InfoValue></InfoRow>
-          <InfoRow><InfoLabel>Recorded</InfoLabel><InfoValue style={{ fontSize: '0.78rem', fontWeight: 400 }}>{formatDateTime(expense.created_at)}</InfoValue></InfoRow>
-          {expense.bill_image_url && <InfoRow><InfoLabel>Bill</InfoLabel><Image src={expense.bill_image_url} alt="Bill" width={80} height={60} style={{ borderRadius: 6, objectFit: 'cover', border: '1px solid var(--card-border)' }} /></InfoRow>}
+          <InfoRow>
+            <InfoLabel>Date</InfoLabel>
+            <InfoValue>{formatDate(expense.date)}</InfoValue>
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>Amount</InfoLabel>
+            <InfoValue style={{ color: '#909ffa', fontSize: '1.05rem', fontWeight: 700 }}>
+              {formatCurrency(expense.amount)}
+            </InfoValue>
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>Share / Person</InfoLabel>
+            <InfoValue>{formatCurrency(sharePerPerson)}</InfoValue>
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>Description</InfoLabel>
+            <InfoValue style={{ fontWeight: 400 }}>{expense.description || 'No description'}</InfoValue>
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>Recorded</InfoLabel>
+            <InfoValue style={{ fontSize: '0.78rem', fontWeight: 400 }}>{formatDateTime(expense.created_at)}</InfoValue>
+          </InfoRow>
+          {expense.bill_image_url && (
+            <InfoRow>
+              <InfoLabel>Bill</InfoLabel>
+              <Image
+                src={expense.bill_image_url}
+                alt="Bill"
+                width={80}
+                height={60}
+                style={{ borderRadius: 7, objectFit: 'cover', border: '1px solid var(--card-border)' }}
+              />
+            </InfoRow>
+          )}
         </InfoBlock>
+
         <InfoBlock>
-          <InfoRow><InfoLabel>Participants ({expense.expense_participants.length})</InfoLabel></InfoRow>
-          {expense.expense_participants.length === 0 ? <Typography.Text type="secondary" style={{ fontSize: '0.82rem' }}>No participants recorded.</Typography.Text> : (
+          <InfoRow>
+            <InfoLabel>Participants ({expense.expense_participants.length})</InfoLabel>
+          </InfoRow>
+          {expense.expense_participants.length === 0 ? (
+            <Typography.Text type="secondary" style={{ fontSize: '0.82rem' }}>No participants recorded.</Typography.Text>
+          ) : (
             <ParticipantList>
               {expense.expense_participants.map((p) => (
                 <ParticipantRow key={p.user_id}>
-                  <Typography.Text style={{ fontSize: '0.8rem', color: 'var(--text-strong)' }}>{p.profile?.full_name ?? '?'}</Typography.Text>
-                  <Typography.Text style={{ fontSize: '0.8rem', color: '#909ffa', fontWeight: 600 }}>{formatCurrency(sharePerPerson)}</Typography.Text>
+                  <Flex align="center" gap={8}>
+                    <Avatar
+                      size={20}
+                      style={{ background: '#909ffa', color: '#fff', fontSize: 9, fontWeight: 700, flexShrink: 0 }}
+                    >
+                      {(p.profile?.full_name ?? '?').charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography.Text style={{ fontSize: '0.8rem', color: 'var(--text-strong)' }}>
+                      {p.profile?.full_name ?? '?'}
+                    </Typography.Text>
+                  </Flex>
+                  <Typography.Text style={{ fontSize: '0.8rem', color: '#909ffa', fontWeight: 600 }}>
+                    {formatCurrency(sharePerPerson)}
+                  </Typography.Text>
                 </ParticipantRow>
               ))}
             </ParticipantList>
           )}
         </InfoBlock>
-      </ModalGrid>
+      </DetailGrid>
     </Modal>
   )
 }
 
-function SettleModal({ debt, submitting, onClose, onSubmit }: { debt: DebtRow; submitting: boolean; onClose: () => void; onSubmit: (debt: DebtRow, amount: number, note: string) => Promise<void> }) {
+/* ─── Settle modal styled ─────────────────────────────────────────────────── */
+
+const SettleBanner = styled.div`
+  background: linear-gradient(135deg, rgba(82,196,26,0.1) 0%, rgba(82,196,26,0.04) 100%);
+  border-bottom: 1px solid var(--border-light);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+`
+
+const SettleIcon = styled.div`
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(82,196,26,0.35);
+
+  .anticon {
+    color: white;
+    font-size: 19px;
+  }
+`
+
+const DebtSummaryCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--content-bg);
+  border: 1px solid var(--card-border);
+  margin-bottom: 16px;
+`
+
+/* ─── Settle modal ────────────────────────────────────────────────────────── */
+
+function SettleModal({
+  debt,
+  submitting,
+  onClose,
+  onSubmit,
+}: {
+  debt: DebtRow
+  submitting: boolean
+  onClose: () => void
+  onSubmit: (debt: DebtRow, amount: number, note: string) => Promise<void>
+}) {
   const [form] = Form.useForm<{ amount: number; note: string }>()
+
   async function handleOk() {
     const values = await form.validateFields()
     await onSubmit(debt, values.amount, values.note ?? '')
     form.resetFields()
   }
+
   return (
-    <Modal open onCancel={onClose} title="Record Settlement" okText="Confirm Payment" confirmLoading={submitting} onOk={() => void handleOk()} width="min(420px, 95vw)">
-      <Space direction="vertical" size={16} style={{ width: '100%', paddingTop: 8 }}>
-        <Alert type="info" showIcon title={<span><strong>{debt.fromName}</strong> pays <strong>{debt.toName}</strong> — <strong>{formatCurrency(debt.netAmount)}</strong></span>} />
-        <Form form={form} layout="vertical" initialValues={{ amount: debt.netAmount }}>
+    <Modal
+      open
+      onCancel={onClose}
+      title={null}
+      okText="Confirm Payment"
+      confirmLoading={submitting}
+      onOk={() => void handleOk()}
+      width="min(440px, 96vw)"
+      style={{ top: 24 }}
+      styles={{ body: { padding: 0 } }}
+    >
+      {/* Banner */}
+      <SettleBanner>
+        <SettleIcon>
+          <CheckCircleOutlined />
+        </SettleIcon>
+        <div>
+          <Typography.Title level={5} style={{ margin: '0 0 2px', color: 'var(--text-strong)', lineHeight: 1.2 }}>
+            Record Settlement
+          </Typography.Title>
+          <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Mark a payment as completed
+          </Typography.Text>
+        </div>
+      </SettleBanner>
+
+      <div style={{ padding: '16px 20px 4px' }}>
+        {/* Debt summary */}
+        <DebtSummaryCard>
+          <Flex align="center" gap={6} wrap>
+            <Tag color="red" style={{ margin: 0, fontSize: 11 }}>{debt.fromName}</Tag>
+            <ArrowRightOutlined style={{ color: 'var(--text-muted)', fontSize: 10 }} />
+            <Tag color="green" style={{ margin: 0, fontSize: 11 }}>{debt.toName}</Tag>
+          </Flex>
+          <Typography.Text strong style={{ color: '#52c41a', fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+            {formatCurrency(debt.netAmount)}
+          </Typography.Text>
+        </DebtSummaryCard>
+
+        <Form form={form} layout="vertical" requiredMark={false} initialValues={{ amount: debt.netAmount, note: '' }}>
           <Form.Item label="Amount Paid" name="amount" rules={[{ required: true, message: 'Enter amount.' }]}>
             <InputNumber min={0.01} max={debt.netAmount} precision={2} prefix="PKR" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item label="Note (optional)" name="note">
-            <Form.Item name="note" noStyle>
-              <input placeholder="e.g. Cash handed over" style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--text-strong)', fontSize: '0.9rem', outline: 'none' }} />
-            </Form.Item>
+          <Form.Item label="Note (optional)" name="note" style={{ marginBottom: 16 }}>
+            <input
+              placeholder="e.g. Cash handed over"
+              style={{
+                width: '100%',
+                padding: '7px 11px',
+                borderRadius: 8,
+                border: '1px solid var(--card-border)',
+                background: 'var(--card-bg)',
+                color: 'var(--text-strong)',
+                fontSize: '0.9rem',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
           </Form.Item>
         </Form>
-      </Space>
+      </div>
     </Modal>
   )
 }
