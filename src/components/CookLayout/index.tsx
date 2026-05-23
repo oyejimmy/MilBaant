@@ -452,17 +452,17 @@ const BottomNav = styled.nav`
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 300;
+  z-index: 2000;
   height: 58px;
   background: var(--navbar-bg);
   border-top: 1px solid var(--sidebar-border);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: stretch;
   padding: 0 2px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 `;
 
 const BottomNavItem = styled.button<{ $active: boolean }>`
@@ -967,7 +967,7 @@ export function CookLayout() {
         </MainLayout>
       </Shell>
 
-      {/* ── Mobile bottom nav — outside Shell so position:fixed is viewport-relative ── */}
+      {/* ── Mobile bottom nav — fixed at viewport bottom ── */}
       {!isDesktop && (
         <BottomNav role="navigation" aria-label="Cook navigation">
           {mobileBottomItems.map((item) => {

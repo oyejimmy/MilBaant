@@ -24,15 +24,17 @@ const BottomNavContainer = styled.nav`
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 300;
+  z-index: 2000;
   height: 56px;
   background: var(--navbar-bg);
   border-top: 1px solid var(--navbar-border);
   display: flex;
   align-items: stretch;
   padding: 0 2px;
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 
   @supports (padding: max(0px)) {
     padding-bottom: max(env(safe-area-inset-bottom), 4px);
@@ -63,23 +65,6 @@ const NavButton = styled.button<{ $active: boolean }>`
     transform: scale(0.95);
   }
 
-  /* Active indicator */
-  ${({ $active }) =>
-    $active &&
-    `
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 32px;
-      height: 3px;
-      background: var(--primary);
-      border-radius: 0 0 3px 3px;
-    }
-  `}
-
   .anticon {
     font-size: 20px;
     transition: transform 0.2s ease;
@@ -93,6 +78,15 @@ const NavButton = styled.button<{ $active: boolean }>`
     }
   `}
 `
+
+const ActiveDot = styled.div`
+  position: absolute;
+  top: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+`;
 
 const NavLabel = styled.span`
   font-size: 10px;
@@ -120,18 +114,22 @@ export function MobileBottomNav({ onMoreClick }: MobileBottomNavProps) {
 
   return (
     <BottomNavContainer role="navigation" aria-label="Main navigation">
-      {NAV_ITEMS.map((item) => (
-        <NavButton
-          key={item.key}
-          $active={activePath === item.key}
-          onClick={() => navigate(item.key)}
-          aria-label={item.label}
-          aria-current={activePath === item.key ? 'page' : undefined}
-        >
-          {item.icon}
-          <NavLabel>{item.label}</NavLabel>
-        </NavButton>
-      ))}
+      {NAV_ITEMS.map((item) => {
+        const isActive = activePath === item.key;
+        return (
+          <NavButton
+            key={item.key}
+            $active={isActive}
+            onClick={() => navigate(item.key)}
+            aria-label={item.label}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            {isActive && <ActiveDot />}
+            {item.icon}
+            <NavLabel>{item.label}</NavLabel>
+          </NavButton>
+        );
+      })}
       <NavButton
         $active={false}
         onClick={onMoreClick}

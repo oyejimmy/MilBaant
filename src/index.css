@@ -110,8 +110,7 @@ body {
 /* ── Mobile performance: reduce paint/composite cost ─────────────────────── */
 @media (max-width: 767px) {
   /* Promote scrollable containers to their own layer */
-  .ant-layout-content,
-  #root {
+  .ant-layout-content {
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
   }
