@@ -1,28 +1,33 @@
-import styled, { keyframes } from 'styled-components'
+import styled, { keyframes } from "styled-components";
 
 // ── Animations ────────────────────────────────────────────────────────────────
 
 export const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
-`
+`;
 
 export const pulse = keyframes`
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(1.04); }
-`
+`;
 
 // ── Page wrapper ──────────────────────────────────────────────────────────────
 
 export const PageWrap = styled.div`
   animation: ${fadeUp} 0.3s ease;
   width: 100%;
-`
+`;
 
 // ── Greeting banner ───────────────────────────────────────────────────────────
 
 export const GreetingBanner = styled.div`
-  background: linear-gradient(135deg, #ea580c 0%, #f97316 55%, #fb923c 100%);
+  background: linear-gradient(
+    135deg,
+    #1a0cea99 0%,
+    #f91666b8 55%,
+    #fb3c3c8a 100%
+  );
   border-radius: 20px;
   padding: 22px 24px;
   display: flex;
@@ -33,7 +38,7 @@ export const GreetingBanner = styled.div`
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -50%;
     right: -5%;
@@ -45,7 +50,7 @@ export const GreetingBanner = styled.div`
   }
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -60%;
     right: 20%;
@@ -61,7 +66,7 @@ export const GreetingBanner = styled.div`
     border-radius: 24px;
     align-items: flex-start;
   }
-`
+`;
 
 export const GreetingEmoji = styled.div`
   font-size: 48px;
@@ -71,19 +76,19 @@ export const GreetingEmoji = styled.div`
   @media (min-width: 992px) {
     font-size: 60px;
   }
-`
+`;
 
 export const GreetingBody = styled.div`
   flex: 1;
   min-width: 0;
-`
+`;
 
 export const GreetingTitle = styled.div`
   font-size: clamp(18px, 4vw, 26px);
   font-weight: 800;
   color: #fff;
   line-height: 1.2;
-`
+`;
 
 export const GreetingDate = styled.div`
   font-size: 13px;
@@ -94,7 +99,7 @@ export const GreetingDate = styled.div`
     font-size: 15px;
     margin-top: 6px;
   }
-`
+`;
 
 export const GreetingStatsRow = styled.div`
   display: none;
@@ -104,20 +109,20 @@ export const GreetingStatsRow = styled.div`
     gap: 28px;
     margin-top: 18px;
   }
-`
+`;
 
 export const GreetingStatItem = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2px;
-`
+`;
 
 export const GreetingStatValue = styled.div`
   font-size: 22px;
   font-weight: 900;
   color: #fff;
   line-height: 1;
-`
+`;
 
 export const GreetingStatLabel = styled.div`
   font-size: 10px;
@@ -125,7 +130,7 @@ export const GreetingStatLabel = styled.div`
   color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.6px;
-`
+`;
 
 // ── Two-column grid (desktop) ─────────────────────────────────────────────────
 
@@ -139,7 +144,7 @@ export const DashGrid = styled.div`
     gap: 20px;
     align-items: start;
   }
-`
+`;
 
 // ── Dinner card ───────────────────────────────────────────────────────────────
 
@@ -156,7 +161,7 @@ export const DinnerCard = styled.div`
   overflow: hidden;
 
   &::after {
-    content: '🍛';
+    content: "🍛";
     position: absolute;
     right: 14px;
     bottom: 6px;
@@ -169,7 +174,7 @@ export const DinnerCard = styled.div`
   @media (min-width: 992px) {
     padding: 24px 26px;
   }
-`
+`;
 
 export const DinnerTopRow = styled.div`
   display: flex;
@@ -177,7 +182,7 @@ export const DinnerTopRow = styled.div`
   gap: 8px;
   margin-bottom: 10px;
   flex-wrap: wrap;
-`
+`;
 
 export const DinnerSectionLabel = styled.div`
   font-size: 11px;
@@ -185,7 +190,7 @@ export const DinnerSectionLabel = styled.div`
   color: #722ed1;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-`
+`;
 
 export const DinnerMealName = styled.div`
   font-size: clamp(18px, 4vw, 24px);
@@ -193,14 +198,14 @@ export const DinnerMealName = styled.div`
   color: var(--text-strong);
   line-height: 1.25;
   margin-bottom: 6px;
-`
+`;
 
 export const DinnerDescription = styled.div`
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
   margin-bottom: 8px;
-`
+`;
 
 export const DinnerMetaRow = styled.div`
   font-size: 13px;
@@ -210,31 +215,31 @@ export const DinnerMetaRow = styled.div`
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 14px;
-`
+`;
 
 // ── Balance card ──────────────────────────────────────────────────────────────
 
-export const BalanceCard = styled.div<{ $status: 'good' | 'warn' | 'over' }>`
+export const BalanceCard = styled.div<{ $status: "good" | "warn" | "over" }>`
   background: ${({ $status }) =>
-    $status === 'good'
-      ? 'linear-gradient(135deg, #14532d 0%, #166534 55%, #16a34a 100%)'
-      : $status === 'over'
-        ? 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #dc2626 100%)'
-        : 'linear-gradient(135deg, #78350f 0%, #92400e 55%, #d97706 100%)'};
+    $status === "good"
+      ? "linear-gradient(135deg, #14532d 0%, #166534 55%, #16a34a 100%)"
+      : $status === "over"
+        ? "linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #dc2626 100%)"
+        : "linear-gradient(135deg, #78350f 0%, #92400e 55%, #d97706 100%)"};
   border-radius: 20px;
   padding: 20px 22px;
   color: #fff;
   box-shadow: ${({ $status }) =>
-    $status === 'good'
-      ? '0 6px 26px rgba(22,163,74,0.45)'
-      : $status === 'over'
-        ? '0 6px 26px rgba(220,38,38,0.45)'
-        : '0 6px 26px rgba(217,119,6,0.45)'};
+    $status === "good"
+      ? "0 6px 26px rgba(22,163,74,0.45)"
+      : $status === "over"
+        ? "0 6px 26px rgba(220,38,38,0.45)"
+        : "0 6px 26px rgba(217,119,6,0.45)"};
   position: relative;
   overflow: hidden;
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -30%;
     right: -10%;
@@ -248,7 +253,7 @@ export const BalanceCard = styled.div<{ $status: 'good' | 'warn' | 'over' }>`
   @media (min-width: 992px) {
     padding: 24px 26px;
   }
-`
+`;
 
 export const BalanceLabel = styled.div`
   font-size: 11px;
@@ -257,7 +262,7 @@ export const BalanceLabel = styled.div`
   letter-spacing: 0.8px;
   color: rgba(255, 255, 255, 0.72);
   margin-bottom: 6px;
-`
+`;
 
 export const BalanceBig = styled.div`
   font-size: clamp(30px, 8vw, 44px);
@@ -265,31 +270,31 @@ export const BalanceBig = styled.div`
   color: #fff;
   line-height: 1;
   margin: 4px 0 6px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   letter-spacing: -1.5px;
-`
+`;
 
 export const BalanceStatus = styled.div`
   font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.4;
-`
+`;
 
 export const BalanceProgressSection = styled.div`
   margin-top: 16px;
-`
+`;
 
 export const BalanceProgressLabels = styled.div`
   display: flex;
   justify-content: space-between;
   margin-bottom: 7px;
-`
+`;
 
 export const BalanceProgressLabel = styled.span`
   font-size: 12px;
   color: rgba(255, 255, 255, 0.72);
-`
+`;
 
 // ── Quick stats strip ─────────────────────────────────────────────────────────
 
@@ -301,7 +306,7 @@ export const StatsRow = styled.div`
   @media (min-width: 992px) {
     gap: 16px;
   }
-`
+`;
 
 export const StatChip = styled.div<{ $color: string }>`
   background: var(--card-bg);
@@ -314,7 +319,9 @@ export const StatChip = styled.div<{ $color: string }>`
   align-items: center;
   gap: 4px;
   text-align: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
     transform: translateY(-2px);
@@ -324,14 +331,14 @@ export const StatChip = styled.div<{ $color: string }>`
   @media (min-width: 992px) {
     padding: 18px 14px;
   }
-`
+`;
 
 export const StatChipValue = styled.div<{ $color: string }>`
   font-size: clamp(16px, 4vw, 22px);
   font-weight: 900;
   color: ${({ $color }) => $color};
   line-height: 1;
-`
+`;
 
 export const StatChipLabel = styled.div`
   font-size: 10px;
@@ -339,7 +346,7 @@ export const StatChipLabel = styled.div`
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-`
+`;
 
 // ── Section header ────────────────────────────────────────────────────────────
 
@@ -351,7 +358,7 @@ export const SectionHeader = styled.div`
   color: var(--text-muted);
   margin-bottom: 10px;
   padding-left: 2px;
-`
+`;
 
 // ── Action cards grid ─────────────────────────────────────────────────────────
 
@@ -364,12 +371,13 @@ export const ActionsGrid = styled.div`
     grid-template-columns: 1fr 1fr;
     gap: 14px;
   }
-`
+`;
 
 export const ActionCard = styled.button<{ $color: string; $urgent?: boolean }>`
   width: 100%;
   background: var(--card-bg);
-  border: 2px solid ${({ $urgent, $color }) => ($urgent ? $color : 'var(--card-border)')};
+  border: 2px solid
+    ${({ $urgent, $color }) => ($urgent ? $color : "var(--card-border)")};
   border-radius: 18px;
   padding: 18px 20px;
   display: flex;
@@ -377,10 +385,14 @@ export const ActionCard = styled.button<{ $color: string; $urgent?: boolean }>`
   gap: 14px;
   cursor: pointer;
   text-align: left;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
   box-shadow: ${({ $urgent, $color }) =>
-    $urgent ? `0 4px 18px ${$color}32` : '0 2px 8px rgba(0,0,0,0.05)'};
-  animation: ${({ $urgent }) => ($urgent ? pulse : 'none')} 2s ease-in-out infinite;
+    $urgent ? `0 4px 18px ${$color}32` : "0 2px 8px rgba(0,0,0,0.05)"};
+  animation: ${({ $urgent }) => ($urgent ? pulse : "none")} 2s ease-in-out
+    infinite;
 
   &:active {
     transform: scale(0.97);
@@ -396,7 +408,7 @@ export const ActionCard = styled.button<{ $color: string; $urgent?: boolean }>`
     padding: 20px 22px;
     gap: 16px;
   }
-`
+`;
 
 export const ActionIcon = styled.div<{ $color: string }>`
   width: 52px;
@@ -416,12 +428,12 @@ export const ActionIcon = styled.div<{ $color: string }>`
     font-size: 26px;
     border-radius: 16px;
   }
-`
+`;
 
 export const ActionContent = styled.div`
   flex: 1;
   min-width: 0;
-`
+`;
 
 export const ActionTitle = styled.div`
   font-size: 15px;
@@ -432,7 +444,7 @@ export const ActionTitle = styled.div`
   @media (min-width: 992px) {
     font-size: 16px;
   }
-`
+`;
 
 export const ActionSub = styled.div`
   font-size: 12px;
@@ -442,7 +454,7 @@ export const ActionSub = styled.div`
   @media (min-width: 992px) {
     font-size: 13px;
   }
-`
+`;
 
 export const ActionArrow = styled.div<{ $color: string }>`
   width: 30px;
@@ -455,7 +467,7 @@ export const ActionArrow = styled.div<{ $color: string }>`
   color: ${({ $color }) => $color};
   font-size: 12px;
   flex-shrink: 0;
-`
+`;
 
 // ── Urgent pulse dot ──────────────────────────────────────────────────────────
 
@@ -466,43 +478,39 @@ export const UrgentDot = styled.div`
   background: #f97316;
   flex-shrink: 0;
   animation: ${pulse} 1.5s ease-in-out infinite;
-`
+`;
 
 // ── Alert banners ─────────────────────────────────────────────────────────────
 
-export const AlertBox = styled.div<{ $variant: 'error' | 'warn' }>`
+export const AlertBox = styled.div<{ $variant: "error" | "warn" }>`
   background: ${({ $variant }) =>
-    $variant === 'error'
-      ? 'rgba(220,38,38,0.08)'
-      : 'rgba(217,119,6,0.08)'};
+    $variant === "error" ? "rgba(220,38,38,0.08)" : "rgba(217,119,6,0.08)"};
   border: 2px solid
     ${({ $variant }) =>
-      $variant === 'error'
-        ? 'rgba(220,38,38,0.25)'
-        : 'rgba(217,119,6,0.22)'};
+      $variant === "error" ? "rgba(220,38,38,0.25)" : "rgba(217,119,6,0.22)"};
   border-radius: 16px;
   padding: 16px 20px;
   display: flex;
   align-items: flex-start;
   gap: 12px;
-`
+`;
 
-export const AlertIcon = styled.div<{ $variant: 'error' | 'warn' }>`
-  color: ${({ $variant }) => ($variant === 'error' ? '#dc2626' : '#d97706')};
+export const AlertIcon = styled.div<{ $variant: "error" | "warn" }>`
+  color: ${({ $variant }) => ($variant === "error" ? "#dc2626" : "#d97706")};
   font-size: 22px;
   flex-shrink: 0;
   margin-top: 1px;
-`
+`;
 
-export const AlertTitle = styled.div<{ $variant: 'error' | 'warn' }>`
+export const AlertTitle = styled.div<{ $variant: "error" | "warn" }>`
   font-size: 15px;
   font-weight: 700;
-  color: ${({ $variant }) => ($variant === 'error' ? '#dc2626' : '#d97706')};
+  color: ${({ $variant }) => ($variant === "error" ? "#dc2626" : "#d97706")};
   margin-bottom: 3px;
-`
+`;
 
 export const AlertBody = styled.div`
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
-`
+`;
