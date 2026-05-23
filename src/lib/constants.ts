@@ -1,4 +1,4 @@
-import type { ExpenseCategory, FlatFundExpenseCategory, NavItem, Role } from '@/lib/types'
+import type { AdvanceCategoryKey, ExpenseCategory, FlatFundExpenseCategory, NavItem, Role } from '@/lib/types'
 
 export const APP_NAME = 'MilBaant'
 export const DEFAULT_MEMBER_COUNT = 10
@@ -72,6 +72,42 @@ export const QUERY_KEYS = {
   contributionPayments: ['contribution-payments'],
   dailyMenu: ['daily-menu'],
   announcements: ['announcements'],
+  advanceBudgets: ['advance-budgets'],
+  monthlyContributions: ['monthly-contributions'],
+  contributionBreakdowns: ['contribution-breakdowns'],
+}
+
+export const ADVANCE_CATEGORY_KEYS: AdvanceCategoryKey[] = [
+  'pcc_grocery',
+  'maintenance',
+  'meat',
+  'water_roti',
+  'kitchen_daily',
+  'cook_salary',
+  'light_bill',
+  'gas_bill',
+]
+
+export const ADVANCE_CATEGORY_LABELS: Record<AdvanceCategoryKey, string> = {
+  pcc_grocery:   'Grocery',
+  maintenance:   'Maintenance',
+  meat:          'Meat',
+  water_roti:    'Water + Roti',
+  kitchen_daily: 'Kitchen Daily',
+  cook_salary:   'Cook Salary',
+  light_bill:    'Light Bill',
+  gas_bill:      'Gas Bill',
+}
+
+export const ADVANCE_CATEGORY_COLORS: Record<AdvanceCategoryKey, string> = {
+  pcc_grocery:   'blue',
+  maintenance:   'orange',
+  meat:          'red',
+  water_roti:    'cyan',
+  kitchen_daily: 'green',
+  cook_salary:   'purple',
+  light_bill:    'gold',
+  gas_bill:      'volcano',
 }
 
 export const PURCHASE_CATEGORY_OPTIONS = [

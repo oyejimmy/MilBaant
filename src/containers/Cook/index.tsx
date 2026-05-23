@@ -313,24 +313,25 @@ export function CookPage() {
   return (
     <PageStack>
       <PageHeader
-        title="Cook Ledger"
+        title="Flat Ka Khata"
         subtitle="Track advance money given to the cook and every item purchased with it."
-        breadcrumbs={[{ title: "Home", path: "/" }, { title: "Cook Ledger" }]}
+        breadcrumbs={[{ title: "Home", path: "/" }, { title: "Flat Ka Khata" }]}
         actions={
           <Space wrap>
             <DatePicker
               picker="month"
-              placeholder="Filter by month"
+              placeholder="Select a Month"
               value={filterMonth}
               onChange={(v) => setFilterMonth(v ? v.startOf("month") : null)}
               allowClear
             />
             {!!userId && (
               <Button
+                type="primary"
                 icon={<ShoppingCartOutlined />}
                 onClick={() => setPurchaseOpen(true)}
               >
-                Log Purchase
+                Nayi Khareedari
               </Button>
             )}
             {isAdmin && (

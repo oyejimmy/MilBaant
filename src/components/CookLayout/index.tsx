@@ -59,7 +59,11 @@ const COOK_NAV_ITEMS: CookNavItem[] = [
     label: "Dashboard",
     icon: <DashboardOutlined />,
   },
-  { key: "/cook-portal/cook", label: "Cook Ledger", icon: <CoffeeOutlined /> },
+  {
+    key: "/cook-portal/cook",
+    label: "Flat Ka Khata",
+    icon: <CoffeeOutlined />,
+  },
   {
     key: "/cook-portal/cook-requests",
     label: "Requests",
@@ -81,7 +85,7 @@ const COOK_NAV_ITEMS: CookNavItem[] = [
 // ── Page title map ─────────────────────────────────────────────────────────
 const PAGE_TITLES: Record<string, string> = {
   "/cook-portal/dashboard": "Dashboard",
-  "/cook-portal/cook": "Cook Ledger",
+  "/cook-portal/cook": "Flat Ka Khata",
   "/cook-portal/cook-requests": "Item Requests",
   "/cook-portal/daily-menu": "Daily Menu",
   "/cook-portal/weekend-expenses": "Weekend Meals",

@@ -1,10 +1,10 @@
-import { Form, Input, Modal, Button, Space } from 'antd'
-import { BottomSheet } from '@/components/BottomSheet'
-import { useMobileLayout } from '@/hooks/useResponsive'
+import { Form, Input, Modal, Button, Space } from "antd";
+import { BottomSheet } from "@/components/BottomSheet";
+import { useMobileLayout } from "@/hooks/useResponsive";
 
 interface AnnouncementFormValues {
-  title: string
-  content: string
+  title: string;
+  content: string;
 }
 
 export function AnnouncementComposer({
@@ -13,23 +13,23 @@ export function AnnouncementComposer({
   onClose,
   onSubmit,
 }: {
-  open: boolean
-  confirmLoading: boolean
-  onClose: () => void
-  onSubmit: (values: AnnouncementFormValues) => Promise<void>
+  open: boolean;
+  confirmLoading: boolean;
+  onClose: () => void;
+  onSubmit: (values: AnnouncementFormValues) => Promise<void>;
 }) {
-  const [form] = Form.useForm<AnnouncementFormValues>()
-  const isMobile = useMobileLayout()
+  const [form] = Form.useForm<AnnouncementFormValues>();
+  const isMobile = useMobileLayout();
 
   async function handleOk() {
-    const values = await form.validateFields()
-    await onSubmit(values)
-    form.resetFields()
+    const values = await form.validateFields();
+    await onSubmit(values);
+    form.resetFields();
   }
 
   function handleCancel() {
-    form.resetFields()
-    onClose()
+    form.resetFields();
+    onClose();
   }
 
   const formContent = (
@@ -37,26 +37,28 @@ export function AnnouncementComposer({
       <Form.Item
         label="Title"
         name="title"
-        rules={[{ required: true, message: 'Please add a title.' }]}
+        rules={[{ required: true, message: "Please add a title." }]}
       >
-        <Input 
+        <Input
           placeholder="Enter announcement title"
-          size={isMobile ? 'large' : 'middle'}
+          size={isMobile ? "large" : "middle"}
         />
       </Form.Item>
       <Form.Item
         label="Content"
         name="content"
-        rules={[{ required: true, message: 'Please add the announcement text.' }]}
+        rules={[
+          { required: true, message: "Please add the announcement text." },
+        ]}
       >
-        <Input.TextArea 
-          rows={isMobile ? 6 : 5} 
+        <Input.TextArea
+          rows={isMobile ? 6 : 5}
           placeholder="Write the announcement content"
-          style={{ fontSize: isMobile ? '16px' : '14px' }}
+          style={{ fontSize: isMobile ? "16px" : "14px" }}
         />
       </Form.Item>
     </Form>
-  )
+  );
 
   if (isMobile) {
     return (
@@ -68,7 +70,11 @@ export function AnnouncementComposer({
         forceBottomSheet
       >
         {formContent}
-        <Space style={{ width: '100%', marginTop: 16 }} direction="vertical" size={8}>
+        <Space
+          style={{ width: "100%", marginTop: 16 }}
+          direction="vertical"
+          size={8}
+        >
           <Button
             type="primary"
             size="large"
@@ -83,7 +89,7 @@ export function AnnouncementComposer({
           </Button>
         </Space>
       </BottomSheet>
-    )
+    );
   }
 
   return (
@@ -95,8 +101,9 @@ export function AnnouncementComposer({
       onOk={() => void handleOk()}
       confirmLoading={confirmLoading}
       destroyOnHidden
+      centered
     >
       {formContent}
     </Modal>
-  )
+  );
 }

@@ -5,8 +5,8 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal,
   Select,
+  Space,
   Typography,
 } from "antd";
 import {
@@ -15,18 +15,10 @@ import {
   DollarOutlined,
   ShoppingCartOutlined,
 } from "@ant-design/icons";
-
-import {
-  ModalHeader,
-  HeaderIcon,
-  FormBody,
-  TwoCol,
-  SectionDivider,
-  SectionLabel,
-} from "../../styles";
-
+import { HeaderIcon, TwoCol, SectionDivider, SectionLabel } from "../../styles";
 import { PURCHASE_CATEGORY_OPTIONS } from "@/lib/constants";
 import type { PurchaseCategory } from "@/lib/types";
+import { StyledModal } from "@/components/StyledModal";
 
 type Props = {
   open: boolean;
@@ -56,115 +48,103 @@ export function LogCookPurchaseModal({
   }
 
   return (
-    <Modal
+    <StyledModal
+      title={
+        <Space>
+          <HeaderIcon
+            $gradient="linear-gradient(135deg,#c62828,#ff4d4f)"
+            $shadow="0 4px 12px rgba(198,40,40,0.25)"
+          >
+            <ShoppingCartOutlined />
+          </HeaderIcon>
+
+          <div>
+            <Typography.Text strong>Flat Ka Naya Khata</Typography.Text>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              Flat ke liye nayi khareedari yahan likho jo aap nayi laaye ho.
+            </div>
+          </div>
+        </Space>
+      }
+      centered
       open={open}
-      title={null}
-      onCancel={onClose}
-      width="min(480px,95vw)"
+      closable={false}
+      style={{ paddingBottom: "50px" }}
       footer={[
         <Button size="small" key="cancel" onClick={onClose}>
           Cancel
         </Button>,
         <Button
           key="submit"
+          size="small"
           type="primary"
           loading={submitting}
-          size="small"
           onClick={() => void handleOk()}
         >
-          Save Purchase
+          Khata Save Kary
         </Button>,
       ]}
-      styles={{
-        body: { padding: 0 },
-        footer: {
-          padding: "10px 16px 14px",
-          borderTop: "1px solid var(--border-light)",
-        },
-      }}
     >
-      <ModalHeader>
-        <HeaderIcon
-          $gradient="linear-gradient(135deg,#c62828,#ff4d4f)"
-          $shadow="0 4px 12px rgba(198,40,40,0.25)"
-        >
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{
+          date: dayjs(),
+          category: "grocery",
+        }}
+      >
+        <SectionLabel>
           <ShoppingCartOutlined />
-        </HeaderIcon>
+          <Typography.Text strong style={{ fontSize: 11 }}>
+            ITEM DETAILS
+          </Typography.Text>
+        </SectionLabel>
 
-        <div>
-          <Typography.Text strong>Log Purchase</Typography.Text>
-          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Record cook purchase
-          </div>
-        </div>
-      </ModalHeader>
-
-      <FormBody>
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            date: dayjs(),
-            category: "grocery",
-          }}
-        >
-          <SectionLabel>
-            <ShoppingCartOutlined />
-            <Typography.Text strong style={{ fontSize: 11 }}>
-              ITEM DETAILS
-            </Typography.Text>
-          </SectionLabel>
-
-          <TwoCol>
-            <Form.Item name="item" label="Item" rules={[{ required: true }]}>
-              <Input
-                placeholder="Enter Item Chicken, Tomatoes, Rice"
-                prefix={<CoffeeOutlined />}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="category"
-              label="Category"
-              rules={[{ required: true }]}
-            >
-              <Select options={[...PURCHASE_CATEGORY_OPTIONS]} />
-            </Form.Item>
-          </TwoCol>
-
-          <TwoCol>
-            <Form.Item
-              name="amount"
-              label="Amount"
-              rules={[{ required: true }]}
-            >
-              <InputNumber
-                min={1}
-                precision={2}
-                style={{ width: "100%" }}
-                placeholder="Enter Amount here"
-                prefix={<DollarOutlined />}
-              />
-            </Form.Item>
-
-            <Form.Item name="date" label="Date" rules={[{ required: true }]}>
-              <DatePicker
-                style={{ width: "100%" }}
-                suffixIcon={<CalendarOutlined />}
-              />
-            </Form.Item>
-          </TwoCol>
-
-          <SectionDivider />
-
-          <Form.Item name="note" label="Note">
-            <Input.TextArea
-              placeholder="e.g. Bought from local market, PCC or Imtiaz"
-              rows={2}
+        <TwoCol>
+          <Form.Item name="item" label="Item" rules={[{ required: true }]}>
+            <Input
+              placeholder="Enter Item Chicken, Tomatoes, Rice"
+              prefix={<CoffeeOutlined />}
             />
           </Form.Item>
-        </Form>
-      </FormBody>
-    </Modal>
+
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
+            <Select options={[...PURCHASE_CATEGORY_OPTIONS]} />
+          </Form.Item>
+        </TwoCol>
+
+        <TwoCol>
+          <Form.Item name="amount" label="Amount" rules={[{ required: true }]}>
+            <InputNumber
+              min={1}
+              precision={2}
+              style={{ width: "100%" }}
+              placeholder="Enter Amount here"
+              prefix={<DollarOutlined />}
+            />
+          </Form.Item>
+
+          <Form.Item name="date" label="Date" rules={[{ required: true }]}>
+            <DatePicker
+              style={{ width: "100%" }}
+              suffixIcon={<CalendarOutlined />}
+            />
+          </Form.Item>
+        </TwoCol>
+
+        <SectionDivider />
+
+        <Form.Item name="note" label="Note">
+          <Input.TextArea
+            placeholder="e.g. local market, PCC ya Imtiaz se khareeda"
+            rows={2}
+          />
+        </Form.Item>
+      </Form>
+    </StyledModal>
   );
 }

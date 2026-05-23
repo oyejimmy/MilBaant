@@ -47,6 +47,7 @@ export function DinnerOverrideModal({
 
   return (
     <Modal
+      centered
       open={open}
       title={<ModalTitle>Change Tonight&apos;s Dinner</ModalTitle>}
       footer={

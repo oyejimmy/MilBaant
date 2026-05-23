@@ -24,6 +24,14 @@ export function useProfiles() {
   })
 }
 
+export function useFlatmates() {
+  const query = useProfiles()
+  return {
+    ...query,
+    data: (query.data ?? []).filter((p) => p.role !== 'cook'),
+  }
+}
+
 export function useUpdateProfilePermissions() {
   return useMutation({
     mutationFn: async (payload: {

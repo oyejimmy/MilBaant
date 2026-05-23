@@ -48,6 +48,7 @@ export function BreakfastModal({
 
   return (
     <Modal
+      centered
       open={open}
       title={<ModalTitle>Breakfast — {title}</ModalTitle>}
       footer={

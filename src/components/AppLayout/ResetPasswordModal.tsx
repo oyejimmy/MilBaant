@@ -34,7 +34,7 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
       onClose();
     } catch (err) {
       message.error(
-        err instanceof Error ? err.message : "Failed to update password."
+        err instanceof Error ? err.message : "Failed to update password.",
       );
     } finally {
       setLoading(false);
@@ -44,6 +44,7 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
   return (
     <Modal
       open={open}
+      centered
       title={
         <ModalTitle>
           <KeyOutlined style={{ color: "var(--primary)" }} />
@@ -53,7 +54,7 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
       onCancel={onClose}
       footer={null}
       width="min(420px, 95vw)"
-      destroyOnClose
+      destroyOnHidden
     >
       {email && (
         <Typography.Text
@@ -63,7 +64,11 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
           Updating password for: <strong>{email}</strong>
         </Typography.Text>
       )}
-      <Form form={form} layout="vertical" onFinish={(v) => void handleSubmit(v)}>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={(v) => void handleSubmit(v)}
+      >
         <Form.Item
           label="New Password"
           name="newPassword"

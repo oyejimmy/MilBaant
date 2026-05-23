@@ -376,3 +376,67 @@ export interface CreateCookRequestInput {
   note?: string
   requestedBy: string
 }
+
+/* ─── Advance Contributions ───────────────────────────────────────────────── */
+
+export type AdvanceCategoryKey =
+  | 'pcc_grocery'
+  | 'maintenance'
+  | 'meat'
+  | 'water_roti'
+  | 'kitchen_daily'
+  | 'cook_salary'
+  | 'light_bill'
+  | 'gas_bill'
+
+export interface MonthlyBudget {
+  id: string
+  month: string
+  category_key: AdvanceCategoryKey
+  budget_amount: number
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface MonthlyContribution {
+  id: string
+  month: string
+  total_budget: number
+  flatmate_count: number
+  per_person_default: number
+  is_published: boolean
+  published_at: string | null
+  published_by: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ContributionBreakdown {
+  id: string
+  monthly_contribution_id: string
+  user_id: string
+  override_amount: number | null
+  note: string | null
+  created_at: string
+  updated_at: string
+  member?: Pick<Profile, 'id' | 'full_name'> | null
+}
+
+/** Computed per-member summary used in the admin table */
+export interface UserContributionSummary {
+  userId: string
+  fullName: string
+  defaultAmount: number
+  overrideAmount: number | null
+  finalAmount: number
+}
+
+export interface SavePlanInput {
+  month: string
+  budgets: Partial<Record<AdvanceCategoryKey, number>>
+  flatmateCount: number
+  overrides: Array<{ userId: string; overrideAmount: number | null; note?: string }>
+  createdBy: string
+}

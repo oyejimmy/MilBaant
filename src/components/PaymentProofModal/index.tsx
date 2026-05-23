@@ -1,20 +1,35 @@
-import { useState, useCallback } from 'react'
-import { App, Button, DatePicker, Flex, Image, InputNumber, Modal, Space, Typography, Upload } from 'antd'
-import { CheckCircleOutlined, InboxOutlined, UploadOutlined } from '@ant-design/icons'
-import type { UploadFile } from 'antd'
-import dayjs, { type Dayjs } from 'dayjs'
-import { useAuth } from '@/hooks/useAuth'
-import { useCreateContributionPayment } from '@/hooks/useContributions'
-import { supabase } from '@/lib/supabase'
-import { formatCurrency } from '@/lib/formatters'
+import { useState, useCallback } from "react";
+import {
+  App,
+  Button,
+  DatePicker,
+  Flex,
+  Image,
+  InputNumber,
+  Modal,
+  Space,
+  Typography,
+  Upload,
+} from "antd";
+import {
+  CheckCircleOutlined,
+  InboxOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
+import type { UploadFile } from "antd";
+import dayjs, { type Dayjs } from "dayjs";
+import { useAuth } from "@/hooks/useAuth";
+import { useCreateContributionPayment } from "@/hooks/useContributions";
+import { supabase } from "@/lib/supabase";
+import { formatCurrency } from "@/lib/formatters";
 
 interface PaymentProofModalProps {
-  open: boolean
-  onClose: () => void
-  userId: string
-  userName: string
-  amountOwed: number
-  month: string
+  open: boolean;
+  onClose: () => void;
+  userId: string;
+  userName: string;
+  amountOwed: number;
+  month: string;
 }
 
 export function PaymentProofModal({
@@ -25,61 +40,61 @@ export function PaymentProofModal({
   amountOwed,
   month,
 }: PaymentProofModalProps) {
-  const { userId: currentUserId } = useAuth()
-  const { message } = App.useApp()
-  const createPayment = useCreateContributionPayment()
+  const { userId: currentUserId } = useAuth();
+  const { message } = App.useApp();
+  const createPayment = useCreateContributionPayment();
 
-  const [amount, setAmount] = useState<number>(amountOwed)
-  const [paidDate, setPaidDate] = useState<Dayjs>(dayjs())
-  const [fileList, setFileList] = useState<UploadFile[]>([])
-  const [uploading, setUploading] = useState(false)
-  const [previewImage, setPreviewImage] = useState<string>('')
-  const [previewOpen, setPreviewOpen] = useState(false)
+  const [amount, setAmount] = useState<number>(amountOwed);
+  const [paidDate, setPaidDate] = useState<Dayjs>(dayjs());
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string>("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleClose = useCallback(() => {
-    setAmount(amountOwed)
-    setPaidDate(dayjs())
-    setFileList([])
-    onClose()
-  }, [amountOwed, onClose])
+    setAmount(amountOwed);
+    setPaidDate(dayjs());
+    setFileList([]);
+    onClose();
+  }, [amountOwed, onClose]);
 
   const handleUpload = useCallback(async () => {
     if (!currentUserId) {
-      message.error('You must be logged in')
-      return
+      message.error("You must be logged in");
+      return;
     }
 
     if (amount <= 0) {
-      message.error('Please enter a valid amount')
-      return
+      message.error("Please enter a valid amount");
+      return;
     }
 
-    setUploading(true)
+    setUploading(true);
 
     try {
-      let screenshotUrl: string | null = null
+      let screenshotUrl: string | null = null;
 
       // Upload screenshot if provided
       if (fileList.length > 0 && fileList[0].originFileObj) {
-        const file = fileList[0].originFileObj
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${userId}_${month}_${Date.now()}.${fileExt}`
-        const filePath = `payment-proofs/${fileName}`
+        const file = fileList[0].originFileObj;
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${userId}_${month}_${Date.now()}.${fileExt}`;
+        const filePath = `payment-proofs/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('bill-images')
+          .from("bill-images")
           .upload(filePath, file, {
-            cacheControl: '3600',
+            cacheControl: "3600",
             upsert: false,
-          })
+          });
 
-        if (uploadError) throw uploadError
+        if (uploadError) throw uploadError;
 
         const { data: urlData } = supabase.storage
-          .from('bill-images')
-          .getPublicUrl(filePath)
+          .from("bill-images")
+          .getPublicUrl(filePath);
 
-        screenshotUrl = urlData.publicUrl
+        screenshotUrl = urlData.publicUrl;
       }
 
       // Create payment record
@@ -87,35 +102,50 @@ export function PaymentProofModal({
         userId,
         month,
         amount,
-        paidAt: paidDate.format('YYYY-MM-DD'),
+        paidAt: paidDate.format("YYYY-MM-DD"),
         screenshotUrl,
         createdBy: currentUserId,
-      })
+      });
 
-      message.success('Payment proof submitted successfully!')
-      handleClose()
+      message.success("Payment proof submitted successfully!");
+      handleClose();
     } catch (error) {
-      console.error('Upload error:', error)
-      message.error(error instanceof Error ? error.message : 'Failed to submit payment proof')
+      console.error("Upload error:", error);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit payment proof",
+      );
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }, [currentUserId, amount, fileList, userId, month, paidDate, createPayment, message, handleClose])
+  }, [
+    currentUserId,
+    amount,
+    fileList,
+    userId,
+    month,
+    paidDate,
+    createPayment,
+    message,
+    handleClose,
+  ]);
 
   const handlePreview = async (file: UploadFile) => {
     if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj as File)
+      file.preview = await getBase64(file.originFileObj as File);
     }
-    setPreviewImage(file.url || (file.preview as string))
-    setPreviewOpen(true)
-  }
+    setPreviewImage(file.url || (file.preview as string));
+    setPreviewOpen(true);
+  };
 
   return (
     <>
       <Modal
+        centered
         title={
           <Flex align="center" gap={8}>
-            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20 }} />
+            <CheckCircleOutlined style={{ color: "#52c41a", fontSize: 20 }} />
             <span>Submit Payment Proof</span>
           </Flex>
         }
@@ -137,31 +167,45 @@ export function PaymentProofModal({
         ]}
         width={500}
       >
-        <Space direction="vertical" size={16} style={{ width: '100%', marginTop: 16 }}>
+        <Space
+          direction="vertical"
+          size={16}
+          style={{ width: "100%", marginTop: 16 }}
+        >
           {/* User Info */}
           <div
             style={{
-              padding: '12px 16px',
-              background: 'var(--content-bg)',
+              padding: "12px 16px",
+              background: "var(--content-bg)",
               borderRadius: 8,
-              border: '1px solid var(--card-border)',
+              border: "1px solid var(--card-border)",
             }}
           >
-            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <Typography.Text
+              style={{ fontSize: 12, color: "var(--text-muted)" }}
+            >
               Submitting payment for
             </Typography.Text>
-            <Typography.Title level={5} style={{ margin: '4px 0 0 0', color: 'var(--text-strong)' }}>
+            <Typography.Title
+              level={5}
+              style={{ margin: "4px 0 0 0", color: "var(--text-strong)" }}
+            >
               {userName}
             </Typography.Title>
-            <Typography.Text style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-              Month: {dayjs(month, 'YYYY-MM').format('MMMM YYYY')}
+            <Typography.Text
+              style={{ fontSize: 13, color: "var(--text-muted)" }}
+            >
+              Month: {dayjs(month, "YYYY-MM").format("MMMM YYYY")}
             </Typography.Text>
           </div>
 
           {/* Amount */}
           <div>
-            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
-              Amount Paid <span style={{ color: '#ff4d4f' }}>*</span>
+            <Typography.Text
+              strong
+              style={{ display: "block", marginBottom: 8 }}
+            >
+              Amount Paid <span style={{ color: "#ff4d4f" }}>*</span>
             </Typography.Text>
             <InputNumber
               value={amount}
@@ -169,24 +213,34 @@ export function PaymentProofModal({
               min={0}
               precision={2}
               prefix="PKR"
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
               size="large"
               placeholder="Enter amount paid"
             />
-            <Typography.Text style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+            <Typography.Text
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                marginTop: 4,
+                display: "block",
+              }}
+            >
               Amount owed: {formatCurrency(amountOwed)}
             </Typography.Text>
           </div>
 
           {/* Payment Date */}
           <div>
-            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
-              Payment Date <span style={{ color: '#ff4d4f' }}>*</span>
+            <Typography.Text
+              strong
+              style={{ display: "block", marginBottom: 8 }}
+            >
+              Payment Date <span style={{ color: "#ff4d4f" }}>*</span>
             </Typography.Text>
             <DatePicker
               value={paidDate}
               onChange={(date) => setPaidDate(date ?? dayjs())}
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
               size="large"
               format="DD MMM YYYY"
             />
@@ -194,7 +248,10 @@ export function PaymentProofModal({
 
           {/* Screenshot Upload */}
           <div>
-            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+            <Typography.Text
+              strong
+              style={{ display: "block", marginBottom: 8 }}
+            >
               Payment Screenshot (Optional)
             </Typography.Text>
             <Upload.Dragger
@@ -207,7 +264,7 @@ export function PaymentProofModal({
               listType="picture"
             >
               <p className="ant-upload-drag-icon">
-                <InboxOutlined style={{ color: 'var(--primary)' }} />
+                <InboxOutlined style={{ color: "var(--primary)" }} />
               </p>
               <p className="ant-upload-text">Click or drag image to upload</p>
               <p className="ant-upload-hint">
@@ -225,18 +282,22 @@ export function PaymentProofModal({
         footer={null}
         onCancel={() => setPreviewOpen(false)}
       >
-        <Image alt="Payment proof" style={{ width: '100%' }} src={previewImage} />
+        <Image
+          alt="Payment proof"
+          style={{ width: "100%" }}
+          src={previewImage}
+        />
       </Modal>
     </>
-  )
+  );
 }
 
 // Helper function to convert file to base64
 function getBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = (error) => reject(error)
-  })
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
 }
