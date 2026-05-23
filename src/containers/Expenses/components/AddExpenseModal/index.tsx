@@ -6,11 +6,10 @@ import {
   DatePicker,
   Select,
   Button,
-  Space,
   Upload,
   message,
 } from "antd";
-import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import type { UploadFile } from "antd/es/upload/interface";
 import { useState } from "react";
@@ -48,13 +47,13 @@ export function AddExpenseModal({
   };
 
   const categories = [
-    "rent",
-    "utility_bill",
-    "groceries",
-    "internet",
-    "cleaning",
-    "maintenance",
-    "other",
+    "Rent",
+    "Utility Bill",
+    "Groceries",
+    "Internet",
+    "Cleaning",
+    "Maintenance",
+    "Other",
   ];
 
   return (
@@ -65,6 +64,7 @@ export function AddExpenseModal({
       onOk={handleSubmit}
       confirmLoading={submitting}
       width={600}
+      centered
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -93,13 +93,14 @@ export function AddExpenseModal({
           label="Category"
           rules={[{ required: true, message: "Please select category" }]}
         >
-          <Select>
-            {categories.map((cat) => (
-              <Select.Option key={cat} value={cat}>
-                {CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat}
-              </Select.Option>
-            ))}
-          </Select>
+          <Select
+            placeholder="Select a Category"
+            options={categories.map((cat) => ({
+              value: cat,
+              label:
+                CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat,
+            }))}
+          />
         </Form.Item>
 
         <Form.Item
@@ -116,13 +117,14 @@ export function AddExpenseModal({
         </Form.Item>
 
         <Form.Item name="participantIds" label="Participants">
-          <Select mode="multiple" placeholder="Select participants">
-            {profiles.map((profile) => (
-              <Select.Option key={profile.id} value={profile.id}>
-                {profile.full_name}
-              </Select.Option>
-            ))}
-          </Select>
+          <Select
+            mode="multiple"
+            placeholder="Select participants"
+            options={profiles.map((profile) => ({
+              value: profile.id,
+              label: profile.full_name,
+            }))}
+          />
         </Form.Item>
 
         <Form.Item label="Bill Image (Optional)">

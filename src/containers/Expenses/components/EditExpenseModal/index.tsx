@@ -52,6 +52,7 @@ export function EditExpenseModal({
       onOk={handleSubmit}
       confirmLoading={submitting}
       width={500}
+      centered
     >
       <Form form={form} layout="vertical">
         <Form.Item

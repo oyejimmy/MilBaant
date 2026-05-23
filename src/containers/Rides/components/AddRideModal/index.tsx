@@ -9,6 +9,7 @@ import {
   Avatar,
   Checkbox,
   Typography,
+  Button,
 } from "antd";
 import {
   CarOutlined,
@@ -72,7 +73,6 @@ export function AddRideModal({
 
   return (
     <Modal
-      centered
       open={open}
       title={
         <Flex align="center" gap={8}>
@@ -80,10 +80,23 @@ export function AddRideModal({
           <span>Add Ride</span>
         </Flex>
       }
-      okText="Save Ride"
+      centered
+      closable={false}
       confirmLoading={submitting}
-      onCancel={onClose}
-      onOk={handleSubmit}
+      footer={[
+        <Button size="small" key="cancel" onClick={onClose}>
+          Cancel
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          loading={submitting}
+          size="small"
+          onClick={() => void handleSubmit()}
+        >
+          Save Advance
+        </Button>,
+      ]}
       width="min(520px, 95vw)"
     >
       <Form
