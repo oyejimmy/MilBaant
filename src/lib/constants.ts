@@ -113,6 +113,18 @@ export const ADVANCE_CATEGORY_COLORS: Record<AdvanceCategoryKey, string> = {
   carryover:     'geekblue',
 }
 
+export const ADVANCE_CATEGORY_DESCRIPTIONS: Record<AdvanceCategoryKey, string> = {
+  pcc_grocery: 'Monthly grocery budget including dry goods, vegetables, and other essential grocery items',
+  maintenance: 'Monthly maintenance costs for flat repairs, cleaning supplies, and upkeep',
+  meat: 'Monthly budget for meat, poultry, and seafood purchases',
+  water_roti: 'Budget for drinking water, roti, and bread expenses',
+  kitchen_daily: 'Daily kitchen expenses like tea, sugar, spices, and small supplies',
+  cook_salary: 'Monthly cook salary payment',
+  light_bill: 'Monthly electricity bill estimate',
+  gas_bill: 'Monthly gas bill estimate',
+  carryover: 'Remaining balance from previous month that reduces this month\'s contribution',
+}
+
 export const PURCHASE_CATEGORY_OPTIONS = [
   { label: 'Grocery', value: 'grocery' },
   { label: 'Meat', value: 'meat' },

@@ -20,7 +20,8 @@ export function PrintModal({
     <Modal
       centered
       open={open}
-      title="Save as Image"
+      title=""
+      closable={false}
       onCancel={onClose}
       footer={
         <Flex justify="flex-end" gap={8}>

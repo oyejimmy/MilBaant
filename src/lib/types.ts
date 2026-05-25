@@ -412,6 +412,7 @@ export interface MonthlyContribution {
   created_by: string
   created_at: string
   updated_at: string
+  carryover_from_previous?: number
 }
 
 export interface ContributionBreakdown {

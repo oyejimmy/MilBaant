@@ -25,7 +25,8 @@ INSERT INTO public.advance_contribution_categories (key, label, sort_order) VALU
     ('kitchen_daily', 'Kitchen Daily', 5),
     ('cook_salary',   'Cook Salary',   6),
     ('light_bill',    'Light Bill',    7),
-    ('gas_bill',      'Gas Bill',      8)
+    ('gas_bill',      'Gas Bill',      8),
+    ('carryover',     'Carryover',     9)
 ON CONFLICT (key) DO NOTHING;
 
 -- ── 2. Monthly Budget (admin sets per-category amounts) ───────────────────────

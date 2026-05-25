@@ -7,6 +7,7 @@ import {
   Flex,
   Grid,
   Space,
+  Tag,
   Typography,
   message,
 } from "antd";
@@ -47,7 +48,7 @@ import {
 import { formatCurrency, formatDate, formatMonthYear } from "@/lib/formatters";
 import { uploadBillImage } from "@/lib/storage";
 import { exportExpensesToExcel } from "@/lib/export";
-import { CATEGORY_LABELS } from "@/lib/constants";
+import { CATEGORY_LABELS, ADVANCE_CATEGORY_KEYS, ADVANCE_CATEGORY_LABELS, ADVANCE_CATEGORY_COLORS, ADVANCE_CATEGORY_DESCRIPTIONS } from "@/lib/constants";
 import { useAdvanceContribution, useSavePlan, useShiftCarryover } from "@/hooks/useAdvanceContributions";
 import { AddExpenseModal } from "./components/AddExpenseModal";
 import { EditExpenseModal } from "./components/EditExpenseModal";
@@ -84,8 +85,12 @@ export function ExpensesPage() {
   const [printOpen, setPrintOpen] = useState(false);
   const [printImageUrl, setPrintImageUrl] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [printBudgetOpen, setPrintBudgetOpen] = useState(false);
+  const [printBudgetImageUrl, setPrintBudgetImageUrl] = useState<string | null>(null);
+  const [capturingBudget, setCapturingBudget] = useState(false);
   const [editBudgetOpen, setEditBudgetOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+  const printBudgetRef = useRef<HTMLDivElement>(null);
   const [draftMemberCount, setDraftMemberCount] = useState<number | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(
     new Set(),
@@ -115,7 +120,7 @@ export function ExpensesPage() {
   const fixedTotal = calculateFixedTotal(fixedExpenses);
   const activeMemberCount = profiles.length || 1;
   const perMemberShare = calculatePerMemberShare(fixedTotal, activeMemberCount);
-  const estimatedPerPerson = activeMemberCount > 0 ? budgetContribution.totalBudget / activeMemberCount : 0;
+  const estimatedPerPerson = budgetContribution.estimatedPerPerson ?? (activeMemberCount > 0 ? budgetContribution.totalBudget / activeMemberCount : 0);
   const remainingAmount = budgetContribution.totalBudget - fixedTotal;
   const isMonthFinished = selectedMonth.isBefore(dayjs(), "month");
 
@@ -168,11 +173,39 @@ export function ExpensesPage() {
     }, 300);
   };
 
+  const handleOpenBudgetPrint = async () => {
+    setPrintBudgetOpen(true);
+    setTimeout(async () => {
+      if (!printBudgetRef.current) return;
+      setCapturingBudget(true);
+      try {
+        const canvas = await html2canvas(printBudgetRef.current, {
+          backgroundColor: "#ffffff",
+          scale: 2,
+          useCORS: true,
+        });
+        setPrintBudgetImageUrl(canvas.toDataURL("image/png"));
+      } catch {
+        message.error("Failed to generate budget image.");
+      } finally {
+        setCapturingBudget(false);
+      }
+    }, 300);
+  };
+
   const handleSavePrintImage = () => {
     if (!printImageUrl) return;
     const link = document.createElement("a");
     link.href = printImageUrl;
     link.download = `expenses-${selectedMonth.format("YYYY-MM")}.png`;
+    link.click();
+  };
+
+  const handleSaveBudgetPrintImage = () => {
+    if (!printBudgetImageUrl) return;
+    const link = document.createElement("a");
+    link.href = printBudgetImageUrl;
+    link.download = `budget-estimate-${selectedMonth.format("YYYY-MM")}.png`;
     link.click();
   };
 
@@ -333,6 +366,22 @@ export function ExpensesPage() {
             icon={<WalletOutlined />}
             color="#faad14"
           />
+          {budgetContribution.carryoverFromPrevious > 0 && (
+            <SummaryStat
+              title="Carryover"
+              value={`- ${formatCurrency(budgetContribution.carryoverFromPrevious)}`}
+              subtitle="From previous month - reduces this month's contribution"
+              icon={<WalletOutlined />}
+              color="#52c41a"
+            />
+          )}
+          <SummaryStat
+            title="Adjusted Total"
+            value={formatCurrency(budgetContribution.adjustedTotalBudget)}
+            subtitle="After carryover"
+            icon={<WalletOutlined />}
+            color="#faad14"
+          />
           <SummaryStat
             title="Remaining"
             value={formatCurrency(remainingAmount)}
@@ -427,6 +476,9 @@ export function ExpensesPage() {
                 Monthly Budget Estimate
               </Typography.Title>
               <Flex gap={8}>
+                <Button icon={<PrinterOutlined />} onClick={handleOpenBudgetPrint}>
+                  Print Budget
+                </Button>
                 {isAdmin && (
                   <>
                     {isMonthFinished && remainingAmount > 0 && (
@@ -448,12 +500,19 @@ export function ExpensesPage() {
             </Flex>
             <Typography.Text style={{ color: "var(--text-muted)" }}>
               Rough estimation of overall contribution for groceries and other expenses for {formatMonthYear(selectedMonth)}.
+              {budgetContribution.carryoverFromPrevious > 0 && (
+                <span style={{ display: "block", marginTop: 4 }}>
+                  💡 <strong>Carryover</strong> is the remaining balance from last month that reduces this month's required contribution!
+                </span>
+              )}
             </Typography.Text>
             <div style={{ marginTop: 16 }}>
               <QueryState isLoading={budgetContribution.isLoading} error={budgetContribution.error}>
                 <MonthlyBudgetTable
                   categoryBudgets={budgetContribution.categoryBudgets}
                   totalBudget={budgetContribution.totalBudget}
+                  adjustedTotalBudget={budgetContribution.adjustedTotalBudget}
+                  carryoverFromPrevious={budgetContribution.carryoverFromPrevious}
                   isMobile={isMobile}
                   activeMemberCount={activeMemberCount}
                 />
@@ -521,6 +580,13 @@ export function ExpensesPage() {
         printImageUrl={printImageUrl}
         onClose={() => setPrintOpen(false)}
         onSave={handleSavePrintImage}
+      />
+      <PrintModal
+        open={printBudgetOpen}
+        capturing={capturingBudget}
+        printImageUrl={printBudgetImageUrl}
+        onClose={() => setPrintBudgetOpen(false)}
+        onSave={handleSaveBudgetPrintImage}
       />
 
       <PrintWrapper>
@@ -629,6 +695,121 @@ export function ExpensesPage() {
                       }}
                     >
                       {formatCurrency(remainingAmount)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <PrintFooter>
+              Generated by MilBaant · {dayjs().format("DD MMM YYYY")}
+            </PrintFooter>
+          </PrintContent>
+        </div>
+      </PrintWrapper>
+      <PrintWrapper>
+        <div ref={printBudgetRef}>
+          <PrintContent>
+            <PrintHeader>
+              <PrintTitle>Monthly Budget Estimate</PrintTitle>
+              <PrintSubtitle>{selectedMonth.format("MMMM YYYY")}</PrintSubtitle>
+            </PrintHeader>
+            <PrintSummary>
+              <PrintSummaryCard $color="var(--primary)">
+                <PrintLabel>Total Estimated Budget</PrintLabel>
+                <PrintValue $color="var(--primary)">
+                  {formatCurrency(budgetContribution.totalBudget)}
+                </PrintValue>
+              </PrintSummaryCard>
+              {budgetContribution.carryoverFromPrevious > 0 && (
+                <PrintSummaryCard $color="#52c41a">
+                  <PrintLabel>Less: Carryover</PrintLabel>
+                  <PrintValue $color="#52c41a">
+                    - {formatCurrency(budgetContribution.carryoverFromPrevious)}
+                  </PrintValue>
+                </PrintSummaryCard>
+              )}
+              <PrintSummaryCard $color="#faad14">
+                <PrintLabel>Adjusted Total</PrintLabel>
+                <PrintValue $color="#faad14">
+                  {formatCurrency(budgetContribution.adjustedTotalBudget)}
+                </PrintValue>
+              </PrintSummaryCard>
+              <PrintSummaryCard $color="#7c3aed">
+                <PrintLabel>Per-person ({activeMemberCount} people)</PrintLabel>
+                <PrintValue $color="#7c3aed">
+                  {formatCurrency(estimatedPerPerson)}
+                </PrintValue>
+              </PrintSummaryCard>
+              <PrintSummaryCard $color="var(--info)">
+                <PrintLabel>Members</PrintLabel>
+                <PrintValue $color="var(--info)">{activeMemberCount}</PrintValue>
+              </PrintSummaryCard>
+            </PrintSummary>
+            <div style={{ padding: "20px 28px" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 13,
+                }}
+              >
+                <thead>
+                  <tr style={{ background: "#f0f5ff" }}>
+                    <th style={pTh}>Category</th>
+                    <th style={pTh}>Description</th>
+                    <th style={pTh}>Estimated Budget</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ADVANCE_CATEGORY_KEYS.map((key) => {
+                    const budget = budgetContribution.categoryBudgets[key] ?? 0;
+                    if (budget <= 0) return null;
+                    return (
+                      <tr
+                        key={key}
+                        style={{ background: "white" }}
+                      >
+                        <td style={pTd}>
+                          <Tag color={ADVANCE_CATEGORY_COLORS[key]}>
+                            {ADVANCE_CATEGORY_LABELS[key]}
+                          </Tag>
+                        </td>
+                        <td style={{ ...pTd, color: "#666" }}>
+                          {ADVANCE_CATEGORY_DESCRIPTIONS[key]}
+                        </td>
+                        <td style={{ ...pTd, fontWeight: 600, color: "#111", textAlign: "right" }}>
+                          {formatCurrency(budget)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr
+                    style={{
+                      background:
+                        "linear-gradient(90deg, var(--primary-soft), var(--bg-elevated))",
+                    }}
+                  >
+                    <td
+                      style={{
+                        ...pTd,
+                        fontWeight: 700,
+                        color: "var(--primary)",
+                      }}
+                      colSpan={2}
+                    >
+                      Total Estimated Budget
+                    </td>
+                    <td
+                      style={{
+                        ...pTd,
+                        fontWeight: 700,
+                        color: "var(--primary)",
+                        fontSize: 14,
+                      }}
+                    >
+                      {formatCurrency(budgetContribution.totalBudget)}
                     </td>
                   </tr>
                 </tfoot>

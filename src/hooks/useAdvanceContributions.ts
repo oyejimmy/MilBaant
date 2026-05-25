@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import dayjs from 'dayjs'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ADVANCE_CATEGORY_KEYS, QUERY_KEYS } from '@/lib/constants'
 import { logActivity } from '@/hooks/useActivityLog'
@@ -79,6 +80,10 @@ async function fetchContributionBreakdowns(planId: string): Promise<Contribution
 /* ── Main query hook ──────────────────────────────────────────────────────── */
 
 export function useAdvanceContribution(month: string) {
+  const previousMonth = useMemo(() => {
+    return dayjs(month).subtract(1, 'month').format('YYYY-MM')
+  }, [month])
+
   const planQuery = useQuery({
     queryKey: [...QUERY_KEYS.monthlyContributions, month],
     queryFn: () => fetchMonthlyContribution(month),
@@ -87,6 +92,11 @@ export function useAdvanceContribution(month: string) {
   const budgetsQuery = useQuery({
     queryKey: [...QUERY_KEYS.advanceBudgets, month],
     queryFn: () => fetchMonthlyBudgets(month),
+  })
+
+  const previousBudgetsQuery = useQuery({
+    queryKey: [...QUERY_KEYS.advanceBudgets, previousMonth],
+    queryFn: () => fetchMonthlyBudgets(previousMonth),
   })
 
   const planId = planQuery.data?.id
@@ -104,18 +114,35 @@ export function useAdvanceContribution(month: string) {
     return map
   }, [budgetsQuery.data])
 
+  const carryoverFromPrevious = useMemo(() => {
+    const prevBudgets = previousBudgetsQuery.data ?? []
+    const carryoverRow = prevBudgets.find(b => b.category_key === 'carryover')
+    return carryoverRow?.budget_amount ?? 0
+  }, [previousBudgetsQuery.data])
+
   const totalBudget = useMemo(
-    () => ADVANCE_CATEGORY_KEYS.reduce((s, k) => s + (categoryBudgets[k] ?? 0), 0),
+    () => ADVANCE_CATEGORY_KEYS.filter(k => k !== 'carryover').reduce((s, k) => s + (categoryBudgets[k] ?? 0), 0),
     [categoryBudgets],
   )
 
+  const adjustedTotalBudget = useMemo(
+    () => Math.max(0, totalBudget - carryoverFromPrevious),
+    [totalBudget, carryoverFromPrevious],
+  )
+
+  const activeMemberCount = planQuery.data?.flatmate_count ?? 1
+  const estimatedPerPerson = activeMemberCount > 0 ? adjustedTotalBudget / activeMemberCount : 0
+
   return {
-    plan: planQuery.data ?? null,
+    plan: planQuery.data ? { ...planQuery.data, carryover_from_previous: carryoverFromPrevious } : null,
     categoryBudgets,
     totalBudget,
+    adjustedTotalBudget,
+    carryoverFromPrevious,
+    estimatedPerPerson,
     breakdowns: breakdownsQuery.data ?? [],
-    isLoading: planQuery.isLoading || budgetsQuery.isLoading,
-    error: (planQuery.error ?? budgetsQuery.error ?? null) as Error | null,
+    isLoading: planQuery.isLoading || budgetsQuery.isLoading || previousBudgetsQuery.isLoading,
+    error: (planQuery.error ?? budgetsQuery.error ?? previousBudgetsQuery.error ?? null) as Error | null,
   }
 }
 
