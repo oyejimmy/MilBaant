@@ -10,8 +10,7 @@ interface FixedExpensesTableProps {
   isAdmin: boolean;
   expandedDescriptions: Set<string>;
   fixedTotal: number;
-  perMemberShare: number;
-  activeMemberCount: number;
+  totalBudget: number;
   onToggleDescription: (id: string) => void;
   onEdit: (expense: Expense) => void;
   onDelete: (id: string, label?: string) => void;
@@ -22,12 +21,12 @@ export function FixedExpensesTable({
   isAdmin,
   expandedDescriptions,
   fixedTotal,
-  perMemberShare,
-  activeMemberCount,
+  totalBudget,
   onToggleDescription,
   onEdit,
   onDelete,
 }: FixedExpensesTableProps) {
+  const remainingAmount = totalBudget - fixedTotal;
   const DESCRIPTION_LIMIT = 60;
 
   const columns: ColumnsType<Expense> = [
@@ -133,28 +132,24 @@ export function FixedExpensesTable({
       scroll={{ x: 700 }}
       size="small"
       summary={() => (
-        <Table.Summary.Row>
+        <Table.Summary.Row style={{ background: "var(--primary-soft)" }}>
           <Table.Summary.Cell index={0} colSpan={2}>
             <Typography.Text strong>Total</Typography.Text>
           </Table.Summary.Cell>
-          <Table.Summary.Cell index={1}>
+          <Table.Summary.Cell index={2}>
             <Typography.Text strong>
               {formatCurrency(fixedTotal)}
             </Typography.Text>
           </Table.Summary.Cell>
-          <Table.Summary.Cell index={2}>
-            <Tag
-              color="blue"
-              style={{
-                fontWeight: 600,
-                fontSize: 13,
-                padding: "2px 10px",
-              }}
-            >
-              Per-person ({activeMemberCount} people): {formatCurrency(perMemberShare)}
-            </Tag>
+          <Table.Summary.Cell index={3}>
+            <Typography.Text strong>Remaining</Typography.Text>
           </Table.Summary.Cell>
-          {isAdmin && <Table.Summary.Cell index={3} />}
+          <Table.Summary.Cell index={4}>
+            <Typography.Text strong style={{ color: remainingAmount >= 0 ? "#52c41a" : "#ff4d4f" }}>
+              {formatCurrency(remainingAmount)}
+            </Typography.Text>
+          </Table.Summary.Cell>
+          {isAdmin && <Table.Summary.Cell index={5} />}
         </Table.Summary.Row>
       )}
     />

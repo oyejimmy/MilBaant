@@ -388,6 +388,7 @@ export type AdvanceCategoryKey =
   | 'cook_salary'
   | 'light_bill'
   | 'gas_bill'
+  | 'carryover'
 
 export interface MonthlyBudget {
   id: string

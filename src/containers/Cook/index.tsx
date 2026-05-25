@@ -350,52 +350,55 @@ export function CookPage() {
       <QueryState isLoading={isLoading} error={error}>
         {/* Balance card */}
         <BalanceCard $status={balanceStatus}>
-          <div>
-            <Typography.Text
-              style={{
-                color: "var(--text-muted)",
-                fontSize: "0.78rem",
-                display: "block",
-                marginBottom: 4,
-              }}
-            >
-              CURRENT BALANCE
-            </Typography.Text>
-            <BalanceAmount $status={balanceStatus}>
-              {balance >= 0 ? "+" : ""}
-              {formatCurrency(balance)}
-            </BalanceAmount>
-            <Typography.Text
-              style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}
-            >
-              {balanceStatus === "surplus"
-                ? `Cook has ${formatCurrency(balance)} remaining`
-                : balanceStatus === "deficit"
-                  ? `Cook overspent by ${formatCurrency(Math.abs(balance))}`
-                  : "Advance fully used"}
-            </Typography.Text>
-          </div>
+          <Flex vertical={isMobile} gap={isMobile ? 8 : 0} style={{ width: "100%" }}>
+            <div style={{ flex: 1, marginBottom: 0 }}>
+              <Typography.Text
+                style={{
+                  color: "var(--text-muted)",
+                  fontSize: "0.78rem",
+                  display: "block",
+                  marginBottom: 4,
+                }}
+              >
+                CURRENT BALANCE
+              </Typography.Text>
+              <BalanceAmount $status={balanceStatus}>
+                {balance >= 0 ? "+" : ""}
+                {formatCurrency(balance)}
+              </BalanceAmount>
+              <Typography.Text
+                style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginBottom: 0 }}
+              >
+                {balanceStatus === "surplus"
+                  ? `Cook has ${formatCurrency(balance)} remaining`
+                  : balanceStatus === "deficit"
+                    ? `Cook overspent by ${formatCurrency(Math.abs(balance))}`
+                    : "Advance fully used"}
+              </Typography.Text>
+            </div>
 
-          <div style={{ minWidth: 140, flex: "1 1 140px", maxWidth: 220 }}>
-            <Flex justify="space-between" style={{ marginBottom: 6 }}>
-              <Typography.Text
-                style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}
-              >
-                Used {usedPercent.toFixed(0)}%
-              </Typography.Text>
-              <Typography.Text
-                style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}
-              >
-                {formatCurrency(totalSpent)} / {formatCurrency(totalAdvanced)}
-              </Typography.Text>
-            </Flex>
-            <Progress
-              percent={usedPercent}
-              showInfo={false}
-              strokeColor={balanceStatus === "deficit" ? "#ff4d4f" : "#52c41a"}
-              size="small"
-            />
-          </div>
+            <div style={{ minWidth: 140, flex: "1 1 140px", maxWidth: isMobile ? "100%" : 220, marginBottom: 0 }}>
+              <Flex justify="space-between" style={{ marginBottom: 6 }}>
+                <Typography.Text
+                  style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}
+                >
+                  Used {usedPercent.toFixed(0)}%
+                </Typography.Text>
+                <Typography.Text
+                  style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}
+                >
+                  {formatCurrency(totalSpent)} / {formatCurrency(totalAdvanced)}
+                </Typography.Text>
+              </Flex>
+              <Progress
+                percent={usedPercent}
+                showInfo={false}
+                strokeColor={balanceStatus === "deficit" ? "#ff4d4f" : "#52c41a"}
+                size="small"
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+          </Flex>
         </BalanceCard>
 
         {/* Summary stats */}

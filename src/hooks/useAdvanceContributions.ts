@@ -278,3 +278,109 @@ export function useUnpublishPlan() {
     },
   })
 }
+
+export function useShiftCarryover() {
+  return useMutation({
+    mutationFn: async ({
+      fromMonth,
+      toMonth,
+      amount,
+      flatmateCount,
+      createdBy,
+    }: {
+      fromMonth: string
+      toMonth: string
+      amount: number
+      flatmateCount: number
+      createdBy: string
+    }) => {
+      const now = new Date().toISOString()
+
+      // Fetch existing budgets for next month
+      const existingBudgets = await fetchMonthlyBudgets(toMonth)
+      const existingBudgetMap = new Map(existingBudgets.map(b => [b.category_key, b.budget_amount]))
+      
+      // Calculate new carryover amount
+      const newCarryover = (existingBudgetMap.get('carryover') ?? 0) + amount
+
+      const budgetRows = [
+        ...(Object.entries(existingBudgetMap) as [AdvanceCategoryKey, number][])
+          .filter(([key]) => key !== 'carryover')
+          .map(([category_key, budget_amount]) => ({
+            month: toMonth,
+            category_key,
+            budget_amount,
+            created_by: createdBy,
+            updated_at: now,
+          })),
+        {
+          month: toMonth,
+          category_key: 'carryover' as AdvanceCategoryKey,
+          budget_amount: newCarryover,
+          created_by: createdBy,
+          updated_at: now,
+        },
+      ].filter(r => r.budget_amount > 0)
+
+      // Upsert budgets
+      if (budgetRows.length > 0) {
+        const { error } = await supabase
+          .from('monthly_budget')
+          .upsert(budgetRows, { onConflict: 'month,category_key' })
+        if (error) throw new Error(error.message)
+      } else {
+        // If no budgets, delete existing budgets for that month
+        const { error } = await supabase
+          .from('monthly_budget')
+          .delete()
+          .eq('month', toMonth)
+        if (error) throw new Error(error.message)
+      }
+
+      // Calculate total and per person for next month
+      const total = budgetRows.reduce((s, r) => s + Number(r.budget_amount), 0)
+      const perPerson = flatmateCount > 0 ? total / flatmateCount : 0
+
+      // Upsert plan header for next month
+      const { data: planData, error: planError } = await supabase
+        .from('monthly_contributions')
+        .upsert(
+          {
+            month: toMonth,
+            total_budget: total,
+            flatmate_count: flatmateCount,
+            per_person_default: perPerson,
+            created_by: createdBy,
+            updated_at: now,
+          },
+          { onConflict: 'month' },
+        )
+        .select(
+          'id, month, total_budget, flatmate_count, per_person_default, is_published, published_at, published_by, created_by, created_at, updated_at',
+        )
+        .single()
+
+      if (planError) throw new Error(planError.message)
+
+      await logActivity({
+        userId: createdBy,
+        action: 'create',
+        entity: 'monthly_contributions',
+        entityId: planData.id,
+        description: `Shifted carryover of ${amount} from ${fromMonth} to ${toMonth}`,
+      })
+
+      return {
+        ...planData,
+        total_budget: Number(planData.total_budget),
+        flatmate_count: Number(planData.flatmate_count),
+        per_person_default: Number(planData.per_person_default),
+      } as MonthlyContribution
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.advanceBudgets })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.monthlyContributions })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.contributionBreakdowns })
+    },
+  })
+}

@@ -38,6 +38,7 @@ import {
   useUpsertPrevMonthRemainder,
 } from "@/hooks/useSettings";
 import { useContributionPayments } from "@/hooks/useContributions";
+import { useAdvanceContribution } from "@/hooks/useAdvanceContributions";
 import { useCookRequests } from "@/hooks/useCookRequests";
 import { useMenuByDate } from "@/hooks/useDailyMenu";
 import {
@@ -448,12 +449,12 @@ const CardPoly = styled.div<{
 /* ─── Stat cards grid ────────────────────────────────────────────────────── */
 const StatCardsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 6px;
-  @media (max-width: 1100px) {
-    grid-template-columns: repeat(3, 1fr);
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(4, 1fr);
   }
-  @media (max-width: 560px) {
+  @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
 `;
@@ -775,6 +776,7 @@ export function DashboardPage() {
   const contributeInfoQuery = useContributeInfo();
   const prevRemainderQuery = usePrevMonthRemainder();
   const upsertPrevRemainder = useUpsertPrevMonthRemainder();
+  const budgetContribution = useAdvanceContribution(monthStr);
 
   const expenses = expensesQuery.data ?? [];
   const profiles = profilesQuery.data ?? [];
@@ -794,6 +796,8 @@ export function DashboardPage() {
   const totalRecorded = fixedTotal + prevRemainder;
   const perMemberShare = calculatePerMemberShare(fixedTotal, memberCount);
   const totalContributions = payments.reduce((s, p) => s + p.amount, 0);
+  const totalBudget = budgetContribution.totalBudget;
+  const remainingAmount = totalBudget - fixedTotal;
   const flatmates = profiles.filter((p) => p.role !== "cook");
   const userSummary = buildMonthlyUserSummary(
     flatmates,
@@ -1011,6 +1015,20 @@ export function DashboardPage() {
                 sub: "Carried over from last month",
                 accent: "#1677ff",
                 icon: <HistoryOutlined />,
+              },
+              {
+                label: "Total Budget",
+                value: formatCurrency(totalBudget),
+                sub: "Estimated monthly budget",
+                accent: "#faad14",
+                icon: <WalletOutlined />,
+              },
+              {
+                label: "Remaining",
+                value: formatCurrency(remainingAmount),
+                sub: remainingAmount > 0 ? "From budget" : "Over budget",
+                accent: remainingAmount >= 0 ? "#52c41a" : "#ff4d4f",
+                icon: <RiseOutlined />,
               },
               {
                 label: "Contributions",

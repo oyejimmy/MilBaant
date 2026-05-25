@@ -40,11 +40,6 @@ import {
   useUpsertMemberCount,
 } from "@/hooks/useSettings";
 import {
-  useContributionPayments,
-  useDeleteContributionPayment,
-} from "@/hooks/useContributions";
-import {
-  buildMonthlyUserSummary,
   calculateFixedTotal,
   calculatePerMemberShare,
   splitExpensesByType,
@@ -53,16 +48,15 @@ import { formatCurrency, formatDate, formatMonthYear } from "@/lib/formatters";
 import { uploadBillImage } from "@/lib/storage";
 import { exportExpensesToExcel } from "@/lib/export";
 import { CATEGORY_LABELS } from "@/lib/constants";
+import { useAdvanceContribution, useSavePlan, useShiftCarryover } from "@/hooks/useAdvanceContributions";
 import { AddExpenseModal } from "./components/AddExpenseModal";
 import { EditExpenseModal } from "./components/EditExpenseModal";
 import { DistributeModal } from "./components/DistributeModal";
 import { PrintModal } from "./components/PrintModal";
 import { FixedExpensesTable } from "./components/FixedExpensesTable";
-import { WeekendExpensesTable } from "./components/WeekendExpensesTable";
-import { UserSummaryTable } from "./components/UserSummaryTable";
 import { MobileExpensesList } from "./components/MobileExpensesList";
-import { MobileWeekendExpensesList } from "./components/MobileWeekendExpensesList";
-import { MobileUserSummaryList } from "./components/MobileUserSummaryList";
+import { MonthlyBudgetTable } from "./components/MonthlyBudgetTable";
+import { EditBudgetModal } from "./components/EditBudgetModal";
 import { BillDistribution } from "./components/BillDistribution";
 import {
   PrintWrapper,
@@ -90,58 +84,68 @@ export function ExpensesPage() {
   const [printOpen, setPrintOpen] = useState(false);
   const [printImageUrl, setPrintImageUrl] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [editBudgetOpen, setEditBudgetOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const [draftMemberCount, setDraftMemberCount] = useState<number | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(
     new Set(),
   );
 
-  const { userId, canManageExpenses, isAdmin } = useAuth();
+  const { userId, canManageExpenses, isAdmin, isCook } = useAuth();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const expensesQuery = useExpenses(selectedMonth);
   const profilesQuery = useProfiles();
   const memberCountQuery = useMemberCountSetting();
+  const budgetContribution = useAdvanceContribution(selectedMonth.format("YYYY-MM"));
+  const savePlan = useSavePlan();
+  const shiftCarryover = useShiftCarryover();
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
   const updateExpense = useUpdateExpense();
   const saveMemberCount = useUpsertMemberCount();
-  const paymentsQuery = useContributionPayments(
-    selectedMonth.format("YYYY-MM"),
-  );
-  const deletePayment = useDeleteContributionPayment();
-
   const expenses = expensesQuery.data ?? [];
   const profiles = useMemo(
     () => (profilesQuery.data ?? []).filter((p) => p.role !== "cook"),
     [profilesQuery.data],
   );
   const memberCount = memberCountQuery.data ?? 10;
-  const payments = paymentsQuery.data ?? [];
 
-  const paymentsByUser = new Map();
-  for (const p of payments) {
-    const existing = paymentsByUser.get(p.user_id) ?? [];
-    paymentsByUser.set(p.user_id, [...existing, p]);
-  }
-
-  const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses);
+  const { fixedExpenses } = splitExpensesByType(expenses);
   const fixedTotal = calculateFixedTotal(fixedExpenses);
   const activeMemberCount = profiles.length || 1;
   const perMemberShare = calculatePerMemberShare(fixedTotal, activeMemberCount);
-  const userSummary = buildMonthlyUserSummary(
-    profiles,
-    perMemberShare,
-    weekendExpenses,
-  );
+  const estimatedPerPerson = activeMemberCount > 0 ? budgetContribution.totalBudget / activeMemberCount : 0;
+  const remainingAmount = budgetContribution.totalBudget - fixedTotal;
+  const isMonthFinished = selectedMonth.isBefore(dayjs(), "month");
 
   const toggleDescription = (id: string) => {
     setExpandedDescriptions((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
+  };
+
+  const handleShiftCarryover = async () => {
+    if (!isAdmin || !userId || remainingAmount <= 0) return;
+    const nextMonth = selectedMonth.add(1, "month").format("YYYY-MM");
+    try {
+      await shiftCarryover.mutateAsync({
+        fromMonth: selectedMonth.format("YYYY-MM"),
+        toMonth: nextMonth,
+        amount: remainingAmount,
+        flatmateCount: activeMemberCount,
+        createdBy: userId,
+      });
+      message.success(`Successfully shifted ${formatCurrency(remainingAmount)} to ${formatMonthYear(selectedMonth.add(1, "month"))}!`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Unable to shift carryover");
+    }
   };
 
   const handleOpenPrint = async () => {
@@ -257,15 +261,6 @@ export function ExpensesPage() {
     }
   };
 
-  const handleDeletePayment = async (id: string) => {
-    try {
-      await deletePayment.mutateAsync({ id, userId: userId ?? "" });
-      message.success("Payment record removed.");
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : "Unable to delete.");
-    }
-  };
-
   const isLoading =
     expensesQuery.isLoading ||
     profilesQuery.isLoading ||
@@ -332,9 +327,23 @@ export function ExpensesPage() {
             color="var(--primary)"
           />
           <SummaryStat
+            title="Total Budget"
+            value={formatCurrency(budgetContribution.totalBudget)}
+            subtitle="Estimated budget"
+            icon={<WalletOutlined />}
+            color="#faad14"
+          />
+          <SummaryStat
+            title="Remaining"
+            value={formatCurrency(remainingAmount)}
+            subtitle={remainingAmount > 0 ? "From budget" : "Over budget"}
+            icon={<WalletOutlined />}
+            color={remainingAmount >= 0 ? "#52c41a" : "#ff4d4f"}
+          />
+          <SummaryStat
             title="Per-person Share"
-            value={formatCurrency(perMemberShare)}
-            subtitle="Each member owes"
+            value={formatCurrency(estimatedPerPerson)}
+            subtitle="Estimated budget per person"
             icon={<UserOutlined />}
             color="#7c3aed"
           />
@@ -383,8 +392,7 @@ export function ExpensesPage() {
                 expenses={fixedExpenses}
                 isAdmin={isAdmin}
                 fixedTotal={fixedTotal}
-                perMemberShare={perMemberShare}
-                activeMemberCount={activeMemberCount}
+                totalBudget={budgetContribution.totalBudget}
                 onEdit={setEditingExpense}
                 onDelete={handleDeleteExpense}
               />
@@ -394,8 +402,7 @@ export function ExpensesPage() {
                 isAdmin={isAdmin}
                 expandedDescriptions={expandedDescriptions}
                 fixedTotal={fixedTotal}
-                perMemberShare={perMemberShare}
-                activeMemberCount={activeMemberCount}
+                totalBudget={budgetContribution.totalBudget}
                 onToggleDescription={toggleDescription}
                 onEdit={setEditingExpense}
                 onDelete={handleDeleteExpense}
@@ -404,83 +411,72 @@ export function ExpensesPage() {
           </div>
         </SectionBlock>
 
-        <SectionBlock>
-          <Typography.Title
-            level={4}
-            style={{ marginTop: 0, color: "var(--text-strong)" }}
-          >
-            Weekend Expenses
-          </Typography.Title>
-          <Typography.Text style={{ color: "var(--text-muted)" }}>
-            Meals recorded on Saturdays and Sundays are divided only among
-            selected participants.
-          </Typography.Text>
-          <div style={{ marginTop: 16 }}>
-            {isMobile ? (
-              <MobileWeekendExpensesList
-                expenses={weekendExpenses}
-                isAdmin={isAdmin}
-                onDelete={handleDeleteExpense}
-              />
-            ) : (
-              <WeekendExpensesTable
-                expenses={weekendExpenses}
-                isAdmin={isAdmin}
-                onDelete={handleDeleteExpense}
-              />
-            )}
-          </div>
-        </SectionBlock>
-
-        <SectionBlock>
-          <Flex
-            justify="space-between"
-            align="center"
-            wrap
-            gap={8}
-            style={{ marginBottom: 4 }}
-          >
-            <div>
+        {!isCook && (
+          <SectionBlock>
+            <Flex
+              align="center"
+              justify="space-between"
+              wrap
+              gap={8}
+              style={{ marginBottom: 8 }}
+            >
               <Typography.Title
                 level={4}
-                style={{
-                  marginTop: 0,
-                  marginBottom: 0,
-                  color: "var(--text-strong)",
-                }}
+                style={{ marginTop: 0, marginBottom: 0, color: "var(--text-strong)" }}
               >
-                Monthly Owed Per User
+                Monthly Budget Estimate
               </Typography.Title>
-              <Typography.Text
-                style={{ color: "var(--text-muted)", fontSize: 12 }}
-              >
-                Share plus weekend participation. Submit payment proof on
-                Dashboard.
-              </Typography.Text>
+              <Flex gap={8}>
+                {isAdmin && (
+                  <>
+                    {isMonthFinished && remainingAmount > 0 && (
+                      <Button 
+                        type="default" 
+                        loading={shiftCarryover.isPending}
+                        onClick={handleShiftCarryover}
+                        icon={<WalletOutlined />}
+                      >
+                        Shift Remaining
+                      </Button>
+                    )}
+                    <Button type="primary" onClick={() => setEditBudgetOpen(true)}>
+                      Edit Budget
+                    </Button>
+                  </>
+                )}
+              </Flex>
+            </Flex>
+            <Typography.Text style={{ color: "var(--text-muted)" }}>
+              Rough estimation of overall contribution for groceries and other expenses for {formatMonthYear(selectedMonth)}.
+            </Typography.Text>
+            <div style={{ marginTop: 16 }}>
+              <QueryState isLoading={budgetContribution.isLoading} error={budgetContribution.error}>
+                <MonthlyBudgetTable
+                  categoryBudgets={budgetContribution.categoryBudgets}
+                  totalBudget={budgetContribution.totalBudget}
+                  isMobile={isMobile}
+                  activeMemberCount={activeMemberCount}
+                />
+              </QueryState>
             </div>
-          </Flex>
-          <div style={{ marginTop: 12 }}>
-            {isMobile ? (
-              <MobileUserSummaryList
-                summaries={userSummary}
-                paymentsByUser={paymentsByUser}
-                selectedMonth={selectedMonth}
-                userId={userId ?? undefined}
-                isAdmin={isAdmin}
-                onDeletePayment={handleDeletePayment}
-              />
-            ) : (
-              <UserSummaryTable
-                summaries={userSummary}
-                paymentsByUser={paymentsByUser}
-                selectedMonth={selectedMonth}
-                userId={userId ?? undefined}
-                isAdmin={isAdmin}
-                onDeletePayment={handleDeletePayment}
-              />
-            )}
-          </div>
-        </SectionBlock>
+          </SectionBlock>
+        )}
+
+        <EditBudgetModal
+          open={editBudgetOpen}
+          onClose={() => setEditBudgetOpen(false)}
+          categoryBudgets={budgetContribution.categoryBudgets}
+          isPending={savePlan.isPending}
+          onSave={async (budgets, flatmateCount) => {
+            await savePlan.mutateAsync({
+              month: selectedMonth.format("YYYY-MM"),
+              budgets,
+              flatmateCount,
+              overrides: [],
+              createdBy: userId ?? "",
+            });
+          }}
+        />
 
         {isAdmin && (
           <SectionBlock>
@@ -541,10 +537,10 @@ export function ExpensesPage() {
                   {formatCurrency(fixedTotal)}
                 </PrintValue>
               </PrintSummaryCard>
-              <PrintSummaryCard $color="var(--blue-700)">
-                <PrintLabel>Per-person Share</PrintLabel>
-                <PrintValue $color="var(--blue-700)">
-                  {formatCurrency(perMemberShare)}
+              <PrintSummaryCard $color="#7c3aed">
+                <PrintLabel>Per-person Share (Estimated)</PrintLabel>
+                <PrintValue $color="#7c3aed">
+                  {formatCurrency(estimatedPerPerson)}
                 </PrintValue>
               </PrintSummaryCard>
               <PrintSummaryCard $color="var(--info)">
@@ -602,7 +598,6 @@ export function ExpensesPage() {
                         fontWeight: 700,
                         color: "var(--primary)",
                       }}
-                      colSpan={2}
                     >
                       Total
                     </td>
@@ -620,10 +615,20 @@ export function ExpensesPage() {
                       style={{
                         ...pTd,
                         fontWeight: 700,
-                        color: "var(--blue-700)",
+                        color: "var(--text-strong)",
                       }}
                     >
-                      Per-person ({activeMemberCount} people): {formatCurrency(perMemberShare)}
+                      Remaining
+                    </td>
+                    <td
+                      style={{
+                        ...pTd,
+                        fontWeight: 700,
+                        color: remainingAmount >= 0 ? "#52c41a" : "#ff4d4f",
+                        fontSize: 14,
+                      }}
+                    >
+                      {formatCurrency(remainingAmount)}
                     </td>
                   </tr>
                 </tfoot>

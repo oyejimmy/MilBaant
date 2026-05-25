@@ -86,6 +86,7 @@ export const ADVANCE_CATEGORY_KEYS: AdvanceCategoryKey[] = [
   'cook_salary',
   'light_bill',
   'gas_bill',
+  'carryover',
 ]
 
 export const ADVANCE_CATEGORY_LABELS: Record<AdvanceCategoryKey, string> = {
@@ -97,6 +98,7 @@ export const ADVANCE_CATEGORY_LABELS: Record<AdvanceCategoryKey, string> = {
   cook_salary:   'Cook Salary',
   light_bill:    'Light Bill',
   gas_bill:      'Gas Bill',
+  carryover:     'Carryover',
 }
 
 export const ADVANCE_CATEGORY_COLORS: Record<AdvanceCategoryKey, string> = {
@@ -108,6 +110,7 @@ export const ADVANCE_CATEGORY_COLORS: Record<AdvanceCategoryKey, string> = {
   cook_salary:   'purple',
   light_bill:    'gold',
   gas_bill:      'volcano',
+  carryover:     'geekblue',
 }
 
 export const PURCHASE_CATEGORY_OPTIONS = [

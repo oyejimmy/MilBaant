@@ -9,8 +9,7 @@ interface MobileExpensesListProps {
   expenses: Expense[];
   isAdmin: boolean;
   fixedTotal: number;
-  perMemberShare: number;
-  activeMemberCount: number;
+  totalBudget: number;
   onEdit: (expense: Expense) => void;
   onDelete: (id: string, label?: string) => void;
 }
@@ -19,11 +18,11 @@ export function MobileExpensesList({
   expenses,
   isAdmin,
   fixedTotal,
-  perMemberShare,
-  activeMemberCount,
+  totalBudget,
   onEdit,
   onDelete,
 }: MobileExpensesListProps) {
+  const remainingAmount = totalBudget - fixedTotal;
   return (
     <Space direction="vertical" size={8} style={{ width: "100%" }}>
       {expenses.length === 0 && (
@@ -91,19 +90,24 @@ export function MobileExpensesList({
         <div
           style={{
             padding: "8px 12px",
-            background: "var(--content-bg)",
+            background: "var(--primary-soft)",
             borderRadius: 7,
-            border: "1px solid var(--card-border)",
-            display: "flex",
-            justifyContent: "space-between",
+            border: "1px solid var(--primary)",
           }}
         >
-          <Typography.Text strong>Total</Typography.Text>
-          <Flex gap={8} align="center">
-            <Typography.Text strong>
-              {formatCurrency(fixedTotal)}
-            </Typography.Text>
-            <Tag color="blue">Per-person ({activeMemberCount} people): {formatCurrency(perMemberShare)}</Tag>
+          <Flex justify="space-between" wrap gap={8}>
+            <Flex vertical gap={4}>
+              <Typography.Text strong>Total</Typography.Text>
+              <Typography.Text strong>
+                {formatCurrency(fixedTotal)}
+              </Typography.Text>
+            </Flex>
+            <Flex vertical gap={4} style={{ textAlign: "right" }}>
+              <Typography.Text strong>Remaining</Typography.Text>
+              <Typography.Text strong style={{ color: remainingAmount >= 0 ? "#52c41a" : "#ff4d4f" }}>
+                {formatCurrency(remainingAmount)}
+              </Typography.Text>
+            </Flex>
           </Flex>
         </div>
       )}
