@@ -6,7 +6,7 @@ import { ROLE_META } from "../constants";
 import { initials } from "../helpers";
 
 interface RemoveUserModalProps {
-  profile: Profile;
+  profile: Profile | null;
   open: boolean;
   submitting: boolean;
   onClose: () => void;
@@ -21,6 +21,9 @@ export function RemoveUserModal({
   onConfirm,
 }: RemoveUserModalProps) {
   const [confirmName, setConfirmName] = useState("");
+
+  if (!profile) return null;
+
   const nameMatches =
     confirmName.trim().toLowerCase() === profile.full_name.trim().toLowerCase();
 

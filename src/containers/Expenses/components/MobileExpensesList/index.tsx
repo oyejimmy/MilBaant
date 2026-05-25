@@ -10,6 +10,7 @@ interface MobileExpensesListProps {
   isAdmin: boolean;
   fixedTotal: number;
   perMemberShare: number;
+  activeMemberCount: number;
   onEdit: (expense: Expense) => void;
   onDelete: (id: string, label?: string) => void;
 }
@@ -19,6 +20,7 @@ export function MobileExpensesList({
   isAdmin,
   fixedTotal,
   perMemberShare,
+  activeMemberCount,
   onEdit,
   onDelete,
 }: MobileExpensesListProps) {
@@ -101,7 +103,7 @@ export function MobileExpensesList({
             <Typography.Text strong>
               {formatCurrency(fixedTotal)}
             </Typography.Text>
-            <Tag color="blue">Per-person: {formatCurrency(perMemberShare)}</Tag>
+            <Tag color="blue">Per-person ({activeMemberCount} people): {formatCurrency(perMemberShare)}</Tag>
           </Flex>
         </div>
       )}

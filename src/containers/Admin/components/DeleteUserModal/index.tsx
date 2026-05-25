@@ -5,7 +5,7 @@ import { ROLE_META } from "../constants";
 import { avatarColor, initials } from "../helpers";
 
 interface DeleteUserModalProps {
-  profile: Profile;
+  profile: Profile | null;
   open: boolean;
   submitting: boolean;
   onClose: () => void;
@@ -19,6 +19,8 @@ export function DeleteUserModal({
   onClose,
   onConfirm,
 }: DeleteUserModalProps) {
+  if (!profile) return null;
+
   return (
     <Modal
       centered

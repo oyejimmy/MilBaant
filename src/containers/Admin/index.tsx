@@ -431,7 +431,7 @@ export function AdminPage() {
       </QueryState>
 
       <DeleteUserModal
-        profile={deleteTarget!}
+        profile={deleteTarget}
         open={!!deleteTarget}
         submitting={updateProfile.isPending}
         onClose={() => setDeleteTarget(null)}
@@ -439,7 +439,7 @@ export function AdminPage() {
       />
 
       <RemoveUserModal
-        profile={removeTarget!}
+        profile={removeTarget}
         open={!!removeTarget}
         submitting={deleteUser.isPending}
         onClose={() => setRemoveTarget(null)}
@@ -464,7 +464,7 @@ export function AdminPage() {
       />
 
       <EditUserModal
-        profile={editUser!}
+        profile={editUser}
         open={!!editUser}
         submitting={updateProfile.isPending}
         onClose={() => setEditUser(null)}

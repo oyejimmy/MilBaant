@@ -127,7 +127,8 @@ export function ExpensesPage() {
 
   const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses);
   const fixedTotal = calculateFixedTotal(fixedExpenses);
-  const perMemberShare = calculatePerMemberShare(fixedTotal, memberCount);
+  const activeMemberCount = profiles.length || 1;
+  const perMemberShare = calculatePerMemberShare(fixedTotal, activeMemberCount);
   const userSummary = buildMonthlyUserSummary(
     profiles,
     perMemberShare,
@@ -339,7 +340,7 @@ export function ExpensesPage() {
           />
           <SummaryStat
             title="Member Count"
-            value={memberCount}
+            value={activeMemberCount}
             subtitle="Active flatmates"
             icon={<TeamOutlined />}
             color="#059669"
@@ -383,6 +384,7 @@ export function ExpensesPage() {
                 isAdmin={isAdmin}
                 fixedTotal={fixedTotal}
                 perMemberShare={perMemberShare}
+                activeMemberCount={activeMemberCount}
                 onEdit={setEditingExpense}
                 onDelete={handleDeleteExpense}
               />
@@ -391,6 +393,9 @@ export function ExpensesPage() {
                 expenses={fixedExpenses}
                 isAdmin={isAdmin}
                 expandedDescriptions={expandedDescriptions}
+                fixedTotal={fixedTotal}
+                perMemberShare={perMemberShare}
+                activeMemberCount={activeMemberCount}
                 onToggleDescription={toggleDescription}
                 onEdit={setEditingExpense}
                 onDelete={handleDeleteExpense}
@@ -509,7 +514,7 @@ export function ExpensesPage() {
         open={distributeOpen}
         fixedTotal={fixedTotal}
         perMemberShare={perMemberShare}
-        memberCount={memberCount}
+        memberCount={activeMemberCount}
         isAdmin={isAdmin}
         onClose={() => setDistributeOpen(false)}
         onSaveMemberCount={saveMemberCount.mutateAsync}
@@ -544,7 +549,7 @@ export function ExpensesPage() {
               </PrintSummaryCard>
               <PrintSummaryCard $color="var(--info)">
                 <PrintLabel>Members</PrintLabel>
-                <PrintValue $color="var(--info)">{memberCount}</PrintValue>
+                <PrintValue $color="var(--info)">{activeMemberCount}</PrintValue>
               </PrintSummaryCard>
             </PrintSummary>
             <div style={{ padding: "0 0 20px" }}>
@@ -618,7 +623,7 @@ export function ExpensesPage() {
                         color: "var(--blue-700)",
                       }}
                     >
-                      Per-person: {formatCurrency(perMemberShare)}
+                      Per-person ({activeMemberCount} people): {formatCurrency(perMemberShare)}
                     </td>
                   </tr>
                 </tfoot>

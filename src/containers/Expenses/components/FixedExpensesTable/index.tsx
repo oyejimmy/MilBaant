@@ -9,6 +9,9 @@ interface FixedExpensesTableProps {
   expenses: Expense[];
   isAdmin: boolean;
   expandedDescriptions: Set<string>;
+  fixedTotal: number;
+  perMemberShare: number;
+  activeMemberCount: number;
   onToggleDescription: (id: string) => void;
   onEdit: (expense: Expense) => void;
   onDelete: (id: string, label?: string) => void;
@@ -18,6 +21,9 @@ export function FixedExpensesTable({
   expenses,
   isAdmin,
   expandedDescriptions,
+  fixedTotal,
+  perMemberShare,
+  activeMemberCount,
   onToggleDescription,
   onEdit,
   onDelete,
@@ -118,9 +124,6 @@ export function FixedExpensesTable({
       : []),
   ];
 
-  const fixedTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const perMemberShare = expenses.length > 0 ? fixedTotal / 10 : 0; // This should come from props
-
   return (
     <Table
       rowKey="id"
@@ -148,7 +151,7 @@ export function FixedExpensesTable({
                 padding: "2px 10px",
               }}
             >
-              Per-person: {formatCurrency(perMemberShare)}
+              Per-person ({activeMemberCount} people): {formatCurrency(perMemberShare)}
             </Tag>
           </Table.Summary.Cell>
           {isAdmin && <Table.Summary.Cell index={3} />}

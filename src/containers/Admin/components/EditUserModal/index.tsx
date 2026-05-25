@@ -16,7 +16,7 @@ import type { EditUserFormValues } from "../../types";
 import { avatarColor, initials } from "../helpers";
 
 interface EditUserModalProps {
-  profile: Profile;
+  profile: Profile | null;
   open: boolean;
   submitting: boolean;
   onClose: () => void;
@@ -35,6 +35,8 @@ export function EditUserModal({
   onPermissionChange,
 }: EditUserModalProps) {
   const [form] = Form.useForm<EditUserFormValues>();
+
+  if (!profile) return null;
 
   const handleOk = async () => {
     const values = await form.validateFields();
