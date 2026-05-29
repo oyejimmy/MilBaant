@@ -98,6 +98,16 @@ ALTER TABLE public.monthly_budget                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.monthly_contributions            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contribution_breakdown           ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first (safest way)
+DROP POLICY IF EXISTS "acc_select" ON public.advance_contribution_categories;
+DROP POLICY IF EXISTS "acc_admin_write" ON public.advance_contribution_categories;
+DROP POLICY IF EXISTS "mb_select" ON public.monthly_budget;
+DROP POLICY IF EXISTS "mb_admin_write" ON public.monthly_budget;
+DROP POLICY IF EXISTS "mc_select" ON public.monthly_contributions;
+DROP POLICY IF EXISTS "mc_admin_write" ON public.monthly_contributions;
+DROP POLICY IF EXISTS "cb_select" ON public.contribution_breakdown;
+DROP POLICY IF EXISTS "cb_admin_write" ON public.contribution_breakdown;
+
 -- advance_contribution_categories: all authenticated users can read; admin writes
 CREATE POLICY "acc_select" ON public.advance_contribution_categories
     FOR SELECT USING (auth.role() = 'authenticated');
