@@ -7,7 +7,7 @@ import type { Profile, Role } from '@/lib/types'
 async function fetchProfiles() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, role, can_add_expenses, is_active')
+    .select('id, full_name, role, can_add_expenses, is_active, avatar_url')
     .order('full_name', { ascending: true })
 
   if (error) {

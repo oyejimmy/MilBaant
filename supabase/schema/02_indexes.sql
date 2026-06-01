@@ -9,6 +9,7 @@
 
 CREATE INDEX IF NOT EXISTS expenses_date_idx                ON public.expenses (date);
 CREATE INDEX IF NOT EXISTS expenses_category_idx            ON public.expenses (category);
+CREATE INDEX IF NOT EXISTS expenses_monthly_period_idx      ON public.expenses (monthly_period_id);
 CREATE INDEX IF NOT EXISTS expense_participants_user_idx    ON public.expense_participants (user_id);
 
 -- ── Debt Settlements ─────────────────────────────────────────────────────────
@@ -61,5 +62,5 @@ CREATE INDEX IF NOT EXISTS activity_logs_created_at_idx     ON public.activity_l
 DO $$
 BEGIN
   RAISE NOTICE '✅ Indexes created successfully';
-  RAISE NOTICE '📊 Total indexes: 24';
+  RAISE NOTICE '📊 Total indexes: 25';
 END $$;

@@ -65,6 +65,7 @@ export interface Expense {
   created_at: string
   creator?: Pick<Profile, 'id' | 'full_name'> | null
   expense_participants: ExpenseParticipant[]
+  monthly_period_id?: string | null
 }
 
 export interface Announcement {
@@ -105,6 +106,7 @@ export interface CreateExpenseInput {
   description?: string
   participantIds: string[]
   billImageUrl?: string | null
+  monthly_period_id?: string
 }
 
 export interface AuthContextValue {
@@ -388,7 +390,8 @@ export type AdvanceCategoryKey =
   | 'cook_salary'
   | 'light_bill'
   | 'gas_bill'
-  | 'carryover'
+  // 'carryover' is intentionally excluded — it is computed from real
+  // transaction data, not stored as a budget category
 
 export interface MonthlyBudget {
   id: string

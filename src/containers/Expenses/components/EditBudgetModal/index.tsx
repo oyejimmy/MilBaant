@@ -9,6 +9,7 @@ import {
   Row,
   Col,
   Tag,
+  Alert,
 } from "antd";
 import { formatCurrency } from "@/lib/formatters";
 import {
@@ -23,6 +24,8 @@ interface EditBudgetModalProps {
   open: boolean;
   onClose: () => void;
   categoryBudgets: Partial<Record<AdvanceCategoryKey, number>>;
+  /** Real carryover computed from previous month's actual transactions */
+  carryoverFromPrevious: number;
   onSave: (
     budgets: Partial<Record<AdvanceCategoryKey, number>>,
     flatmateCount: number
@@ -38,6 +41,7 @@ export function EditBudgetModal({
   open,
   onClose,
   categoryBudgets,
+  carryoverFromPrevious,
   onSave,
   isPending,
 }: EditBudgetModalProps) {
@@ -54,6 +58,7 @@ export function EditBudgetModal({
     [categoryBudgets]
   );
 
+  // Total budget = sum of expense categories only (carryover is not a category)
   const totalBudget = useMemo(() => {
     let total = 0;
     for (const key of ADVANCE_CATEGORY_KEYS) {
@@ -62,7 +67,9 @@ export function EditBudgetModal({
     return total;
   }, [form, categoryBudgets]);
 
-  const perPerson = totalBudget / flatmateCount;
+  // Required collection = budget − real carryover from previous month
+  const requiredCollection = Math.max(0, totalBudget - carryoverFromPrevious);
+  const perPerson = flatmateCount > 0 ? requiredCollection / flatmateCount : 0;
 
   const handleOk = async () => {
     const values = await form.validateFields();
@@ -92,8 +99,9 @@ export function EditBudgetModal({
         initialValues={initialValues}
         style={{ marginTop: 8 }}
       >
+        {/* Summary card */}
         <Card style={{ marginBottom: 16 }}>
-          <Flex justify="space-between" align="center">
+          <Flex justify="space-between" align="center" wrap gap={12}>
             <div>
               <Typography.Text
                 style={{
@@ -111,6 +119,19 @@ export function EditBudgetModal({
               >
                 {formatCurrency(totalBudget)}
               </Typography.Text>
+              {carryoverFromPrevious > 0 && (
+                <Typography.Text
+                  style={{
+                    display: "block",
+                    color: "#52c41a",
+                    fontSize: "0.82rem",
+                    marginTop: 2,
+                  }}
+                >
+                  − {formatCurrency(carryoverFromPrevious)} carryover →
+                  required: {formatCurrency(requiredCollection)}
+                </Typography.Text>
+              )}
             </div>
             <div style={{ textAlign: "right" }}>
               <Typography.Text
@@ -121,7 +142,7 @@ export function EditBudgetModal({
                   marginBottom: 4,
                 }}
               >
-                PER PERSON ( {flatmateCount} members )
+                PER PERSON ({flatmateCount} members)
               </Typography.Text>
               <Typography.Text
                 strong
@@ -133,6 +154,22 @@ export function EditBudgetModal({
           </Flex>
         </Card>
 
+        {carryoverFromPrevious > 0 && (
+          <Alert
+            type="success"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message={
+              <>
+                <strong>{formatCurrency(carryoverFromPrevious)}</strong> carryover
+                from last month (collected − actual expenses) will automatically
+                reduce the required collection.
+              </>
+            }
+          />
+        )}
+
+        {/* Expense category inputs */}
         <Row gutter={[12, 12]}>
           {ADVANCE_CATEGORY_KEYS.map((key) => (
             <Col key={key} xs={12} sm={8} md={6}>

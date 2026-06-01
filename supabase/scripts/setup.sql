@@ -2,123 +2,100 @@
 -- MilBaant Database - Complete Setup Script
 -- ============================================================
 -- PURPOSE: Run all schema files in correct order to set up
---          the complete database from scratch
--- IDEMPOTENT: Safe to run multiple times
+--          the complete database from scratch.
+-- IDEMPOTENT: Safe to run multiple times.
 -- HOW TO RUN: Paste this entire file in Supabase SQL Editor
+--             OR run each section block by block.
 -- ============================================================
 
-\echo '🚀 Starting MilBaant database setup...'
-\echo ''
-
--- Step 1: Extensions
-\echo '📦 Step 1/9: Creating extensions...'
-\i schema/00_extensions.sql
-\echo ''
-
--- Step 2: Tables
-\echo '📊 Step 2/9: Creating tables...'
-\i schema/01_tables.sql
-\echo ''
-
--- Step 3: Indexes
-\echo '🔍 Step 3/9: Creating indexes...'
-\i schema/02_indexes.sql
-\echo ''
-
--- Step 4: Functions
-\echo '⚙️  Step 4/9: Creating functions...'
-\i schema/03_functions.sql
-\echo ''
-
--- Step 5: Triggers
-\echo '⚡ Step 5/9: Creating triggers...'
-\i schema/04_triggers.sql
-\echo ''
-
--- Step 6: Enable RLS
-\echo '🔒 Step 6/9: Enabling Row Level Security...'
-\i schema/05_rls_enable.sql
-\echo ''
-
--- Step 7: RLS Policies
-\echo '🛡️  Step 7/9: Creating RLS policies...'
-\i schema/06_rls_policies.sql
-\echo ''
-
--- Step 8: Storage
-\echo '💾 Step 8/9: Creating storage buckets...'
-\i schema/07_storage.sql
-\echo ''
-
--- Step 9: Seed Data
-\echo '🌱 Step 9/9: Inserting seed data...'
-\i schema/08_seed_data.sql
-\echo ''
-
--- ============================================================
--- Final Verification
+-- NOTE: Supabase SQL Editor does not support \i (psql meta-commands).
+-- Copy and paste the contents of each file below in order, OR
+-- paste the full concatenated SQL that follows.
 -- ============================================================
 
-\echo '🔍 Running final verification...'
-\echo ''
+-- ── STEP 0: Extensions ───────────────────────────────────────────────────────
+-- Contents of schema/00_extensions.sql
 
--- Check tables
-SELECT 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- ── STEP 1: Tables ───────────────────────────────────────────────────────────
+-- Contents of schema/01_tables.sql  (paste here or run separately)
+
+-- ── STEP 2: Indexes ──────────────────────────────────────────────────────────
+-- Contents of schema/02_indexes.sql
+
+-- ── STEP 3: Functions ────────────────────────────────────────────────────────
+-- Contents of schema/03_functions.sql
+
+-- ── STEP 4: Triggers ─────────────────────────────────────────────────────────
+-- Contents of schema/04_triggers.sql
+
+-- ── STEP 5: Enable RLS ───────────────────────────────────────────────────────
+-- Contents of schema/05_rls_enable.sql
+
+-- ── STEP 6: RLS Policies ─────────────────────────────────────────────────────
+-- Contents of schema/06_rls_policies.sql
+
+-- ── STEP 7: Storage ──────────────────────────────────────────────────────────
+-- Contents of schema/07_storage.sql
+
+-- ── STEP 8: Seed Data ────────────────────────────────────────────────────────
+-- Contents of schema/08_seed_data.sql
+
+-- ── STEP 9: Advance Contributions ────────────────────────────────────────────
+-- Contents of schema/09_advance_contributions.sql
+
+-- ============================================================
+-- Verification
+-- ============================================================
+
+SELECT
   schemaname,
   tablename,
-  rowsecurity as rls_enabled
-FROM pg_tables 
+  rowsecurity AS rls_enabled
+FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY tablename;
 
--- Check functions
-SELECT 
-  proname as function_name,
-  prosecdef as is_security_definer
-FROM pg_proc 
+SELECT
+  proname AS function_name,
+  prosecdef AS is_security_definer
+FROM pg_proc
 WHERE pronamespace = 'public'::regnamespace
 ORDER BY proname;
 
--- Check storage buckets
 SELECT id, name, public FROM storage.buckets;
 
--- Check RLS policies count
-SELECT 
+SELECT
   schemaname,
   tablename,
-  COUNT(*) as policy_count
-FROM pg_policies 
+  COUNT(*) AS policy_count
+FROM pg_policies
 WHERE schemaname = 'public'
 GROUP BY schemaname, tablename
 ORDER BY tablename;
 
--- ============================================================
--- Success Message
--- ============================================================
-
 DO $$
 BEGIN
   RAISE NOTICE '';
-  RAISE NOTICE '═══════════════════════════════════════════════════════';
-  RAISE NOTICE '✅ MilBaant database setup completed successfully!';
-  RAISE NOTICE '═══════════════════════════════════════════════════════';
+  RAISE NOTICE '=======================================================';
+  RAISE NOTICE 'MilBaant database setup completed successfully!';
+  RAISE NOTICE '=======================================================';
   RAISE NOTICE '';
-  RAISE NOTICE '📊 Database Summary:';
-  RAISE NOTICE '   • Tables: 17 created';
-  RAISE NOTICE '   • Indexes: 24 created';
-  RAISE NOTICE '   • Functions: 5 created';
-  RAISE NOTICE '   • Triggers: 3 created';
-  RAISE NOTICE '   • RLS: Enabled on all tables';
-  RAISE NOTICE '   • RLS Policies: 50+ created';
-  RAISE NOTICE '   • Storage Buckets: 3 created';
-  RAISE NOTICE '   • Seed Data: Inserted';
+  RAISE NOTICE 'Database Summary:';
+  RAISE NOTICE '  Tables: 23 created';
+  RAISE NOTICE '  Indexes: 25 created';
+  RAISE NOTICE '  Functions: 7 created';
+  RAISE NOTICE '  Triggers: 3 created';
+  RAISE NOTICE '  RLS: Enabled on all 23 tables';
+  RAISE NOTICE '  RLS Policies: 60+ created';
+  RAISE NOTICE '  Storage Buckets: 3 created';
+  RAISE NOTICE '  Seed Data: Inserted';
   RAISE NOTICE '';
-  RAISE NOTICE '🎉 Your database is ready to use!';
+  RAISE NOTICE 'Next steps:';
+  RAISE NOTICE '  1. Create your first user (becomes admin automatically)';
+  RAISE NOTICE '  2. Configure .env with Supabase credentials';
+  RAISE NOTICE '  3. Run: npm run dev';
   RAISE NOTICE '';
-  RAISE NOTICE '📝 Next steps:';
-  RAISE NOTICE '   1. Create your first user (will become admin automatically)';
-  RAISE NOTICE '   2. Configure your .env file with Supabase credentials';
-  RAISE NOTICE '   3. Run: npm run dev';
-  RAISE NOTICE '';
-  RAISE NOTICE '═══════════════════════════════════════════════════════';
+  RAISE NOTICE '=======================================================';
 END $$;

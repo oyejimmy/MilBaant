@@ -47,11 +47,17 @@ export function UserContributionCard({ month, userId }: UserContributionCardProp
   const flatmateCount   = plan.flatmate_count > 0 ? plan.flatmate_count : 1
 
   /* ── Per-category proportional breakdown ────────────────────────────── */
-  const categoryRows = ADVANCE_CATEGORY_KEYS.map((key) => {
-    const budget    = categoryBudgets[key] ?? 0
-    const userShare = budget / flatmateCount
-    return { key, budget, userShare }
-  })
+  // Carryover is not a budget category — it is computed from real transaction data
+  const categoryRows = ADVANCE_CATEGORY_KEYS
+    .map((key) => {
+      const budget    = categoryBudgets[key] ?? 0
+      const userShare = budget / flatmateCount
+      return { key, budget, userShare }
+    })
+    .filter((row) => row.budget > 0)
+
+  const carryoverAmount    = plan.carryover_from_previous ?? 0
+  const carryoverPerPerson = carryoverAmount > 0 ? carryoverAmount / flatmateCount : 0
 
   /* ── Collapse items ──────────────────────────────────────────────────── */
   const breakdownContent = (
@@ -82,6 +88,29 @@ export function UserContributionCard({ month, userId }: UserContributionCardProp
           </Flex>
         </Flex>
       ))}
+
+      {carryoverAmount > 0 && (
+        <Flex
+          justify="space-between"
+          align="center"
+          style={{
+            padding:      '10px 0',
+            borderBottom: '1px solid var(--card-border)',
+          }}
+        >
+          <Tag color="green" style={{ margin: 0, fontSize: 12 }}>
+            Less: Carryover
+          </Tag>
+          <Flex vertical align="flex-end" gap={0}>
+            <Typography.Text strong style={{ fontSize: 14, color: '#52c41a' }}>
+              − {formatCurrency(carryoverPerPerson)}
+            </Typography.Text>
+            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+              of {formatCurrency(carryoverAmount)}
+            </Typography.Text>
+          </Flex>
+        </Flex>
+      )}
 
       <Flex
         justify="space-between"

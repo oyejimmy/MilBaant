@@ -53,20 +53,24 @@ CREATE TABLE IF NOT EXISTS public.bed_assignments (
 -- ── Expenses ─────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.expenses (
-    id            uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_by    uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
-    category      text         NOT NULL CHECK (category IN (
-                                   'gas_bill','light_bill','cook_salary','kitchen_daily',
-                                   'water_roti','meat','maintenance','pcc_grocery','weekend_meal'
-                               )),
-    description   text,
-    amount        numeric(10,2) NOT NULL CHECK (amount >= 0),
-    date          date          NOT NULL,
-    last_date     date,
-    split_type    text          NOT NULL CHECK (split_type IN ('all_members','custom_participants')),
-    bill_image_url text,
-    created_at    timestamptz   NOT NULL DEFAULT timezone('utc', now())
+    id               uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_by       uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    category         text         NOT NULL CHECK (category IN (
+                                     'gas_bill','light_bill','cook_salary','kitchen_daily',
+                                     'water_roti','meat','maintenance','pcc_grocery','weekend_meal'
+                                 )),
+    description      text,
+    amount           numeric(10,2) NOT NULL CHECK (amount >= 0),
+    date             date          NOT NULL,
+    last_date        date,
+    split_type       text          NOT NULL CHECK (split_type IN ('all_members','custom_participants')),
+    bill_image_url   text,
+    monthly_period_id text,
+    created_at       timestamptz   NOT NULL DEFAULT timezone('utc', now())
 );
+
+-- Ensure monthly_period_id column exists on existing databases
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS monthly_period_id text;
 
 CREATE TABLE IF NOT EXISTS public.expense_participants (
     expense_id uuid NOT NULL REFERENCES public.expenses (id) ON DELETE CASCADE,
@@ -136,12 +140,21 @@ CREATE TABLE IF NOT EXISTS public.cook_requests (
     quantity     text,
     note         text,
     status       text        NOT NULL DEFAULT 'pending'
-                             CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
+                             CHECK (status IN ('pending', 'acknowledged', 'done', 'rejected')),
     cook_comment text,
     requested_by uuid        NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
     created_at   timestamptz NOT NULL DEFAULT timezone('utc', now()),
     updated_at   timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
+
+-- Migrate any legacy status values from old schema
+UPDATE public.cook_requests SET status = 'done'         WHERE status = 'completed';
+UPDATE public.cook_requests SET status = 'acknowledged' WHERE status = 'approved';
+
+-- Drop and recreate the constraint with correct values
+ALTER TABLE public.cook_requests DROP CONSTRAINT IF EXISTS cook_requests_status_check;
+ALTER TABLE public.cook_requests ADD CONSTRAINT cook_requests_status_check
+    CHECK (status IN ('pending', 'acknowledged', 'done', 'rejected'));
 
 CREATE TABLE IF NOT EXISTS public.daily_menu (
     id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -229,5 +242,5 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
 DO $$
 BEGIN
   RAISE NOTICE '✅ Tables created successfully';
-  RAISE NOTICE '📊 Total tables: 17';
+  RAISE NOTICE '📊 Total tables: 19 (core) + 4 (advance contributions) = 23';
 END $$;

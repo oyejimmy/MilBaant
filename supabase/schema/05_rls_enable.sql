@@ -24,6 +24,10 @@ ALTER TABLE public.flat_fund_allocations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.flat_fund_expenses    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contribution_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_menu            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.advance_contribution_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.monthly_budget        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.monthly_contributions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contribution_breakdown ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- Verification
@@ -32,5 +36,5 @@ ALTER TABLE public.daily_menu            ENABLE ROW LEVEL SECURITY;
 DO $$
 BEGIN
   RAISE NOTICE '✅ Row Level Security enabled on all tables';
-  RAISE NOTICE '📊 Total tables with RLS: 19';
+  RAISE NOTICE '📊 Total tables with RLS: 23';
 END $$;

@@ -34,12 +34,6 @@ import { ROLE_OPTIONS } from "@/lib/constants";
 import { exportUsersToExcel } from "@/lib/export";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  useAssignBed,
-  useBedAssignments,
-  useBeds,
-  useRooms,
-} from "@/hooks/useFlatLayout";
-import {
   useAdminCreateUser,
   useAdminDeleteUser,
   useProfiles,
@@ -49,7 +43,6 @@ import {
   useMemberCountSetting,
   useUpsertMemberCount,
 } from "@/hooks/useSettings";
-import { FlatFloorplan } from "@/components/FlatFloorplan/index";
 import type { Profile, Role } from "@/lib/types";
 import { UserTable } from "./components/UserTable";
 import { MobileUserCard } from "./components/MobileUserCard";
@@ -86,20 +79,10 @@ export function AdminPage() {
   const createUser = useAdminCreateUser();
   const deleteUser = useAdminDeleteUser();
   const saveMemberCount = useUpsertMemberCount();
-  const roomsQuery = useRooms();
-  const bedsQuery = useBeds();
-  const assignmentsQuery = useBedAssignments();
-  const assignBed = useAssignBed();
 
   const allProfiles = useMemo(
     () => profilesQuery.data ?? [],
     [profilesQuery.data],
-  );
-  const rooms = useMemo(() => roomsQuery.data ?? [], [roomsQuery.data]);
-  const beds = useMemo(() => bedsQuery.data ?? [], [bedsQuery.data]);
-  const assignments = useMemo(
-    () => assignmentsQuery.data ?? [],
-    [assignmentsQuery.data],
   );
   const memberCount = memberCountQuery.data ?? 6;
 
@@ -195,17 +178,6 @@ export function AdminPage() {
     }
   }
 
-  async function handleAssign(bedId: number, assignedUserId: string | null) {
-    try {
-      await assignBed.mutateAsync({ bedId, userId: assignedUserId });
-      message.success(assignedUserId ? "Bed assigned." : "Bed cleared.");
-    } catch (err) {
-      message.error(
-        err instanceof Error ? err.message : "Unable to update bed.",
-      );
-    }
-  }
-
   async function handleSaveMemberCount() {
     const next = memberCountDraft ?? memberCount;
     if (next < 1) {
@@ -245,14 +217,10 @@ export function AdminPage() {
 
   const isLoading =
     profilesQuery.isLoading ||
-    memberCountQuery.isLoading ||
-    roomsQuery.isLoading ||
-    bedsQuery.isLoading ||
-    assignmentsQuery.isLoading;
+    memberCountQuery.isLoading;
   const error =
     (profilesQuery.error as Error | null) ??
-    (memberCountQuery.error as Error | null) ??
-    (roomsQuery.error as Error | null);
+    (memberCountQuery.error as Error | null);
 
   return (
     <PageStack>
@@ -407,27 +375,6 @@ export function AdminPage() {
           onDraftChange={setMemberCountDraft}
           onSave={handleSaveMemberCount}
         />
-
-        <SectionBlock>
-          <Typography.Title level={5} style={{ margin: "0 0 12px" }}>
-            Flat Layout &amp; Bed Assignments
-          </Typography.Title>
-          <Typography.Text
-            type="secondary"
-            style={{ display: "block", marginBottom: 16 }}
-          >
-            Click any bed to assign a flatmate.
-          </Typography.Text>
-          <FlatFloorplan
-            rooms={rooms}
-            beds={beds}
-            assignments={assignments}
-            profiles={allProfiles}
-            isAdmin
-            saving={assignBed.isPending}
-            onAssign={handleAssign}
-          />
-        </SectionBlock>
       </QueryState>
 
       <DeleteUserModal

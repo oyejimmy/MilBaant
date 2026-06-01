@@ -38,7 +38,29 @@ DROP POLICY IF EXISTS "avatars_owner_delete"                   ON storage.object
 
 -- ── Drop Storage Buckets ─────────────────────────────────────────────────────
 
-DELETE FROM storage.buckets WHERE id IN ('bill-images', 'payment-screenshots', 'avatars');
+-- NOTE: Direct deletion from `storage.buckets` is blocked by Supabase
+-- (storage.protect_delete()) to prevent accidental data loss. Use the
+-- Storage API, the Supabase CLI, or the Dashboard to remove buckets.
+--
+-- Recommended options:
+-- 1) Supabase Dashboard: open the project → Storage → select bucket → Delete
+--
+-- 2) HTTP API (example using the service role key):
+--    Replace <PROJECT_URL> and set the service role key in the environment.
+--
+--    curl -X DELETE \
+--      -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+--      -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+--      "https://<PROJECT_REF>.supabase.co/storage/v1/bucket/bill-images"
+--
+--    Repeat for 'payment-screenshots' and 'avatars'.
+--
+-- 3) Supabase CLI (if installed): use the CLI or Storage commands to remove
+--    buckets (UI/CLI varies by version). After deleting buckets externally,
+--    re-run this reset script to continue dropping tables and policies.
+
+-- If you prefer to skip bucket deletion inside this script, leave as-is and
+-- continue; the rest of the reset will run after buckets are removed.
 
 -- ── Drop All RLS Policies ────────────────────────────────────────────────────
 

@@ -5,12 +5,8 @@
 -- HOW TO RUN: Paste this entire file in Supabase SQL Editor
 -- ============================================================
 
-\echo '🔍 Starting database verification...'
-\echo ''
-
 -- ── Check Extensions ─────────────────────────────────────────────────────────
 
-\echo '📦 Checking extensions...'
 SELECT 
   extname as extension_name,
   extversion as version
@@ -19,8 +15,6 @@ WHERE extname = 'pgcrypto';
 
 -- ── Check Tables ─────────────────────────────────────────────────────────────
 
-\echo ''
-\echo '📊 Checking tables...'
 SELECT 
   schemaname,
   tablename,
@@ -31,8 +25,6 @@ ORDER BY tablename;
 
 -- ── Check Table Counts ───────────────────────────────────────────────────────
 
-\echo ''
-\echo '📈 Checking table row counts...'
 SELECT 
   'profiles' as table_name,
   COUNT(*) as row_count
@@ -77,8 +69,6 @@ ORDER BY table_name;
 
 -- ── Check Indexes ────────────────────────────────────────────────────────────
 
-\echo ''
-\echo '🔍 Checking indexes...'
 SELECT 
   schemaname,
   tablename,
@@ -90,8 +80,6 @@ ORDER BY tablename, indexname;
 
 -- ── Check Functions ──────────────────────────────────────────────────────────
 
-\echo ''
-\echo '⚙️  Checking functions...'
 SELECT 
   proname as function_name,
   prosecdef as is_security_definer,
@@ -103,8 +91,6 @@ ORDER BY proname;
 
 -- ── Check Triggers ───────────────────────────────────────────────────────────
 
-\echo ''
-\echo '⚡ Checking triggers...'
 SELECT 
   trigger_schema,
   trigger_name,
@@ -117,8 +103,6 @@ ORDER BY event_object_table, trigger_name;
 
 -- ── Check RLS Policies ───────────────────────────────────────────────────────
 
-\echo ''
-\echo '🛡️  Checking RLS policies...'
 SELECT 
   schemaname,
   tablename,
@@ -131,8 +115,6 @@ ORDER BY tablename, policyname;
 
 -- ── Check RLS Policy Counts ──────────────────────────────────────────────────
 
-\echo ''
-\echo '📊 RLS policy counts by table...'
 SELECT 
   tablename,
   COUNT(*) as policy_count
@@ -143,8 +125,6 @@ ORDER BY tablename;
 
 -- ── Check Storage Buckets ────────────────────────────────────────────────────
 
-\echo ''
-\echo '💾 Checking storage buckets...'
 SELECT 
   id,
   name,
@@ -155,8 +135,6 @@ ORDER BY name;
 
 -- ── Check Storage Policies ───────────────────────────────────────────────────
 
-\echo ''
-\echo '🗂️  Checking storage policies...'
 SELECT 
   policyname,
   bucket_id,
@@ -166,8 +144,6 @@ ORDER BY bucket_id, policyname;
 
 -- ── Check Settings ───────────────────────────────────────────────────────────
 
-\echo ''
-\echo '⚙️  Checking application settings...'
 SELECT 
   key,
   value
@@ -176,8 +152,6 @@ ORDER BY key;
 
 -- ── Check Constraints ────────────────────────────────────────────────────────
 
-\echo ''
-\echo '🔗 Checking table constraints...'
 SELECT 
   tc.table_name,
   tc.constraint_name,

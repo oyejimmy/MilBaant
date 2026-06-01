@@ -76,6 +76,7 @@ async function processItem(item: SyncItem): Promise<void> {
         description: input.description?.trim() || null, amount: input.amount,
         date: input.date, last_date: input.lastDate || null,
         split_type: splitType, bill_image_url: input.billImageUrl ?? null,
+        monthly_period_id: input.date.substring(0, 7),
       }).select('id').single()
       if (error) throw new Error(error.message)
       if (splitType === 'custom_participants' && input.participantIds.length > 0) {

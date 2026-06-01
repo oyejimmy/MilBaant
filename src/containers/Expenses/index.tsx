@@ -49,7 +49,7 @@ import { formatCurrency, formatDate, formatMonthYear } from "@/lib/formatters";
 import { uploadBillImage } from "@/lib/storage";
 import { exportExpensesToExcel } from "@/lib/export";
 import { CATEGORY_LABELS, ADVANCE_CATEGORY_KEYS, ADVANCE_CATEGORY_LABELS, ADVANCE_CATEGORY_COLORS, ADVANCE_CATEGORY_DESCRIPTIONS } from "@/lib/constants";
-import { useAdvanceContribution, useSavePlan, useShiftCarryover } from "@/hooks/useAdvanceContributions";
+import { useAdvanceContribution, useSavePlan } from "@/hooks/useAdvanceContributions";
 import { AddExpenseModal } from "./components/AddExpenseModal";
 import { EditExpenseModal } from "./components/EditExpenseModal";
 import { DistributeModal } from "./components/DistributeModal";
@@ -104,7 +104,6 @@ export function ExpensesPage() {
   const memberCountQuery = useMemberCountSetting();
   const budgetContribution = useAdvanceContribution(selectedMonth.format("YYYY-MM"));
   const savePlan = useSavePlan();
-  const shiftCarryover = useShiftCarryover();
   const createExpense = useCreateExpense();
   const deleteExpense = useDeleteExpense();
   const updateExpense = useUpdateExpense();
@@ -120,9 +119,8 @@ export function ExpensesPage() {
   const fixedTotal = calculateFixedTotal(fixedExpenses);
   const activeMemberCount = profiles.length || 1;
   const perMemberShare = calculatePerMemberShare(fixedTotal, activeMemberCount);
-  const estimatedPerPerson = budgetContribution.estimatedPerPerson ?? (activeMemberCount > 0 ? budgetContribution.totalBudget / activeMemberCount : 0);
+  const estimatedPerPerson = budgetContribution.estimatedPerPerson;
   const remainingAmount = budgetContribution.totalBudget - fixedTotal;
-  const isMonthFinished = selectedMonth.isBefore(dayjs(), "month");
 
   const toggleDescription = (id: string) => {
     setExpandedDescriptions((prev) => {
@@ -134,23 +132,6 @@ export function ExpensesPage() {
       }
       return next;
     });
-  };
-
-  const handleShiftCarryover = async () => {
-    if (!isAdmin || !userId || remainingAmount <= 0) return;
-    const nextMonth = selectedMonth.add(1, "month").format("YYYY-MM");
-    try {
-      await shiftCarryover.mutateAsync({
-        fromMonth: selectedMonth.format("YYYY-MM"),
-        toMonth: nextMonth,
-        amount: remainingAmount,
-        flatmateCount: activeMemberCount,
-        createdBy: userId,
-      });
-      message.success(`Successfully shifted ${formatCurrency(remainingAmount)} to ${formatMonthYear(selectedMonth.add(1, "month"))}!`);
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "Unable to shift carryover");
-    }
   };
 
   const handleOpenPrint = async () => {
@@ -481,16 +462,6 @@ export function ExpensesPage() {
                 </Button>
                 {isAdmin && (
                   <>
-                    {isMonthFinished && remainingAmount > 0 && (
-                      <Button 
-                        type="default" 
-                        loading={shiftCarryover.isPending}
-                        onClick={handleShiftCarryover}
-                        icon={<WalletOutlined />}
-                      >
-                        Shift Remaining
-                      </Button>
-                    )}
                     <Button type="primary" onClick={() => setEditBudgetOpen(true)}>
                       Edit Budget
                     </Button>
@@ -525,6 +496,7 @@ export function ExpensesPage() {
           open={editBudgetOpen}
           onClose={() => setEditBudgetOpen(false)}
           categoryBudgets={budgetContribution.categoryBudgets}
+          carryoverFromPrevious={budgetContribution.carryoverFromPrevious}
           isPending={savePlan.isPending}
           onSave={async (budgets, flatmateCount) => {
             await savePlan.mutateAsync({

@@ -86,7 +86,9 @@ export const ADVANCE_CATEGORY_KEYS: AdvanceCategoryKey[] = [
   'cook_salary',
   'light_bill',
   'gas_bill',
-  'carryover',
+  // NOTE: 'carryover' is intentionally excluded — it is computed from real
+  // transaction data (prev month collected − prev month expenses), not entered
+  // as a budget category.
 ]
 
 export const ADVANCE_CATEGORY_LABELS: Record<AdvanceCategoryKey, string> = {
@@ -98,7 +100,6 @@ export const ADVANCE_CATEGORY_LABELS: Record<AdvanceCategoryKey, string> = {
   cook_salary:   'Cook Salary',
   light_bill:    'Light Bill',
   gas_bill:      'Gas Bill',
-  carryover:     'Carryover',
 }
 
 export const ADVANCE_CATEGORY_COLORS: Record<AdvanceCategoryKey, string> = {
@@ -110,7 +111,6 @@ export const ADVANCE_CATEGORY_COLORS: Record<AdvanceCategoryKey, string> = {
   cook_salary:   'purple',
   light_bill:    'gold',
   gas_bill:      'volcano',
-  carryover:     'geekblue',
 }
 
 export const ADVANCE_CATEGORY_DESCRIPTIONS: Record<AdvanceCategoryKey, string> = {
@@ -122,7 +122,6 @@ export const ADVANCE_CATEGORY_DESCRIPTIONS: Record<AdvanceCategoryKey, string> =
   cook_salary: 'Monthly cook salary payment',
   light_bill: 'Monthly electricity bill estimate',
   gas_bill: 'Monthly gas bill estimate',
-  carryover: 'Remaining balance from previous month that reduces this month\'s contribution',
 }
 
 export const PURCHASE_CATEGORY_OPTIONS = [
