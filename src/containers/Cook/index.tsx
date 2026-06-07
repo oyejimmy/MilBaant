@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type Dayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import type { ColumnsType } from "antd/es/table";
 import {
   Alert,
@@ -14,6 +14,7 @@ import {
   Space,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from "antd";
@@ -21,6 +22,7 @@ import {
   CoffeeOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  InfoCircleOutlined,
   ShoppingCartOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
@@ -36,11 +38,13 @@ import { SummaryStat } from "@/components/SummaryStat";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useCookAdvances,
+  useCookCarryover,
   useCookPurchases,
   useCreateAdvance,
   useCreatePurchase,
   useDeleteAdvance,
   useDeletePurchase,
+  useUpsertCookCarryover,
 } from "@/hooks/useCook";
 import { PageHeader } from "@/components/PageHeader";
 import { QueryState } from "@/components/QueryState";
@@ -73,11 +77,13 @@ export function CookPage() {
 
   const advancesQuery = useCookAdvances();
   const purchasesQuery = useCookPurchases();
+  const carryoverQuery = useCookCarryover();
 
   const createAdvance = useCreateAdvance();
   const createPurchase = useCreatePurchase();
   const deleteAdvance = useDeleteAdvance();
   const deletePurchase = useDeletePurchase();
+  const upsertCarryover = useUpsertCookCarryover();
 
   const allAdvances = advancesQuery.data ?? [];
   const allPurchases = purchasesQuery.data ?? [];
@@ -94,15 +100,31 @@ export function CookPage() {
       )
     : allPurchases;
 
+  // Carryover from the month before the selected/current month
+  const activeMonth = filterMonth ?? dayjs().startOf("month");
+  const prevMonthStr = activeMonth.subtract(1, "month").format("YYYY-MM");
+  const prevCarryover = (carryoverQuery.data ?? []).find(
+    (c) => c.month === prevMonthStr,
+  );
+  const carryoverBalance = prevCarryover?.balance ?? 0;
+
   const totalAdvanced = advances.reduce((s, a) => s + a.amount, 0);
   const totalSpent = purchases.reduce((s, p) => s + p.amount, 0);
-  const balance = totalAdvanced - totalSpent;
+  // Effective balance includes previous month's carryover
+  const balance = totalAdvanced - totalSpent + carryoverBalance;
 
   const balanceStatus =
     balance > 0.01 ? "surplus" : balance < -0.01 ? "deficit" : "zero";
 
   const usedPercent =
-    totalAdvanced > 0 ? Math.min(100, (totalSpent / totalAdvanced) * 100) : 0;
+    totalAdvanced + Math.max(0, carryoverBalance) > 0
+      ? Math.min(
+          100,
+          (totalSpent /
+            (totalAdvanced + Math.max(0, carryoverBalance))) *
+            100,
+        )
+      : 0;
 
   const categoryBreakdown = PURCHASE_CATEGORY_OPTIONS.map(
     ({ label, value }) => ({
@@ -305,10 +327,32 @@ export function CookPage() {
     },
   ];
 
-  const isLoading = advancesQuery.isLoading || purchasesQuery.isLoading;
+  const isLoading =
+    advancesQuery.isLoading ||
+    purchasesQuery.isLoading ||
+    carryoverQuery.isLoading;
   const error =
     (advancesQuery.error as Error | null) ??
-    (purchasesQuery.error as Error | null);
+    (purchasesQuery.error as Error | null) ??
+    (carryoverQuery.error as Error | null);
+
+  async function handleSaveCarryover() {
+    if (!userId) return;
+    const monthStr = activeMonth.format("YYYY-MM");
+    const thisMonthBalance = totalAdvanced - totalSpent;
+    try {
+      await upsertCarryover.mutateAsync({
+        month: monthStr,
+        balance: thisMonthBalance,
+        createdBy: userId,
+      });
+      message.success(
+        `Carryover saved: ${thisMonthBalance >= 0 ? "+" : ""}${formatCurrency(thisMonthBalance)} for ${monthStr}`,
+      );
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Unable to save carryover.");
+    }
+  }
 
   return (
     <PageStack>
@@ -375,6 +419,38 @@ export function CookPage() {
                     ? `Cook overspent by ${formatCurrency(Math.abs(balance))}`
                     : "Advance fully used"}
               </Typography.Text>
+
+              {/* Carryover from previous month */}
+              {carryoverBalance !== 0 && (
+                <Flex align="center" gap={6} style={{ marginTop: 6 }}>
+                  <Tag
+                    color={carryoverBalance > 0 ? "green" : "red"}
+                    style={{ margin: 0, fontSize: 11 }}
+                  >
+                    {carryoverBalance > 0 ? "+" : ""}
+                    {formatCurrency(carryoverBalance)} from {prevMonthStr}
+                  </Tag>
+                  <Tooltip title="Previous month's balance carried into this month">
+                    <InfoCircleOutlined style={{ color: "var(--text-muted)", fontSize: 12 }} />
+                  </Tooltip>
+                </Flex>
+              )}
+
+              {/* Admin: save end-of-month carryover */}
+              {isAdmin && (
+                <Flex align="center" gap={8} style={{ marginTop: 10 }}>
+                  <Tooltip title={`Save this month's net balance (${formatCurrency(totalAdvanced - totalSpent)}) as carryover into next month`}>
+                    <Button
+                      size="small"
+                      loading={upsertCarryover.isPending}
+                      onClick={() => void handleSaveCarryover()}
+                      style={{ fontSize: 11 }}
+                    >
+                      Close Month & Carry Forward
+                    </Button>
+                  </Tooltip>
+                </Flex>
+              )}
             </div>
 
             <div style={{ minWidth: 140, flex: "1 1 140px", maxWidth: isMobile ? "100%" : 220, marginBottom: 0 }}>
@@ -417,6 +493,15 @@ export function CookPage() {
             icon={<CoffeeOutlined />}
             color="#ff4d4f"
           />
+          {carryoverBalance !== 0 && (
+            <SummaryStat
+              title="Prev Month Carryover"
+              value={`${carryoverBalance >= 0 ? "+" : ""}${formatCurrency(carryoverBalance)}`}
+              subtitle={carryoverBalance > 0 ? "Surplus brought forward" : "Deficit brought forward"}
+              icon={<WalletOutlined />}
+              color={carryoverBalance > 0 ? "#52c41a" : "#ff4d4f"}
+            />
+          )}
           <SummaryStat
             title="Purchases"
             value={purchases.length}

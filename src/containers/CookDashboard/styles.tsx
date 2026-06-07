@@ -72,9 +72,17 @@ export const GreetingEmoji = styled.div`
   font-size: 48px;
   line-height: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   @media (min-width: 992px) {
     font-size: 60px;
+
+    img {
+      width: 68px !important;
+      height: 68px !important;
+    }
   }
 `;
 

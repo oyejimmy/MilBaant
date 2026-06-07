@@ -66,6 +66,7 @@ export const QUERY_KEYS = {
   cookAdvances: ['cook-advances'],
   cookPurchases: ['cook-purchases'],
   cookRequests: ['cook-requests'],
+  cookCarryover: ['cook-carryover'],
   activityLogs: ['activity-logs'],
   flatFundAllocations: ['flat-fund-allocations'],
   flatFundExpenses: ['flat-fund-expenses'],

@@ -15,8 +15,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { PageStack } from "@/components/Glass/index";
 import { QueryState } from "@/components/QueryState";
-import { useCookAdvances, useCookPurchases } from "@/hooks/useCook";
+import { useCookAdvances, useCookCarryover, useCookPurchases } from "@/hooks/useCook";
 import { useCookRequests } from "@/hooks/useCookRequests";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useFlatFundAllocations,
   useFlatFundExpenses,
@@ -95,6 +96,7 @@ const DAY_NAMES: Record<number, string> = {
 
 export function CookDashboardPage() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const today = dayjs();
   const todayStr = today.format("YYYY-MM-DD");
   const todayDay = today.day();
@@ -105,6 +107,7 @@ export function CookDashboardPage() {
   const menuQuery = useMenuByDate(todayStr);
   const advancesQuery = useCookAdvances();
   const purchasesQuery = useCookPurchases();
+  const carryoverQuery = useCookCarryover();
   const flatAllocQuery = useFlatFundAllocations();
   const flatExpQuery = useFlatFundExpenses();
   const expensesQuery = useExpenses(currentMonth);
@@ -119,13 +122,30 @@ export function CookDashboardPage() {
   const requests = requestsQuery.data ?? [];
 
   /* ── Cook ledger ── */
-  const totalAdvanced = advances.reduce((s, a) => s + a.amount, 0);
-  const totalSpent = purchases.reduce((s, p) => s + p.amount, 0);
-  const balance = totalAdvanced - totalSpent;
+  // Carryover from last month (positive = surplus, negative = deficit)
+  const prevMonthStr = currentMonth.subtract(1, "month").format("YYYY-MM");
+  const prevCarryover = (carryoverQuery.data ?? []).find(
+    (c) => c.month === prevMonthStr,
+  );
+  const carryoverBalance = prevCarryover?.balance ?? 0;
+
+  // Current month advances & purchases only
+  const currentMonthStr = currentMonth.format("YYYY-MM");
+  const monthAdvances = advances.filter((a) =>
+    a.date.startsWith(currentMonthStr),
+  );
+  const monthPurchases = purchases.filter((p) =>
+    p.date.startsWith(currentMonthStr),
+  );
+
+  const totalAdvanced = monthAdvances.reduce((s, a) => s + a.amount, 0);
+  const totalSpent = monthPurchases.reduce((s, p) => s + p.amount, 0);
+  const balance = totalAdvanced - totalSpent + carryoverBalance;
+  const totalAvailable = totalAdvanced + Math.max(0, carryoverBalance);
   const usedPercent =
-    totalAdvanced > 0 ? Math.min(100, (totalSpent / totalAdvanced) * 100) : 0;
+    totalAvailable > 0 ? Math.min(100, (totalSpent / totalAvailable) * 100) : 0;
   const balanceStatus: "good" | "warn" | "over" =
-    balance < 0 ? "over" : balance < totalAdvanced * 0.2 ? "warn" : "good";
+    balance < 0 ? "over" : balance < totalAvailable * 0.2 ? "warn" : "good";
 
   /* ── Flat fund ── */
   const flatTotalAlloc = flatAlloc.reduce((s, a) => s + a.amount, 0);
@@ -153,6 +173,7 @@ export function CookDashboardPage() {
     menuQuery.isLoading ||
     advancesQuery.isLoading ||
     purchasesQuery.isLoading ||
+    carryoverQuery.isLoading ||
     flatAllocQuery.isLoading ||
     flatExpQuery.isLoading ||
     requestsQuery.isLoading;
@@ -161,6 +182,7 @@ export function CookDashboardPage() {
     (menuQuery.error as Error | null) ??
     (advancesQuery.error as Error | null) ??
     (purchasesQuery.error as Error | null) ??
+    (carryoverQuery.error as Error | null) ??
     (flatAllocQuery.error as Error | null) ??
     (flatExpQuery.error as Error | null) ??
     (requestsQuery.error as Error | null);
@@ -179,7 +201,23 @@ export function CookDashboardPage() {
       <PageStack>
         {/* ─── Greeting banner ─────────────────────────────────────────── */}
         <GreetingBanner>
-          <GreetingEmoji>👨‍🍳</GreetingEmoji>
+          <GreetingEmoji>
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.full_name}
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "2px solid rgba(255,255,255,0.3)",
+                }}
+              />
+            ) : (
+              "👨‍🍳"
+            )}
+          </GreetingEmoji>
           <GreetingBody>
             <GreetingTitle>
               {greeting} {greetingEmoji}
@@ -191,11 +229,11 @@ export function CookDashboardPage() {
             {/* Inline stats visible only on desktop via CSS */}
             <GreetingStatsRow>
               <GreetingStatItem>
-                <GreetingStatValue>{advances.length}</GreetingStatValue>
+                <GreetingStatValue>{monthAdvances.length}</GreetingStatValue>
                 <GreetingStatLabel>Advances</GreetingStatLabel>
               </GreetingStatItem>
               <GreetingStatItem>
-                <GreetingStatValue>{purchases.length}</GreetingStatValue>
+                <GreetingStatValue>{monthPurchases.length}</GreetingStatValue>
                 <GreetingStatLabel>Purchases</GreetingStatLabel>
               </GreetingStatItem>
               <GreetingStatItem>
@@ -281,6 +319,16 @@ export function CookDashboardPage() {
                     ? `${formatCurrency(Math.abs(balance))} over budget — ask admin`
                     : `Only ${formatCurrency(balance)} left — spend carefully`}
               </BalanceStatus>
+
+              {carryoverBalance !== 0 && (
+                <Tag
+                  color={carryoverBalance > 0 ? "green" : "red"}
+                  style={{ marginTop: 6, fontSize: 11 }}
+                >
+                  {carryoverBalance > 0 ? "+" : ""}
+                  {formatCurrency(carryoverBalance)} carryover from {prevMonthStr}
+                </Tag>
+              )}
 
               <BalanceProgressSection>
                 <BalanceProgressLabels>

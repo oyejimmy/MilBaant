@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS public.cook_requests (
     status       text        NOT NULL DEFAULT 'pending'
                              CHECK (status IN ('pending', 'acknowledged', 'done', 'rejected')),
     cook_comment text,
-    requested_by uuid        NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+    requested_by uuid        NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
     created_at   timestamptz NOT NULL DEFAULT timezone('utc', now()),
     updated_at   timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
@@ -194,6 +194,21 @@ CREATE TABLE IF NOT EXISTS public.flat_fund_expenses (
     date        date         NOT NULL DEFAULT current_date,
     created_by  uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
     created_at  timestamptz  NOT NULL DEFAULT timezone('utc', now())
+);
+
+-- ── Cook Carryover ───────────────────────────────────────────────────────────
+-- Stores the end-of-month balance for the cook ledger.
+-- Positive = cook has leftover advance; negative = cook overspent.
+-- Recorded by admin when closing out a month.
+
+CREATE TABLE IF NOT EXISTS public.cook_carryover (
+    id         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    month      text         NOT NULL UNIQUE,           -- 'YYYY-MM'
+    balance    numeric(10,2) NOT NULL DEFAULT 0,       -- +surplus or -deficit
+    note       text,
+    created_by uuid         NOT NULL REFERENCES public.profiles (id) ON DELETE RESTRICT,
+    created_at timestamptz  NOT NULL DEFAULT timezone('utc', now()),
+    updated_at timestamptz  NOT NULL DEFAULT timezone('utc', now())
 );
 
 -- ── Contributions ────────────────────────────────────────────────────────────

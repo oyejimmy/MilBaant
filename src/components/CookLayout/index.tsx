@@ -704,6 +704,7 @@ export function CookLayout() {
                 <ProfileRow $collapsed={collapsed}>
                   <Avatar
                     size={30}
+                    src={profile?.avatar_url ?? undefined}
                     style={{
                       background:
                         "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
@@ -712,8 +713,11 @@ export function CookLayout() {
                       fontSize: 12,
                       fontWeight: 700,
                     }}
+                    icon={<UserOutlined />}
                   >
-                    {profile?.full_name?.charAt(0)?.toUpperCase() ?? "C"}
+                    {!profile?.avatar_url
+                      ? (profile?.full_name?.charAt(0)?.toUpperCase() ?? "C")
+                      : null}
                   </Avatar>
                   <ProfileMeta $visible={!collapsed}>
                     <Typography.Text
@@ -825,6 +829,7 @@ export function CookLayout() {
                 >
                   <Avatar
                     size={28}
+                    src={profile?.avatar_url ?? undefined}
                     style={{
                       background:
                         "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
@@ -832,8 +837,11 @@ export function CookLayout() {
                       fontSize: 11,
                       fontWeight: 700,
                     }}
+                    icon={<UserOutlined />}
                   >
-                    {profile?.full_name?.charAt(0)?.toUpperCase() ?? "C"}
+                    {!profile?.avatar_url
+                      ? (profile?.full_name?.charAt(0)?.toUpperCase() ?? "C")
+                      : null}
                   </Avatar>
                   <div>
                     <Typography.Text
@@ -918,6 +926,7 @@ export function CookLayout() {
                 <ProfileBtn type="button" aria-label="Profile menu">
                   <Avatar
                     size={28}
+                    src={profile?.avatar_url ?? undefined}
                     style={{
                       background:
                         "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
@@ -925,8 +934,11 @@ export function CookLayout() {
                       fontSize: 11,
                       fontWeight: 700,
                     }}
+                    icon={<UserOutlined />}
                   >
-                    {profile?.full_name?.charAt(0)?.toUpperCase() ?? "C"}
+                    {!profile?.avatar_url
+                      ? (profile?.full_name?.charAt(0)?.toUpperCase() ?? "C")
+                      : null}
                   </Avatar>
                   {isDesktop && (
                     <div

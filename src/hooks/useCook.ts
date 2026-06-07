@@ -107,3 +107,49 @@ export function useDeletePurchase() {
     onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookPurchases }) },
   })
 }
+
+/* ─── Carryover ───────────────────────────────────────────────────────────── */
+// Stores the end-of-month balance for the cook ledger per month.
+// Positive = leftover advance (cook gets credit next month).
+// Negative = overspent (cook owes back / deducted next month).
+
+export interface CookCarryover {
+  id: string
+  month: string        // 'YYYY-MM'
+  balance: number      // + surplus / - deficit
+  note: string | null
+  created_by: string
+  created_at: string
+}
+
+async function fetchCookCarryover(): Promise<CookCarryover[]> {
+  const { data, error } = await supabase
+    .from('cook_carryover')
+    .select('id, month, balance, note, created_by, created_at')
+    .order('month', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((r) => ({ ...r, balance: Number(r.balance) })) as CookCarryover[]
+}
+
+export function useCookCarryover() {
+  return useQuery({ queryKey: QUERY_KEYS.cookCarryover, queryFn: fetchCookCarryover })
+}
+
+export function useUpsertCookCarryover() {
+  return useMutation({
+    mutationFn: async (input: { month: string; balance: number; note?: string; createdBy: string }) => {
+      const { error } = await supabase.from('cook_carryover').upsert(
+        { month: input.month, balance: input.balance, note: input.note?.trim() || null, created_by: input.createdBy },
+        { onConflict: 'month' },
+      )
+      if (error) throw new Error(error.message)
+      await logActivity({
+        userId: input.createdBy,
+        action: 'create',
+        entity: 'cook_carryover',
+        description: `Recorded cook carryover for ${input.month}: ${input.balance >= 0 ? '+' : ''}PKR ${input.balance}`,
+      })
+    },
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cookCarryover }) },
+  })
+}
