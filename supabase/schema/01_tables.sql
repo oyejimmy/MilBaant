@@ -72,6 +72,14 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 -- Ensure monthly_period_id column exists on existing databases
 ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS monthly_period_id text;
 
+-- Ensure category constraint includes all current values (fixes older deployments)
+ALTER TABLE public.expenses DROP CONSTRAINT IF EXISTS expenses_category_check;
+ALTER TABLE public.expenses ADD CONSTRAINT expenses_category_check
+  CHECK (category IN (
+    'gas_bill','light_bill','cook_salary','kitchen_daily',
+    'water_roti','meat','maintenance','pcc_grocery','weekend_meal'
+  ));
+
 CREATE TABLE IF NOT EXISTS public.expense_participants (
     expense_id uuid NOT NULL REFERENCES public.expenses (id) ON DELETE CASCADE,
     user_id    uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
