@@ -798,6 +798,11 @@ export function DashboardPage() {
   const totalContributions = payments.reduce((s, p) => s + p.amount, 0);
   const totalBudget = budgetContribution.totalBudget;
   const remainingAmount = totalBudget - fixedTotal;
+
+  // Per-person amount: use actual contribution payment amount (all pay same),
+  // falling back to the calculated share if no payments recorded yet
+  const perPersonAmount =
+    payments.length > 0 ? payments[0].amount : perMemberShare;
   const flatmates = profiles.filter((p) => p.role !== "cook");
   const userSummary = buildMonthlyUserSummary(
     flatmates,
@@ -1053,8 +1058,8 @@ export function DashboardPage() {
               },
               {
                 label: "Per Member Share",
-                value: formatCurrency(perMemberShare),
-                sub: `${memberCount} members`,
+                value: formatCurrency(perPersonAmount),
+                sub: payments.length > 0 ? "From contribution payments" : `${memberCount} members`,
                 accent: "#06b6d4",
                 icon: <UserOutlined />,
               },
@@ -1289,7 +1294,7 @@ export function DashboardPage() {
                     $size={22}
                     style={{ letterSpacing: "-0.5px" }}
                   >
-                    {formatCurrency(myBalance)}
+                    {formatCurrency(perPersonAmount)}
                   </CardPrimaryText>
                 </div>
                 {isAdmin && (
@@ -1695,6 +1700,157 @@ export function DashboardPage() {
             </BalanceTable>
           )}
         </Card>
+
+        {/* ── Contribution Payments ── */}
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>
+                <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                Contribution Payments
+              </CardTitle>
+              <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                {today.format("MMMM YYYY")} · per person:{" "}
+                <strong style={{ color: "var(--text-strong)" }}>
+                  {formatCurrency(perPersonAmount)}
+                </strong>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+              {/* Collected stat */}
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Collected
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#52c41a", letterSpacing: "-0.3px" }}>
+                  {formatCurrency(totalContributions)}
+                </div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                  {paidCount} of {flatmates.length} paid
+                </div>
+              </div>
+              <LinkBtn onClick={() => navigate("/contributions")}>
+                View all <ArrowRightOutlined />
+              </LinkBtn>
+            </div>
+          </CardHeader>
+
+          {/* Member payment rows */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+            {flatmates.map((member) => {
+              const paid = paymentsByUser.get(member.id) ?? 0;
+              const isPaid = paymentExistsByUser.get(member.id) === true;
+              const isMe = member.id === userId;
+              const initials = member.full_name
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              const perPerson = perPersonAmount;
+
+              return (
+                <div
+                  key={member.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    background: isMe
+                      ? "var(--primary-soft, rgba(22,119,255,0.06))"
+                      : "var(--hover-bg, rgba(0,0,0,0.02))",
+                    border: `1px solid ${isPaid ? "rgba(82,196,26,0.18)" : "var(--card-border)"}`,
+                  }}
+                >
+                  {/* Avatar */}
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 9,
+                      flexShrink: 0,
+                      background: isPaid
+                        ? "linear-gradient(135deg,#52c41a,#389e0d)"
+                        : "linear-gradient(135deg,#8c8c8c,#595959)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#fff",
+                    }}
+                  >
+                    {initials}
+                  </div>
+
+                  {/* Name */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-strong)", display: "flex", alignItems: "center", gap: 5 }}>
+                      {member.full_name.split(" ")[0]}
+                      {isMe && (
+                        <span style={{ fontSize: 10, color: "#1677ff", fontWeight: 700 }}>
+                          you
+                        </span>
+                      )}
+                    </div>
+                    {isPaid && paid > 0 && (
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                        Paid {formatCurrency(paid)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Amount / status */}
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    {isPaid ? (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#52c41a", display: "flex", alignItems: "center", gap: 4 }}>
+                        <CheckCircleOutlined style={{ fontSize: 13 }} />
+                        Paid
+                      </span>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#ff4d4f" }}>
+                          {formatCurrency(perPerson)}
+                        </div>
+                        <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                          pending
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary bar */}
+          {flatmates.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
+                  {paidCount} of {flatmates.length} paid
+                </span>
+                <span style={{ fontSize: 10.5, color: "var(--text-muted)", fontWeight: 600 }}>
+                  {formatCurrency(totalContributions)} collected
+                </span>
+              </div>
+              <div style={{ height: 5, borderRadius: 4, background: "var(--card-border)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    borderRadius: 4,
+                    background: paidCount === flatmates.length ? "#52c41a" : "#1677ff",
+                    width: `${(paidCount / flatmates.length) * 100}%`,
+                    transition: "width 0.4s ease",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </Card>
+
       </QueryState>
       <Modal
         centered
