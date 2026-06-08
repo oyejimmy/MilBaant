@@ -12,7 +12,6 @@ import {
   HomeOutlined,
   PieChartOutlined,
   RiseOutlined,
-  TeamOutlined,
   UserOutlined,
   WalletOutlined,
   FireOutlined,
@@ -38,7 +37,6 @@ import {
   useUpsertPrevMonthRemainder,
 } from "@/hooks/useSettings";
 import { useContributionPayments } from "@/hooks/useContributions";
-import { useAdvanceContribution } from "@/hooks/useAdvanceContributions";
 import { useCookRequests } from "@/hooks/useCookRequests";
 import { useMenuByDate } from "@/hooks/useDailyMenu";
 import {
@@ -449,12 +447,13 @@ const CardPoly = styled.div<{
 /* ─── Stat cards grid ────────────────────────────────────────────────────── */
 const StatCardsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(3, 1fr);
   }
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
   }
 `;
@@ -462,14 +461,13 @@ const StatCardsGrid = styled.div`
 const StatCard = styled.div<{ $accent: string }>`
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 9px 11px;
+  border-radius: 12px;
+  padding: 14px 14px 12px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 0;
 
   &::after {
     content: "";
@@ -479,11 +477,16 @@ const StatCard = styled.div<{ $accent: string }>`
     bottom: 0;
     width: 3px;
     background: ${(p) => p.$accent};
-    border-radius: 10px 0 0 10px;
+    border-radius: 12px 0 0 12px;
   }
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
+  }
+
+  @media (max-width: 640px) {
+    padding: 12px 12px 10px;
   }
 `;
 
@@ -776,7 +779,6 @@ export function DashboardPage() {
   const contributeInfoQuery = useContributeInfo();
   const prevRemainderQuery = usePrevMonthRemainder();
   const upsertPrevRemainder = useUpsertPrevMonthRemainder();
-  const budgetContribution = useAdvanceContribution(monthStr);
 
   const expenses = expensesQuery.data ?? [];
   const profiles = profilesQuery.data ?? [];
@@ -793,11 +795,9 @@ export function DashboardPage() {
   const { fixedExpenses, weekendExpenses } = splitExpensesByType(expenses);
   const fixedTotal = calculateFixedTotal(fixedExpenses);
   const weekendTotal = calculateFixedTotal(weekendExpenses);
-  const totalRecorded = fixedTotal + prevRemainder;
-  const perMemberShare = calculatePerMemberShare(fixedTotal, memberCount);
   const totalContributions = payments.reduce((s, p) => s + p.amount, 0);
-  const totalBudget = budgetContribution.totalBudget;
-  const remainingAmount = totalBudget - fixedTotal;
+  const totalRecorded = totalContributions + prevRemainder;
+  const perMemberShare = calculatePerMemberShare(fixedTotal, memberCount);
 
   // Per-person amount: use actual contribution payment amount (all pay same),
   // falling back to the calculated share if no payments recorded yet
@@ -1008,46 +1008,25 @@ export function DashboardPage() {
           {(
             [
               {
-                label: "Total Recorded",
-                value: formatCurrency(totalRecorded),
-                sub: `${formatCurrency(fixedTotal)} shared + ${formatCurrency(prevRemainder)} remainder`,
-                accent: "#1677ff",
-                icon: <FundOutlined />,
-              },
-              {
-                label: "Prev. Remainder",
-                value: formatCurrency(prevRemainder),
-                sub: "Carried over from last month",
-                accent: "#1677ff",
-                icon: <HistoryOutlined />,
-              },
-              {
-                label: "Total Budget",
-                value: formatCurrency(totalBudget),
-                sub: "Estimated monthly budget",
-                accent: "#faad14",
-                icon: <WalletOutlined />,
-              },
-              {
-                label: "Remaining",
-                value: formatCurrency(remainingAmount),
-                sub: remainingAmount > 0 ? "From budget" : "Over budget",
-                accent: remainingAmount >= 0 ? "#52c41a" : "#ff4d4f",
-                icon: <RiseOutlined />,
-              },
-              {
-                label: "Contributions",
+                label: "Total Contributions This Month",
                 value: formatCurrency(totalContributions),
                 sub: `${paidCount} of ${flatmates.length} paid`,
                 accent: "#52c41a",
                 icon: <CheckCircleOutlined />,
               },
               {
-                label: "Shared Total",
-                value: formatCurrency(fixedTotal),
-                sub: "Split equally among members",
-                accent: "#7c3aed",
-                icon: <TeamOutlined />,
+                label: "Per Member Share This Month",
+                value: formatCurrency(perPersonAmount),
+                sub: payments.length > 0 ? "From contribution payments" : `${memberCount} members`,
+                accent: "#06b6d4",
+                icon: <UserOutlined />,
+              },
+              {
+                label: "Prevous Month Remaining Amount",
+                value: formatCurrency(prevRemainder),
+                sub: "Carried over from last month",
+                accent: "#1677ff",
+                icon: <HistoryOutlined />,
               },
               {
                 label: "Weekend Total",
@@ -1057,39 +1036,38 @@ export function DashboardPage() {
                 icon: <CalendarOutlined />,
               },
               {
-                label: "Per Member Share",
-                value: formatCurrency(perPersonAmount),
-                sub: payments.length > 0 ? "From contribution payments" : `${memberCount} members`,
-                accent: "#06b6d4",
-                icon: <UserOutlined />,
+                label: "Total Balance",
+                value: formatCurrency(totalRecorded),
+                sub: `${formatCurrency(totalContributions)} collected + ${formatCurrency(prevRemainder)} remainder`,
+                accent: "#1677ff",
+                icon: <FundOutlined />,
               },
             ] as const
           ).map((item) => (
-            <StatCard key={item.label} $accent={item.accent}>
+            <StatCard key={String(item.label)} $accent={item.accent}>
               <div
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
                   justifyContent: "space-between",
                   gap: 6,
-                  marginBottom: 4,
+                  marginBottom: 8,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 9.5,
+                    fontSize: 10,
                     fontWeight: 700,
                     color: "var(--text-muted)",
                     textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    paddingTop: 2,
-                    lineHeight: 1.3,
+                    letterSpacing: "0.4px",
+                    lineHeight: 1.4,
                   }}
                 >
                   {item.label}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  {isAdmin && item.label === "Prev. Remainder" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                  {isAdmin && item.label === "Prevous Month Remaining Amount" && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1115,15 +1093,15 @@ export function DashboardPage() {
                   )}
                   <div
                     style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 6,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
                       flexShrink: 0,
                       background: `${item.accent}18`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 12,
+                      fontSize: 13,
                       color: item.accent,
                     }}
                   >
@@ -1133,21 +1111,24 @@ export function DashboardPage() {
               </div>
               <div
                 style={{
-                  fontSize: 15,
-                  fontWeight: 700,
+                  fontSize: 18,
+                  fontWeight: 800,
                   color: "var(--text-strong)",
-                  letterSpacing: "-0.2px",
+                  letterSpacing: "-0.3px",
                   lineHeight: 1.2,
+                  marginBottom: 4,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {item.value}
               </div>
               <div
                 style={{
-                  fontSize: 9.5,
+                  fontSize: 11,
                   color: "var(--text-muted)",
-                  marginTop: 2,
-                  lineHeight: 1.3,
+                  lineHeight: 1.4,
                 }}
               >
                 {item.sub}
